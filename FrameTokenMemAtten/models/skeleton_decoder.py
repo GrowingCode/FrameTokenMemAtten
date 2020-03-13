@@ -24,13 +24,16 @@ class SkeletonDecodeModel(tf.keras.Model):
   the parameter start_nodes must be in the same level and be successive while
   stop_nodes do not have constraints
   '''
-    
+  
   def __init__(self, type_content_data):
     super(SkeletonDecodeModel, self).__init__()
     self.type_content_data = type_content_data
-    self.contingent_parameters = self.add_weight(shape=(contingent_parameters_num, 2, num_units), initializer='random_uniform', trainable=True)
     self.metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
+    self.metrics_shape = [metric_m[1] for metric_m in self.metrics_meta]
+    self.index_metrics = dict((k,v) for k, v in zip(range(len(self.metrics_name)), self.metrics_name))
+    self.metrics_index = {value:key for key, value in self.index_metrics.items()}
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
+    self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
     self.skeleton_lstm_cell = YLSTMCell()
     self.skeleton_dup_lstm_cell = YLSTMCell()
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonNum] + 1
@@ -43,7 +46,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     if compute_token_memory:
       self.mem_nn = NTMOneDirection()
       self.forward_token_lstm = YLSTMCell()
-      self.backward_token_lstm = YLSTMCell() 
+      self.backward_token_lstm = YLSTMCell()
     
     self.token_lstm = YLSTMCell()
     if atom_decode_mode == token_decode:
@@ -86,6 +89,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
+    f_res = f_res[2:]
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):
