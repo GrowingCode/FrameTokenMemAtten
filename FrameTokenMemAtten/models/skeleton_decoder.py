@@ -29,6 +29,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     super(SkeletonDecodeModel, self).__init__()
     self.type_content_data = type_content_data
     self.metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
+    self.metrics_name = [metric_m[0] for metric_m in self.metrics_meta]
     self.metrics_shape = [metric_m[1] for metric_m in self.metrics_meta]
     self.index_metrics = dict((k,v) for k, v in zip(range(len(self.metrics_name)), self.metrics_name))
     self.metrics_index = {value:key for key, value in self.index_metrics.items()}

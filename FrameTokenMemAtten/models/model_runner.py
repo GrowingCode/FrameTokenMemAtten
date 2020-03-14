@@ -22,18 +22,18 @@ class ModelRunner():
     '''
     load training data
     '''
-    self.train_raw_datas = raw_load_data(data_dir + "/" + "train_data.txt", "train")
+    self.train_raw_datas = raw_load_data(data_dir + "/" + "tree_train_data.txt", "train")
     self.train_np_arrays = []
     '''
     load valid data
     currently valid data is not considered
     '''
-    self.valid_raw_datas = raw_load_data(data_dir + "/" + "valid_data.txt", "valid")
+    self.valid_raw_datas = raw_load_data(data_dir + "/" + "tree_valid_data.txt", "valid")
     self.valid_np_arrays = []
     '''
     load test data
     '''
-    self.test_raw_datas = raw_load_data(data_dir + "/" + "test_data.txt", "test")
+    self.test_raw_datas = raw_load_data(data_dir + "/" + "tree_test_data.txt", "test")
     self.test_np_arrays = []
     '''
     load type content data

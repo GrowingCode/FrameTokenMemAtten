@@ -13,7 +13,7 @@ class NTMOneDirection(tf.keras.Model):
     self.merger = EmbedMerger()
     self.memory_update_lstm = YLSTMCell()
     self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
-    self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, bs=525, [1, num_units]))
+    self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525, [1, num_units]))
   
   def compute_variables_in_statement(self, var_info, token_info, forward_memory_cell, forward_memory_h, loop_forward_cell, loop_forward_h, loop_backward_cell, loop_backward_h, decode_f_cell, decode_f_h, inner_statement_as_a_whole = 1):  # @UnusedVariable
     '''
