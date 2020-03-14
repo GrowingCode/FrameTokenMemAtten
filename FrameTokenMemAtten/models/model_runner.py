@@ -357,6 +357,7 @@ def clip_gradients(grads, vs):
   
 
 if __name__ == '__main__':
+#   tf.debugging.set_log_device_placement(True)
   check_or_store_configs()
   runner = ModelRunner()
   runner.train()
