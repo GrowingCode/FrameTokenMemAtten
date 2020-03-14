@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 from utils.config_util import check_or_store_configs
 from inputs.example_data_loader import build_skeleton_feed_dict
+from utils.numpy_tensor_convert import convert_numpy_to_tensor
 
 
 class ModelRunner():
@@ -207,51 +208,75 @@ class ModelRunner():
     else:
       np_arrays = self.test_np_arrays
     part_np_arrays = []
+#     token_info_np_arrays = []
+#     token_info_start_np_arrays = []
+#     token_info_end_np_arrays = []
     one_unit_count = 0
     length_of_datas = len(np_arrays)
     for element_number, np_array in enumerate(np_arrays):
+#       token_info_np_arrays.append(np_array[0])
+#       token_info_start_np_arrays.append(np_array[1])
+#       token_info_end_np_arrays.append(np_array[2])
       part_np_arrays.append(np_array)
       if (one_unit_count >= max_examples_in_one_batch) or (element_number == length_of_datas-1):
-        part_metric = self.model_running_batch(model, mode, optimizer, part_np_arrays)
-        merge_metric(all_metrics, part_metric)
+        start_time = time.time()
+#         token_info_dataset = tf.data.Dataset.from_generator(lambda: token_info_np_arrays, int_type, tf.TensorShape([None, None])).batch(1)  # @UndefinedVariable
+#         token_info_start_dataset = tf.data.Dataset.from_generator(lambda: token_info_start_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
+#         token_info_end_dataset = tf.data.Dataset.from_generator(lambda: token_info_end_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
+#         part_metric = model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset)
+        part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
+        for tensor_array in part_tensor_arrays:
+          part_metric = model_running_one_example(model, mode, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
+          part_metric = model_output(part_metric, model.statistical_metrics_meta)
+          merge_metric(all_metrics, part_metric)
+#         token_info_np_arrays.clear()
+#         token_info_start_np_arrays.clear()
+#         token_info_end_np_arrays.clear()
         part_np_arrays.clear()
         one_unit_count = 0
+        end_time = time.time()
+        print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
   
-  def model_running_batch(self, model, mode, optimizer, part_np_arrays):
-    final_result = {}
-    '''
-    put raw data into many batches, each batch contains many training examples
-    each example has the following shape: (input_unit, input_unit, ...)
-    for an example input_unit is ast_encodes_tensor or ast_decodes_tensor or sequence_decodes_tensor
-    for each input_unit, the shape is [3 or 4, ast_node_num or sequence_num]
-    3 or 4 is the first dimension of ast tensor or sequence tensor for one Java code
-    '''
-    for np_array in part_np_arrays:
-      start_time = time.time()
-      output_result = self.model_running_one_example(model, mode, optimizer, np_array)
-      merge_metric(final_result, output_result)
-      end_time = time.time()
-      avg = None
-      if mode > training_mode:
-        avg = compute_average(output_result)
-    print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s" + "#" + json.dumps(avg))
-    return final_result
-  
-  def model_running_one_example(self, model, mode, optimizer, np_array):
-    training = False
-    if mode == training_mode:
-      training = True
-    if training:
-      with tf.GradientTape() as tape:
-        metrics = model(np_array[0], np_array[1], np_array[2], training = training)
-      cared_variables = model.trainable_variables
-      grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
-      grads_vs = clip_gradients(grads, cared_variables)
-      optimizer.apply_gradients(grads_vs)
-    else:
-      metrics = model(np_array[0], np_array[1], np_array[2], training = training)
-    return model_output(metrics, model.statistical_metrics_meta)
+
+# @tf.function
+# def model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset):
+#   '''
+#   put raw data into many batches, each batch contains many training examples
+#   each example has the following shape: (input_unit, input_unit, ...)
+#   for an example input_unit is ast_encodes_tensor or ast_decodes_tensor or sequence_decodes_tensor
+#   for each input_unit, the shape is [3 or 4, ast_node_num or sequence_num]
+#   3 or 4 is the first dimension of ast tensor or sequence tensor for one Java code
+#   '''
+#   token_info_tensor_iterator = iter(token_info_dataset)
+#   token_info_start_tensor_iterator = iter(token_info_start_dataset)
+#   token_info_end_tensor_iterator = iter(token_info_end_dataset)
+#   initial_metric = list(create_empty_tensorflow_tensors(model.statistical_metrics_meta, None, None))
+#   r_len = len(model.statistical_metrics_meta)  
+#   final_result = initial_metric
+#   model.statistical_metrics_meta
+#   token_info_tensor, token_info_start_tensor, token_info_end_tensor = token_info_tensor_iterator.get_next()[0], token_info_start_tensor_iterator.get_next()[0], token_info_end_tensor_iterator.get_next()[0]
+#   output_result = model_running_one_example(model, mode, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor)
+#   for i in range(r_len):
+#     final_result[i] += output_result[i]
+#   return final_result
+
+
+@tf.function
+def model_running_one_example(model, mode, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
+  training = False
+  if mode == training_mode:
+    training = True
+  if training:
+    with tf.GradientTape() as tape:
+      metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+    cared_variables = model.trainable_variables
+    grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
+    grads_vs = clip_gradients(grads, cared_variables)
+    optimizer.apply_gradients(grads_vs)
+  else:
+    metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+  return metrics
 
 
 def load_examples(data_file_name, mode_info):
@@ -358,6 +383,7 @@ def clip_gradients(grads, vs):
 
 if __name__ == '__main__':
 #   tf.debugging.set_log_device_placement(True)
+#   tf.compat.v1.disable_eager_execution()
   check_or_store_configs()
   runner = ModelRunner()
   runner.train()

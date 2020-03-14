@@ -8,6 +8,7 @@ from utils.initializer import random_uniform_variable_initializer
 class YAttention(tf.keras.Model):
   
   def __init__(self):
+    super(YAttention, self).__init__()
     if attention_algorithm == v_attention:
       self.v = tf.Variable(random_uniform_variable_initializer(203, 21, [1, num_units]))
       self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231, [num_units, num_units]))

@@ -14,9 +14,9 @@ def build_skeleton_feed_dict(line):
     one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
     stmt_skeleton_token_info = np.concatenate((stmt_skeleton_token_info, one_dim), axis=0)
     i = i + 1
-  stmt_skeleton_token_info_start = [int(id_str) for id_str in strs[i].split()]
+  stmt_skeleton_token_info_start = np.array([int(id_str) for id_str in strs[i].split()])
   i = i + 1
-  stmt_skeleton_token_info_end = [int(id_str) for id_str in strs[i].split()]
+  stmt_skeleton_token_info_end = np.array([int(id_str) for id_str in strs[i].split()])
   i = i + 1
   
   assert i == i_len
