@@ -91,7 +91,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
-    f_res = f_res[2:len(self.statistical_metrics_meta)]
+    f_res = f_res[2:2+len(self.statistical_metrics_meta)]
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):

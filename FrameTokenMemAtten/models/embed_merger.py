@@ -9,8 +9,8 @@ class EmbedMerger(tf.keras.Model):
   
   def __init__(self):
     super(EmbedMerger, self).__init__()
-    self.weights = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 4 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 4 * num_units]))
+    self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     self.norm_wrights = []
     self.norm_biases = []
     for _ in range(4):
@@ -19,8 +19,8 @@ class EmbedMerger(tf.keras.Model):
   
   def call(self, forward_h, backward_h):
     linear_input = tf.concat([forward_h, backward_h], 1)
-    res = tf.matmul(linear_input, self.weights)
-    res = tf.add(res, self.biases)
+    res = tf.matmul(linear_input, self.w)
+    res = tf.add(res, self.b)
     i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
     # add layer normalization to each gate
     i = layer_normalization(i, self.norm_wrights[0], self.norm_biases[0])

@@ -7,7 +7,8 @@ default_metrics_meta = [("all_loss", tf.TensorShape(())), ("all_accurate", tf.Te
 
 def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics_contingent_index):
   result = []
-  for m_name in metrics_meta:
+  for mm in metrics_meta:
+    m_name = mm[0]
     if m_name.endswith("_en"):
       ct = tf.zeros([1], int_type)
     elif m_name.endswith("_loss"):
@@ -43,7 +44,8 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
 def create_metrics_contingent_index(metrics_meta):
   metrics_contingent = {}
   idx = 0
-  for m_name in metrics_meta:
+  for mm in metrics_meta:
+    m_name = mm[0]
     if m_name.endswith("_cell") or m_name.endswith("_h") or m_name.endswith("_cells") or m_name.endswith("_hs"):
       metrics_contingent[m_name] = idx
       idx = idx+1

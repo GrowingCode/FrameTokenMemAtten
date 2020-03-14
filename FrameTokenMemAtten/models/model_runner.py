@@ -13,6 +13,7 @@ from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 import tensorflow as tf
 from utils.config_util import check_or_store_configs
+from inputs.example_data_loader import build_skeleton_feed_dict
 
 
 class ModelRunner():
@@ -22,19 +23,16 @@ class ModelRunner():
     '''
     load training data
     '''
-    self.train_raw_datas = raw_load_data(data_dir + "/" + "tree_train_data.txt", "train")
-    self.train_np_arrays = []
+    self.train_np_arrays = load_examples(data_dir + "/" + "tree_train_data.txt", "train")
     '''
     load valid data
     currently valid data is not considered
     '''
-    self.valid_raw_datas = raw_load_data(data_dir + "/" + "tree_valid_data.txt", "valid")
-    self.valid_np_arrays = []
+    self.valid_np_arrays = load_examples(data_dir + "/" + "tree_valid_data.txt", "valid")
     '''
     load test data
     '''
-    self.test_raw_datas = raw_load_data(data_dir + "/" + "tree_test_data.txt", "test")
-    self.test_np_arrays = []
+    self.test_np_arrays = load_examples(data_dir + "/" + "tree_test_data.txt", "test")
     '''
     load type content data
     '''
@@ -99,6 +97,8 @@ class ModelRunner():
       total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
       ''' exactly record train loss '''
       train_avg = compute_average(train_output_result)
+      print("===== train_output_result =====:" + str(train_output_result))
+      print("===== train_avg =====:" + str(train_avg))
       train_average_loss = train_avg["average_all_loss"]
       '''
       compute average loss when training
@@ -244,21 +244,28 @@ class ModelRunner():
     if training:
       with tf.GradientTape() as tape:
         metrics = model(np_array[0], np_array[1], np_array[2], training = training)
-        grads = tape.gradient(metrics[model.metrics_index["all_loss"]], model.trainable_variables)
-        grads = clip_gradients(grads)
-        self.optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        cared_variables = model.trainable_variables
+        grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
+        grads_vs = clip_gradients(grads, cared_variables)
+        self.optimizer.apply_gradients(grads_vs)
     else:
       metrics = model(np_array[0], np_array[1], np_array[2], training = training)
-    return metrics
+    return model_output(metrics, model.statistical_metrics_meta)
 
 
-def raw_load_data(data_file_name, mode_info):
+def load_examples(data_file_name, mode_info):
   start_time = time.time()
   with open(data_file_name) as data_file:
     raw_datas = data_file.readlines()
   end_time = time.time()
   print("reading " + mode_info + " raw data using " + str(end_time-start_time) +"s")
-  return raw_datas
+  start_time = time.time()
+  examples = []
+  for r_data in raw_datas:
+    examples.append(build_skeleton_feed_dict(r_data))
+  end_time = time.time()
+  print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
+  return examples
 
 
 def merge_metric(all_metrics, part_metric):
@@ -330,13 +337,21 @@ def info_of_train_stop_test_start(average_accuracy):
   print("===== Because training accuracy is very high:" + str(average_accuracy) + ", training procedure will stop soon! =====")
   time.sleep(1)
   
+
+def model_output(tensors, tensors_meta):
+  assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
+  numpy_dict = {}
+  for i, t in enumerate(tensors):
+    numpy_dict[tensors_meta[i]] = t.numpy()
+  return numpy_dict
   
-def clip_gradients(grads):
+  
+def clip_gradients(grads, vs):
   final_grads = []
-  for (gv, var) in grads:
+  for (gv, v) in zip(grads, vs):
     if gv is not None:
       grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
-      final_grads.append((grad, var))
+      final_grads.append((grad, v))
   return final_grads
   
 

@@ -10,8 +10,8 @@ class Y2DLSTMCell(tf.keras.Model):
     super(Y2DLSTMCell, self).__init__()
     self.forget_bias = forget_bias
     self.activation = activation
-    self.weights = tf.Variable(random_uniform_variable_initializer(111, 777, [3 * num_units, 5 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(111, 777, [3 * num_units, 5 * num_units]))
+    self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     self.norm_weights = []
     self.norm_biases = []
     for _ in range(6):
@@ -20,8 +20,8 @@ class Y2DLSTMCell(tf.keras.Model):
   
   def call(self, inputs, c1, h1, c2, h2):
     linear_input = tf.concat([inputs, h1, h2], 1)
-    res = tf.matmul(linear_input, self.weights)
-    concat_ = tf.add(res, self.biases)
+    res = tf.matmul(linear_input, self.w)
+    concat_ = tf.add(res, self.b)
     i, j, f, f2, o = tf.split(value=concat_, num_or_size_splits=5, axis=1)
     i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
     j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
@@ -39,8 +39,8 @@ class YLSTMCell(tf.keras.Model):
     super(YLSTMCell, self).__init__()
     self.forget_bias = forget_bias
     self.activation = activation
-    self.weights = tf.Variable(random_uniform_variable_initializer(9, 88, [2 * num_units, 4 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(9, 88, [2 * num_units, 4 * num_units]))
+    self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     self.norm_weights = []
     self.norm_biases = []
     for _ in range(4):
@@ -54,8 +54,8 @@ class YLSTMCell(tf.keras.Model):
     @param state: the states and hidden unit of the two cells
     """
     linear_input = tf.concat([inputs, h], 1)
-    res = tf.matmul(linear_input, self.weights)
-    res = tf.add(res, self.biases)
+    res = tf.matmul(linear_input, self.w)
+    res = tf.add(res, self.b)
     i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
     i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
     j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
@@ -75,7 +75,7 @@ class YLSTMCell(tf.keras.Model):
   
 def layer_normalization(need_to_normalize_tensor, scale, shift, epsilon=1e-5):
   """ Layer normalizes a 2D tensor along its second axis """
-  m, v = tf.nn.moments(need_to_normalize_tensor, [1], keep_dims=True)
+  m, v = tf.nn.moments(need_to_normalize_tensor, [1], keepdims=True)
   ln_initial = (need_to_normalize_tensor - m) / tf.sqrt(v + epsilon)
   return ln_initial * scale + shift
 
