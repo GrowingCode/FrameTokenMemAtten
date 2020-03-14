@@ -1,7 +1,6 @@
 import json
 import os
 import time
-
 from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
@@ -19,7 +18,6 @@ from inputs.example_data_loader import build_skeleton_feed_dict
 class ModelRunner():
   
   def __init__(self):
-    self.optimizer = tf.keras.optimizers.Adam()
     '''
     load training data
     '''
@@ -45,10 +43,12 @@ class ModelRunner():
       os.makedirs(model_storage_dir)
     self.turn_info_txt = model_storage_dir + '/' + turn_info
     self.turn_txt = model_storage_dir + '/' + turn
-    self.check_point_model = model_storage_dir + '/' + model_check_point
+    self.check_point_directory = model_storage_dir + '/' + model_check_point
+    self.check_point_prefix = self.check_point_directory + '/' + 'ckpt'
     self.best_info_txt = model_storage_dir + '/' + best_info
     self.best_txt = model_storage_dir + '/' + best
-    self.best_model = model_storage_dir + '/' + model_best
+    self.best_model_directory = model_storage_dir + '/' + model_best
+    self.best_model_prefix = self.best_model_directory + '/' + 'best'
     self.config_txt = model_storage_dir + '/' + model_config
   
   def train(self):
@@ -72,13 +72,14 @@ class ModelRunner():
     '''
     restore model when turn is not 0
     '''
-    if turn == 0:
-      model = SkeletonDecodeModel(self.type_content_data)
-    else:
-      if restrain_count >= restrain_maximum_count:
-        turn = max_train_epoch
-      if turn < max_train_epoch:
-        model = tf.keras.models.load_model(self.check_point_model)
+    optimizer = tf.keras.optimizers.Adam()
+    model = SkeletonDecodeModel(self.type_content_data)
+    
+    if restrain_count >= restrain_maximum_count:
+      turn = max_train_epoch
+    ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
+    if turn > 0 and turn < max_train_epoch:
+      _ = ckpt.restore(tf.train.latest_checkpoint(self.check_point_directory))
     '''
     begin real training procedure
     '''
@@ -89,7 +90,7 @@ class ModelRunner():
       one epoch starts
       '''
       train_start_time = time.time()
-      train_output_result = self.model_running(model, training_mode)
+      train_output_result = self.model_running(model, training_mode, optimizer)
       train_end_time = time.time()
       train_time_cost = train_end_time - train_start_time
       total_turn_sum_train_time_cost = total_turn_sum_train_time_cost + train_time_cost
@@ -97,13 +98,11 @@ class ModelRunner():
       total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
       ''' exactly record train loss '''
       train_avg = compute_average(train_output_result)
-      print("===== train_output_result =====:" + str(train_output_result))
-      print("===== train_avg =====:" + str(train_avg))
       train_average_loss = train_avg["average_all_loss"]
       '''
       compute average loss when training
       '''
-      print(str(turn+1) + "/" + str(max_train_epoch) + " turn's train_set_average_loss:" + str(train_average_loss))# + "#" + json.dumps(last_not_zero_average_accuracy));
+      print(str(turn+1) + "/" + str(max_train_epoch) + " turn's train_set_average_loss:" + str(train_average_loss))
       '''
       valid the training process if period reached
       '''
@@ -119,17 +118,15 @@ class ModelRunner():
         if valid_avg:
           valid_average_loss = valid_avg["average_all_loss"]
           valid_average_accuracy = valid_avg["average_all_accurate"]
-          print(str(turn+1) + "/" + str(max_train_epoch) + " turn" + "#" + json.dumps(valid_avg));
+          print(str(turn+1) + "/" + str(max_train_epoch) + " turn" + "#" + json.dumps(valid_avg))
         '''
         save best model
         '''
+        to_save_best_model = False
         if max_accuracy is None:
           max_accuracy = valid_average_accuracy
           min_loss = valid_average_loss
-          print("========== Saving best model ==========")
-          model.save(self.best_model)
-          with open(self.best_info_txt, 'w') as best_info_record:
-            best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
+          to_save_best_model = True
         else:
           if newer_accuracy_is_better(max_accuracy, valid_average_accuracy):
             print("max_accuracy[0]:" + str(max_accuracy[0]) + "#valid_average_accuracy[0]:" + str(valid_average_accuracy[0]))
@@ -140,12 +137,14 @@ class ModelRunner():
               restrain_count = 0
             max_accuracy = valid_average_accuracy
             min_loss = valid_average_loss
-            print("========== Saving best model ==========")
-            model.save(self.best_model)
-            with open(self.best_info_txt, 'w') as best_info_record:
-              best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
+            to_save_best_model = True
           else:
             restrain_count = restrain_count + 1
+        if to_save_best_model:
+          print("========== Saving best model ==========")
+          model.save_weights(self.best_model_prefix, save_format='tf')
+          with open(self.best_info_txt, 'w') as best_info_record:
+            best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
         turn_info.append(dict_to_string(valid_avg))
         '''
         save turn model
@@ -155,7 +154,7 @@ class ModelRunner():
         save check point model
         '''
         print("========== Saving check point model ==========")
-        model.save(self.check_point_model)
+        ckpt.save(self.check_point_prefix)
         '''
         write the turn to file
         '''
@@ -179,8 +178,9 @@ class ModelRunner():
   
   def test(self):
     print("===== Testing procedure starts! =====")
-    print("Restore best model in " + self.best_model)
-    model = tf.keras.models.load_model(self.best_model)
+    print("Restore best model in " + self.best_model_directory)
+    model = SkeletonDecodeModel(self.type_content_data)
+    model.load_weights(self.best_model_prefix)
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score
@@ -191,7 +191,7 @@ class ModelRunner():
       best_model_statement_accuracy_record.write(json.dumps(avg))
     print(dict_to_string(avg))
   
-  def model_running(self, model, mode):
+  def model_running(self, model, mode, optimizer=None):
     '''
     mode takes three values:
     0:train
@@ -211,13 +211,13 @@ class ModelRunner():
     for element_number, np_array in enumerate(np_arrays):
       part_np_arrays.append(np_array)
       if (one_unit_count >= max_examples_in_one_batch) or (element_number == length_of_datas-1):
-        part_metric = self.model_running_batch(model, mode, part_np_arrays)
+        part_metric = self.model_running_batch(model, mode, optimizer, part_np_arrays)
         merge_metric(all_metrics, part_metric)
         part_np_arrays.clear()
         one_unit_count = 0
     return all_metrics
   
-  def model_running_batch(self, model, mode, part_np_arrays):
+  def model_running_batch(self, model, mode, optimizer, part_np_arrays):
     final_result = {}
     '''
     put raw data into many batches, each batch contains many training examples
@@ -228,7 +228,7 @@ class ModelRunner():
     '''
     for np_array in part_np_arrays:
       start_time = time.time()
-      output_result = self.model_running_one_example(model, mode, np_array)
+      output_result = self.model_running_one_example(model, mode, optimizer, np_array)
       merge_metric(final_result, output_result)
       end_time = time.time()
       avg = None
@@ -237,17 +237,17 @@ class ModelRunner():
     print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s" + "#" + json.dumps(avg))
     return final_result
   
-  def model_running_one_example(self, model, mode, np_array):
+  def model_running_one_example(self, model, mode, optimizer, np_array):
     training = False
     if mode == training_mode:
       training = True
     if training:
       with tf.GradientTape() as tape:
         metrics = model(np_array[0], np_array[1], np_array[2], training = training)
-        cared_variables = model.trainable_variables
-        grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
-        grads_vs = clip_gradients(grads, cared_variables)
-        self.optimizer.apply_gradients(grads_vs)
+      cared_variables = model.trainable_variables
+      grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
+      grads_vs = clip_gradients(grads, cared_variables)
+      optimizer.apply_gradients(grads_vs)
     else:
       metrics = model(np_array[0], np_array[1], np_array[2], training = training)
     return model_output(metrics, model.statistical_metrics_meta)
@@ -342,7 +342,7 @@ def model_output(tensors, tensors_meta):
   assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
   numpy_dict = {}
   for i, t in enumerate(tensors):
-    numpy_dict[tensors_meta[i]] = t.numpy()
+    numpy_dict[tensors_meta[i][0]] = t.numpy()
   return numpy_dict
   
   
