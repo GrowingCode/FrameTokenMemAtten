@@ -78,8 +78,9 @@ class ModelRunner():
     if restrain_count >= restrain_maximum_count:
       turn = max_train_epoch
     ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
+    manager = tf.train.CheckpointManager(ckpt, self.check_point_directory, max_to_keep=1)
     if turn > 0 and turn < max_train_epoch:
-      _ = ckpt.restore(tf.train.latest_checkpoint(self.check_point_directory))
+      _ = ckpt.restore(manager.latest_checkpoint)
     '''
     begin real training procedure
     '''
@@ -154,7 +155,7 @@ class ModelRunner():
         save check point model
         '''
         print("========== Saving check point model ==========")
-        ckpt.save(self.check_point_prefix)
+        manager.save()
         '''
         write the turn to file
         '''
