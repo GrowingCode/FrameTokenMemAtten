@@ -226,7 +226,10 @@ class ModelRunner():
 #         part_metric = model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset)
         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
         for tensor_array in part_tensor_arrays:
-          part_metric = model_running_one_example(model, mode, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
+          training = False
+          if mode == training_mode:
+            training = True
+          part_metric = model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
           part_metric = model_output(part_metric, model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
@@ -263,10 +266,7 @@ class ModelRunner():
 
 
 @tf.function
-def model_running_one_example(model, mode, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
-  training = False
-  if mode == training_mode:
-    training = True
+def model_running_one_example(training, model, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
   if training:
     with tf.GradientTape() as tape:
       metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
