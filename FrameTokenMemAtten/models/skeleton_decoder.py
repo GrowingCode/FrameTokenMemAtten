@@ -28,7 +28,8 @@ class SkeletonDecodeModel(tf.keras.Model):
   def __init__(self, type_content_data):
     super(SkeletonDecodeModel, self).__init__()
     self.type_content_data = type_content_data
-    self.metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
+    self.statistical_metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
+    self.metrics_meta = self.statistical_metrics_meta + self.create_in_use_tensors_meta()
     self.metrics_name = [metric_m[0] for metric_m in self.metrics_meta]
     self.metrics_shape = [metric_m[1] for metric_m in self.metrics_meta]
     self.index_metrics = dict((k,v) for k, v in zip(range(len(self.metrics_name)), self.metrics_name))
@@ -90,7 +91,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
-    f_res = f_res[2:]
+    f_res = f_res[2:len(self.statistical_metrics_meta)]
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):
