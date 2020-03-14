@@ -229,7 +229,8 @@ class ModelRunner():
           training = False
           if mode == training_mode:
             training = True
-          part_metric = model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
+          with tf.device('/device:GPU:0'):
+            part_metric = model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
           part_metric = model_output(part_metric, model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
