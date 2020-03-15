@@ -11,8 +11,8 @@ from metas.non_hyper_constants import data_dir, model_storage_dir, turn_info, \
   model_storage_parent_dir
 from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
-import tensorflow as tf
 from inputs.example_data_loader import build_skeleton_feed_dict
+import tensorflow as tf
 
 
 class ModelRunner():
@@ -94,7 +94,7 @@ class ModelRunner():
     if restrain_count >= restrain_maximum_count:
       turn = max_train_epoch
     if turn > 0 and turn < max_train_epoch:
-      tf.train.Saver().restore(self.sess, self.check_point_file)
+      tf.compat.v1.train.Saver().restore(self.sess, self.check_point_file)
     '''
     begin real training procedure
     '''
@@ -194,7 +194,7 @@ class ModelRunner():
   def test(self):
     print("===== Testing procedure starts! =====")
     print("Restore best model in " + self.best_model_directory)
-    tf.train.Saver().restore(self.sess, self.best_model_file)
+    tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score
