@@ -4,10 +4,9 @@ from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
 
 
-class Y2DLSTMCell(tf.keras.Model):
+class Y2DLSTMCell():
   
   def __init__(self, forget_bias=0.0, activation=tf.nn.tanh):
-    super(Y2DLSTMCell, self).__init__()
     self.forget_bias = forget_bias
     self.activation = activation
     self.w = tf.Variable(random_uniform_variable_initializer(111, 777, [3 * num_units, 5 * num_units]))
@@ -18,7 +17,7 @@ class Y2DLSTMCell(tf.keras.Model):
       self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
       self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
   
-  def call(self, inputs, c1, h1, c2, h2):
+  def __call__(self, inputs, c1, h1, c2, h2):
     linear_input = tf.concat([inputs, h1, h2], 1)
     res = tf.matmul(linear_input, self.w)
     concat_ = tf.add(res, self.b)
@@ -33,10 +32,9 @@ class Y2DLSTMCell(tf.keras.Model):
     return new_c, new_h
 
 
-class YLSTMCell(tf.keras.Model):
+class YLSTMCell():
   
   def __init__(self, forget_bias=0.0, activation=tf.nn.tanh):
-    super(YLSTMCell, self).__init__()
     self.forget_bias = forget_bias
     self.activation = activation
     self.w = tf.Variable(random_uniform_variable_initializer(9, 88, [2 * num_units, 4 * num_units]))

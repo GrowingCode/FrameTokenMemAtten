@@ -5,10 +5,9 @@ from utils.initializer import random_uniform_variable_initializer,\
 from metas.hyper_settings import num_units
 
 
-class EmbedMerger(tf.keras.Model):
+class EmbedMerger():
   
   def __init__(self):
-    super(EmbedMerger, self).__init__()
     self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 4 * num_units]))
     self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     self.norm_wrights = []
@@ -17,7 +16,7 @@ class EmbedMerger(tf.keras.Model):
       self.norm_wrights.append(tf.Variable(zero_variable_initializer([num_units])))
       self.norm_biases.append(tf.Variable(one_variable_initializer([num_units])))
   
-  def call(self, forward_h, backward_h):
+  def __call__(self, forward_h, backward_h):
     linear_input = tf.concat([forward_h, backward_h], 1)
     res = tf.matmul(linear_input, self.w)
     res = tf.add(res, self.b)

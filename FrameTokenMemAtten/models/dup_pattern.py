@@ -9,10 +9,9 @@ simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
 
-class PointerNetwork(tf.keras.Model):
+class PointerNetwork():
   
   def __init__(self, is_dup_mode=simple_is_dup):
-    super(PointerNetwork, self).__init__()
     self.is_dup_mode = is_dup_mode
     self.dup_w = tf.Variable(random_uniform_variable_initializer(20, 102, [num_units, num_units]))
     if is_dup_mode == simple_is_dup:

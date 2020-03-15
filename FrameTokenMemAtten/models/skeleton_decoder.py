@@ -18,7 +18,7 @@ from models.token_sword_decode import decode_one_token,\
   decode_swords_of_one_token
 
 
-class SkeletonDecodeModel(tf.keras.Model):
+class SkeletonDecodeModel():
   
   '''
   the parameter start_nodes must be in the same level and be successive while
@@ -26,7 +26,6 @@ class SkeletonDecodeModel(tf.keras.Model):
   '''
   
   def __init__(self, type_content_data):
-    super(SkeletonDecodeModel, self).__init__()
     self.type_content_data = type_content_data
     self.statistical_metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
     self.metrics_meta = self.statistical_metrics_meta + self.create_in_use_tensors_meta()
@@ -84,7 +83,7 @@ class SkeletonDecodeModel(tf.keras.Model):
     result = [("token_accumulated_en", tf.TensorShape([None])), ("token_accumulated_cell", tf.TensorShape([None, num_units])), ("token_accumulated_h", tf.TensorShape([None, num_units])), ("dup_token_accumulated_cell", tf.TensorShape([None, num_units])), ("dup_token_accumulated_h", tf.TensorShape([None, num_units])), ("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("memory_accumulated_en", tf.TensorShape([None])), ("memory_cells", tf.TensorShape([None, num_units])), ("memory_hs", tf.TensorShape([None, num_units])), ("dup_memory_cells", tf.TensorShape([None, num_units])), ("dup_memory_hs", tf.TensorShape([None, num_units]))]
     return result
   
-  def call(self, token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = True):
+  def __call__(self, token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = True):
     self.token_info_tensor = token_info_tensor
     self.token_info_start_tensor = token_info_start_tensor
     self.token_info_end_tensor = token_info_end_tensor

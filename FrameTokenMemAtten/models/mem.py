@@ -6,10 +6,9 @@ from utils.initializer import random_uniform_variable_initializer
 from models.embed_merger import EmbedMerger
 
 
-class NTMOneDirection(tf.keras.Model):
+class NTMOneDirection():
   
   def __init__(self):
-    super(NTMOneDirection, self).__init__()
     self.merger = EmbedMerger()
     self.memory_update_lstm = YLSTMCell()
     self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
@@ -87,21 +86,21 @@ def update_one_variable(local_token_index, type_content_en, decode_dup_f_cell, d
   r_after_part_length = after_part_length * after_part_valid
   after_part = [r_after_part_start, r_after_part_length]
   ''' slice and concatenate en '''
-  a_op = tf.Assert(r_after_part_start >= 0, ["after_part_start", after_part_start, "r_after_part_start", r_after_part_start])
-  with tf.control_dependencies([a_op]):# , p_op
-    before_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [before_part[0]], [before_part[1]])
-    curr_part_dup_accumulated_en = tf.slice(tf.convert_to_tensor([type_content_en]), [curr_part[0]], [curr_part[1]])
-    after_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [after_part[0]], [after_part[1]])
-    new_dup_accumulated_en = tf.concat([before_part_dup_accumulated_en, curr_part_dup_accumulated_en, after_part_dup_accumulated_en], axis=0)
-    ''' slice and concatenate cell '''
-    before_part_dup_accumulated_cell = tf.slice(dup_accumulated_cell, [before_part[0], 0], [before_part[1], num_units])
-    curr_part_dup_accumulated_cell = tf.slice(decode_dup_f_cell, [curr_part[0], 0], [curr_part[1], num_units])
-    after_part_dup_accumulated_cell = tf.slice(dup_accumulated_cell, [after_part[0], 0], [after_part[1], num_units])
-    new_dup_accumulated_cell = tf.concat([before_part_dup_accumulated_cell, curr_part_dup_accumulated_cell, after_part_dup_accumulated_cell], axis=0)
-    ''' slice and concatenate h '''
-    before_part_dup_accumulated_h = tf.slice(dup_accumulated_h, [before_part[0], 0], [before_part[1], num_units])
-    curr_part_dup_accumulated_h = tf.slice(decode_dup_f_h, [curr_part[0], 0], [curr_part[1], num_units])
-    after_part_dup_accumulated_h = tf.slice(dup_accumulated_h, [after_part[0], 0], [after_part[1], num_units])
-    new_dup_accumulated_h = tf.concat([before_part_dup_accumulated_h, curr_part_dup_accumulated_h, after_part_dup_accumulated_h], axis=0)
+#   a_op = tf.Assert(r_after_part_start >= 0, ["after_part_start", after_part_start, "r_after_part_start", r_after_part_start])
+#   with tf.control_dependencies([a_op]):# , p_op
+  before_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [before_part[0]], [before_part[1]])
+  curr_part_dup_accumulated_en = tf.slice(tf.convert_to_tensor([type_content_en]), [curr_part[0]], [curr_part[1]])
+  after_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [after_part[0]], [after_part[1]])
+  new_dup_accumulated_en = tf.concat([before_part_dup_accumulated_en, curr_part_dup_accumulated_en, after_part_dup_accumulated_en], axis=0)
+  ''' slice and concatenate cell '''
+  before_part_dup_accumulated_cell = tf.slice(dup_accumulated_cell, [before_part[0], 0], [before_part[1], num_units])
+  curr_part_dup_accumulated_cell = tf.slice(decode_dup_f_cell, [curr_part[0], 0], [curr_part[1], num_units])
+  after_part_dup_accumulated_cell = tf.slice(dup_accumulated_cell, [after_part[0], 0], [after_part[1], num_units])
+  new_dup_accumulated_cell = tf.concat([before_part_dup_accumulated_cell, curr_part_dup_accumulated_cell, after_part_dup_accumulated_cell], axis=0)
+  ''' slice and concatenate h '''
+  before_part_dup_accumulated_h = tf.slice(dup_accumulated_h, [before_part[0], 0], [before_part[1], num_units])
+  curr_part_dup_accumulated_h = tf.slice(decode_dup_f_h, [curr_part[0], 0], [curr_part[1], num_units])
+  after_part_dup_accumulated_h = tf.slice(dup_accumulated_h, [after_part[0], 0], [after_part[1], num_units])
+  new_dup_accumulated_h = tf.concat([before_part_dup_accumulated_h, curr_part_dup_accumulated_h, after_part_dup_accumulated_h], axis=0)
   return new_dup_accumulated_en, new_dup_accumulated_cell, new_dup_accumulated_h
 

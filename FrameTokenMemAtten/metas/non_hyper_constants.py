@@ -32,7 +32,8 @@ all_token_char_sequences = "all_token_char_sequences"
 all_token_each_char_sequence_start = "all_token_each_char_sequence_start"
 all_token_each_char_sequence_end = "all_token_each_char_sequence_end"
 
-model_storage_dir = "model_storage_directory"
+model_storage_parent_dir = 'zoot'
+model_storage_dir = "zoot_run_info_record"
 model_config = "model_config.txt"
 model_check_point = "model_check_point"
 model_best = "model_best"

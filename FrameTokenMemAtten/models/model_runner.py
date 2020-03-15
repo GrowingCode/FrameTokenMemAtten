@@ -7,17 +7,17 @@ from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch
   gradient_clip_abs_range
 from metas.non_hyper_constants import data_dir, model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
-  np_float_type, testing_mode, training_mode, validating_mode
+  np_float_type, testing_mode, training_mode, validating_mode, int_type,\
+  model_storage_parent_dir
 from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 import tensorflow as tf
 from inputs.example_data_loader import build_skeleton_feed_dict
-from utils.numpy_tensor_convert import convert_numpy_to_tensor
 
 
 class ModelRunner():
   
-  def __init__(self):
+  def __init__(self, sess):
     '''
     load training data
     '''
@@ -39,17 +39,35 @@ class ModelRunner():
     '''
     Initialize the directory to put the stored model
     '''
-    if not os.path.exists(model_storage_dir):
-      os.makedirs(model_storage_dir)
-    self.turn_info_txt = model_storage_dir + '/' + turn_info
-    self.turn_txt = model_storage_dir + '/' + turn
-    self.check_point_directory = model_storage_dir + '/' + model_check_point
-    self.check_point_prefix = self.check_point_directory + '/' + 'ckpt'
-    self.best_info_txt = model_storage_dir + '/' + best_info
-    self.best_txt = model_storage_dir + '/' + best
-    self.best_model_directory = model_storage_dir + '/' + model_best
-    self.best_model_prefix = self.best_model_directory + '/' + 'best'
-    self.config_txt = model_storage_dir + '/' + model_config
+    real_model_storage_dir = '../' + model_storage_parent_dir + '/' + model_storage_dir
+    if not os.path.exists(real_model_storage_dir):
+      os.makedirs(real_model_storage_dir)
+    self.turn_info_txt = real_model_storage_dir + '/' + turn_info
+    self.turn_txt = real_model_storage_dir + '/' + turn
+    self.check_point_directory = real_model_storage_dir + '/' + model_check_point
+    self.check_point_file = self.check_point_directory + '/' + 'model.ckpt'
+    self.best_info_txt = real_model_storage_dir + '/' + best_info
+    self.best_txt = real_model_storage_dir + '/' + best
+    self.best_model_directory = real_model_storage_dir + '/' + model_best
+    self.best_model_file = self.best_model_directory + '/' + 'model.ckpt'
+    self.config_txt = real_model_storage_dir + '/' + model_config
+    '''
+    set up necessary data
+    '''
+    self.sess = sess
+    self.model = SkeletonDecodeModel(self.type_content_data)
+    self.optimizer = tf.compat.v1.train.AdamOptimizer()
+    '''
+    build graph of logic 
+    '''
+    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [3, None])
+    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
+    with tf.device('/GPU:0'):
+      self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
+      gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
+      self.train_op = self.optimizer.apply_gradients(gvs)
   
   def train(self):
     turn = 0
@@ -72,15 +90,11 @@ class ModelRunner():
     '''
     restore model when turn is not 0
     '''
-    optimizer = tf.keras.optimizers.Adam()
-    model = SkeletonDecodeModel(self.type_content_data)
     
     if restrain_count >= restrain_maximum_count:
       turn = max_train_epoch
-    ckpt = tf.train.Checkpoint(optimizer=optimizer, model=model)
-    manager = tf.train.CheckpointManager(ckpt, self.check_point_directory, max_to_keep=1)
     if turn > 0 and turn < max_train_epoch:
-      _ = ckpt.restore(manager.latest_checkpoint)
+      tf.compat.v1.train.Saver().restore(self.sess, self.check_point_file)
     '''
     begin real training procedure
     '''
@@ -91,7 +105,7 @@ class ModelRunner():
       one epoch starts
       '''
       train_start_time = time.time()
-      train_output_result = self.model_running(model, training_mode, optimizer)
+      train_output_result = self.model_running(training_mode)
       train_end_time = time.time()
       train_time_cost = train_end_time - train_start_time
       total_turn_sum_train_time_cost = total_turn_sum_train_time_cost + train_time_cost
@@ -109,7 +123,7 @@ class ModelRunner():
       '''
       train_compute_valid = (turn+1) % valid_epoch_period == 0
       if train_compute_valid:
-        valid_output_result = self.model_running(model, validating_mode)
+        valid_output_result = self.model_running(validating_mode)
         valid_avg = compute_average(valid_output_result)
         '''
         compute average loss
@@ -143,7 +157,7 @@ class ModelRunner():
             restrain_count = restrain_count + 1
         if to_save_best_model:
           print("========== Saving best model ==========")
-          model.save_weights(self.best_model_prefix, save_format='tf')
+          tf.compat.v1.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
         turn_info.append(dict_to_string(valid_avg))
@@ -155,7 +169,7 @@ class ModelRunner():
         save check point model
         '''
         print("========== Saving check point model ==========")
-        manager.save()
+        tf.compat.v1.train.Saver().save(self.sess, self.check_point_file)
         '''
         write the turn to file
         '''
@@ -180,24 +194,29 @@ class ModelRunner():
   def test(self):
     print("===== Testing procedure starts! =====")
     print("Restore best model in " + self.best_model_directory)
-    model = SkeletonDecodeModel(self.type_content_data)
-    model.load_weights(self.best_model_prefix)
+    tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score
     '''
-    output_result = self.model_running(model, testing_mode)
+    output_result = self.model_running(testing_mode)
     avg = compute_average(output_result)
     with open(self.best_txt, 'w') as best_model_statement_accuracy_record:
       best_model_statement_accuracy_record.write(json.dumps(avg))
     print(dict_to_string(avg))
   
-  def model_running(self, model, mode, optimizer=None):
+  def model_running(self, mode):
     '''
     mode takes three values:
     0:train
     1:valid
     2:test
+    '''
+    training = False
+    if mode == training_mode:
+      training = True
+    '''
+    feed data to run model
     '''
     all_metrics = {}
     if mode == 0:
@@ -223,14 +242,10 @@ class ModelRunner():
 #         token_info_start_dataset = tf.data.Dataset.from_generator(lambda: token_info_start_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
 #         token_info_end_dataset = tf.data.Dataset.from_generator(lambda: token_info_end_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
 #         part_metric = model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset)
-        part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
-        for tensor_array in part_tensor_arrays:
-          training = False
-          if mode == training_mode:
-            training = True
-          with tf.device('/device:GPU:0'):
-            part_metric = self.model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
-          part_metric = model_output(part_metric, model.statistical_metrics_meta)
+#         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
+        for np_array in part_np_arrays:
+          part_metric = self.model_running_one_example(training, np_array[0], np_array[1], np_array[2])
+          part_metric = model_output(part_metric, self.model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
 #         token_info_start_np_arrays.clear()
@@ -241,19 +256,28 @@ class ModelRunner():
         print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
   
-  def model_running_one_example(self, training, model, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
+#   def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
+#     if training:
+#       with tf.GradientTape() as tape:
+#         metrics = self.model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+#       cared_variables = self.model.trainable_variables
+#       grads = tape.gradient(metrics[self.model.metrics_index["all_loss"]], cared_variables)
+#       grads_vs = clip_gradients(grads, cared_variables)
+#       self.optimizer.apply_gradients(grads_vs)
+#     else:
+#       metrics = self.model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+#     return metrics
+  
+  def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
+    feed_dict = {self.skeleton_token_info_tensor:token_info_tensor, self.skeleton_token_info_start_tensor:token_info_start_tensor, self.skeleton_token_info_end_tensor:token_info_end_tensor}
     if training:
-      with tf.GradientTape() as tape:
-        metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
-      cared_variables = model.trainable_variables
-      grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
-      grads_vs = clip_gradients(grads, cared_variables)
-      optimizer.apply_gradients(grads_vs)
+      r_metrics = self.sess.run([self.train_op, *self.train_metrics], feed_dict=feed_dict)
+      metrics = r_metrics[1:]
     else:
-      metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+      metrics = self.sess.run([*self.test_metrics], feed_dict=feed_dict)
     return metrics
   
-
+  
 # @tf.function
 # def model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset):
 #   '''
@@ -366,7 +390,7 @@ def model_output(tensors, tensors_meta):
   assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
   numpy_dict = {}
   for i, t in enumerate(tensors):
-    numpy_dict[tensors_meta[i][0]] = t.numpy()
+    numpy_dict[tensors_meta[i][0]] = t
   return numpy_dict
   
   

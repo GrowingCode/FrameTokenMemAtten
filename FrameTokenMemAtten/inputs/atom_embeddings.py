@@ -13,20 +13,18 @@ def sword_sequence_for_token(type_content_data, oracle_token_en):
   return tf.slice(type_content_data[all_token_subword_sequences], [atom_seq_start], [atom_seq_end - atom_seq_start + 1])
 
 
-class AtomSimpleEmbed(tf.keras.Model):
+class AtomSimpleEmbed():
   
   def __init__(self, vocab_embeddings):
-    super(AtomSimpleEmbed, self).__init__()
     self.vocab_embeddings = vocab_embeddings
   
   def compute_h(self, token_en):
     return [self.vocab_embeddings[token_en]]
 
 
-class BiLSTMEmbed(tf.keras.Model):
+class BiLSTMEmbed():
   
   def __init__(self, type_content_data, vocab_embeddings):
-    super(BiLSTMEmbed, self).__init__()
     self.type_content_data = type_content_data
     self.vocab_embeddings = vocab_embeddings
     self.merger = EmbedMerger()

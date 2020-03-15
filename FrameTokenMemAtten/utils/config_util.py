@@ -1,6 +1,7 @@
 import os
 import shutil
-from metas.non_hyper_constants import model_storage_dir, model_config
+from metas.non_hyper_constants import model_storage_dir, model_config,\
+  model_storage_parent_dir
 
 
 def check_or_store_configs():
@@ -8,7 +9,7 @@ def check_or_store_configs():
 
 
 def check_or_copy_one_config(origin_config_file):
-  real_model_storage_dir = '../models/' + model_storage_dir
+  real_model_storage_dir = '../' + model_storage_parent_dir + '/' + model_storage_dir
   if not os.path.exists(real_model_storage_dir):
     os.makedirs(real_model_storage_dir)
     

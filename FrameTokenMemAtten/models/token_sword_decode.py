@@ -1,7 +1,7 @@
 from inputs.atom_embeddings import sword_sequence_for_token
 from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks
-from metas.non_hyper_constants import int_type, bool_type, float_type
+from metas.non_hyper_constants import int_type, float_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
   compute_logits_given_to_deocde_embed_with_computed_embeddings
 import tensorflow as tf
@@ -53,13 +53,13 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
       dup_acc_ens = token_metrics[metrics_index["memory_accumulated_en"]]
       r_var_relative = tf.shape(dup_acc_ens)[-1] - oracle_type_content_var
     
-    r_var_relative_valid = tf.cast(tf.greater(r_var_relative, 0), int_type)
-    a_r_op = tf.Assert(tf.logical_or(tf.cast(1-r_var_relative_valid, bool_type), tf.equal(dup_acc_ens[tf.shape(dup_acc_ens)[0]-r_var_relative*r_var_relative_valid-1+r_var_relative_valid], oracle_type_content_en)), ["invalid variable relative"])
-    a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
-    with tf.control_dependencies([a_r_op, a_op]):
-      dup_logits, dup_max_arg_acc_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
-      is_dup_logits = token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_h)
-      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist = token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits)
+#     r_var_relative_valid = tf.cast(tf.greater(r_var_relative, 0), int_type)
+#     a_r_op = tf.Assert(tf.logical_or(tf.cast(1-r_var_relative_valid, bool_type), tf.equal(dup_acc_ens[tf.shape(dup_acc_ens)[0]-r_var_relative*r_var_relative_valid-1+r_var_relative_valid], oracle_type_content_en)), ["invalid variable relative"])
+#     a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
+#     with tf.control_dependencies([a_r_op, a_op]):
+    dup_logits, dup_max_arg_acc_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
+    is_dup_logits = token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_h)
+    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist = token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits)
     
     token_metrics[metrics_index["token_dup_loss"]] = token_metrics[metrics_index["token_dup_loss"]] + dup_loss_of_this_node
     token_metrics[metrics_index["token_dup_accurate"]] = token_metrics[metrics_index["token_dup_accurate"]] + dup_accurate_of_this_node
