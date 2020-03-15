@@ -11,7 +11,6 @@ from metas.non_hyper_constants import data_dir, model_storage_dir, turn_info, \
 from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 import tensorflow as tf
-from utils.config_util import check_or_store_configs
 from inputs.example_data_loader import build_skeleton_feed_dict
 from utils.numpy_tensor_convert import convert_numpy_to_tensor
 
@@ -230,7 +229,7 @@ class ModelRunner():
           if mode == training_mode:
             training = True
           with tf.device('/device:GPU:0'):
-            part_metric = model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
+            part_metric = self.model_running_one_example(training, model, optimizer, tensor_array[0], tensor_array[1], tensor_array[2])
           part_metric = model_output(part_metric, model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
@@ -241,6 +240,18 @@ class ModelRunner():
         end_time = time.time()
         print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
+  
+  def model_running_one_example(self, training, model, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
+    if training:
+      with tf.GradientTape() as tape:
+        metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+      cared_variables = model.trainable_variables
+      grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
+      grads_vs = clip_gradients(grads, cared_variables)
+      optimizer.apply_gradients(grads_vs)
+    else:
+      metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
+    return metrics
   
 
 # @tf.function
@@ -264,20 +275,6 @@ class ModelRunner():
 #   for i in range(r_len):
 #     final_result[i] += output_result[i]
 #   return final_result
-
-
-@tf.function
-def model_running_one_example(training, model, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
-  if training:
-    with tf.GradientTape() as tape:
-      metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
-    cared_variables = model.trainable_variables
-    grads = tape.gradient(metrics[model.metrics_index["all_loss"]], cared_variables)
-    grads_vs = clip_gradients(grads, cared_variables)
-    optimizer.apply_gradients(grads_vs)
-  else:
-    metrics = model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
-  return metrics
 
 
 def load_examples(data_file_name, mode_info):
@@ -380,15 +377,6 @@ def clip_gradients(grads, vs):
       grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
       final_grads.append((grad, v))
   return final_grads
-  
 
-if __name__ == '__main__':
-#   tf.debugging.set_log_device_placement(True)
-#   tf.compat.v1.disable_eager_execution()
-  check_or_store_configs()
-  runner = ModelRunner()
-  runner.train()
-  runner.test()
-  
 
 
