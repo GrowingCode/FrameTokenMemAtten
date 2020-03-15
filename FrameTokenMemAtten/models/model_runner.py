@@ -64,10 +64,10 @@ class ModelRunner():
     self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
-    with tf.device('/GPU:0'):
-      self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
-      gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
-      self.train_op = self.optimizer.apply_gradients(gvs)
+#     with tf.device('/GPU:0'):
+    self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
+    gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
+    self.train_op = self.optimizer.apply_gradients(gvs)
   
   def train(self):
     turn = 0
