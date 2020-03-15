@@ -56,18 +56,18 @@ class ModelRunner():
     '''
     self.sess = sess
     self.model = SkeletonDecodeModel(self.type_content_data)
-    self.optimizer = tf.compat.v1.train.AdamOptimizer()
+    self.optimizer = tf.train.AdamOptimizer()
     '''
     build graph of logic 
     '''
-#     with tf.device('/GPU:0'):
-    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [3, None])
-    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.skeleton_token_info_tensor = tf.placeholder(int_type, [3, None])
+    self.skeleton_token_info_start_tensor = tf.placeholder(int_type, [None])
+    self.skeleton_token_info_end_tensor = tf.placeholder(int_type, [None])
     self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
-    self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
-    gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
-    self.train_op = self.optimizer.apply_gradients(gvs)
+    with tf.device('/GPU:0'):
+      self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
+      gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.trainable_variables(), colocate_gradients_with_ops=True)
+      self.train_op = self.optimizer.apply_gradients(gvs)
   
   def train(self):
     turn = 0
@@ -94,7 +94,7 @@ class ModelRunner():
     if restrain_count >= restrain_maximum_count:
       turn = max_train_epoch
     if turn > 0 and turn < max_train_epoch:
-      tf.compat.v1.train.Saver().restore(self.sess, self.check_point_file)
+      tf.train.Saver().restore(self.sess, self.check_point_file)
     '''
     begin real training procedure
     '''
@@ -157,7 +157,7 @@ class ModelRunner():
             restrain_count = restrain_count + 1
         if to_save_best_model:
           print("========== Saving best model ==========")
-          tf.compat.v1.train.Saver().save(self.sess, self.best_model_file)
+          tf.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
         turn_info.append(dict_to_string(valid_avg))
@@ -169,7 +169,7 @@ class ModelRunner():
         save check point model
         '''
         print("========== Saving check point model ==========")
-        tf.compat.v1.train.Saver().save(self.sess, self.check_point_file)
+        tf.train.Saver().save(self.sess, self.check_point_file)
         '''
         write the turn to file
         '''
@@ -194,7 +194,7 @@ class ModelRunner():
   def test(self):
     print("===== Testing procedure starts! =====")
     print("Restore best model in " + self.best_model_directory)
-    tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
+    tf.train.Saver().restore(self.sess, self.best_model_file)
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score
