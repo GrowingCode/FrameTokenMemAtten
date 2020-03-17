@@ -8,7 +8,8 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
   concat_in_fixed_length_one_dimension
 from models.lstm import YLSTMCell
 from utils.initializer import random_uniform_variable_initializer
-from inputs.atom_embeddings import AtomSimpleEmbed, BiLSTMEmbed
+from inputs.atom_embeddings import AtomSimpleEmbed, BiLSTMEmbed,\
+  sword_sequence_for_token
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary, SkeletonNum,\
   TokenNum, TotalNumberOfSubWord
@@ -16,6 +17,7 @@ from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
   decode_swords_of_one_token
+from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 
 
 class SkeletonDecodeModel():
@@ -91,6 +93,7 @@ class SkeletonDecodeModel():
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = f_res[2:2+len(self.statistical_metrics_meta)]
+    f_res = post_process_decoder_output(f_res, self.metrics_index)
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):
@@ -175,7 +178,7 @@ class SkeletonDecodeModel():
     leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [stmt_end-stmt_start+1])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [stmt_end-stmt_start+1])
     
-    f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)  # , name="SequenceLSTMAllGraph_decode_sequence_while_loop"
+    f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
     
     if compute_token_memory:
@@ -219,7 +222,8 @@ class SkeletonDecodeModel():
     if atom_decode_mode == token_decode:
       r_stmt_metrics_tuple = decode_one_token(self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.dup_token_lstm, self.dup_token_embedder, self.token_pointer)
     elif atom_decode_mode == sword_decode:
-      r_stmt_metrics_tuple = decode_swords_of_one_token(self.training, self.type_content_data, oracle_type_content_en, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
+      oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
+      r_stmt_metrics_tuple = decode_swords_of_one_token(self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
     else:
       assert False
     return (i + 1, i_len, ini_i, *r_stmt_metrics_tuple)
@@ -274,5 +278,14 @@ class SkeletonDecodeModel():
       stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], new_dup_b_cell, accumulated_token_max_length)
       stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], new_dup_b_h, accumulated_token_max_length)
     return (i, i_len-1, embeds, dup_embeds, *stmt_metrics)
+
+
+def post_process_decoder_output(model_metrics, metrics_index):
+  t_array = model_metrics[metrics_index["token_sword_beam"]]
+  model_metrics[metrics_index["token_sword_beam"]] = make_sure_shape_of_tensor_array(t_array, max_threshold_example_length)
+
+
+
+
 
 

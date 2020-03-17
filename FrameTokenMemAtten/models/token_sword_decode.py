@@ -44,7 +44,7 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
     dup_h = tf.convert_to_tensor([token_metrics[metrics_index["dup_token_accumulated_h"]][-1]])
     dup_n_size = tf.shape(token_metrics[metrics_index["dup_token_accumulated_h"]])[0]
     dup_acc_hs = tf.slice(token_metrics[metrics_index["dup_token_accumulated_h"]], [0, 0], [dup_n_size - 1, num_units])
-    dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]  # tf.slice(, [0], [dup_n_size - 1])
+    dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
     
     r_var_relative = oracle_type_content_var_relative
     
@@ -83,8 +83,7 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
   return tuple(token_metrics)
 
 
-def decode_swords_of_one_token(training, type_content_data, token_en, metrics_index, metrics_shape, token_metrics, token_lstm, token_embedder, linear_sword_output_w, sword_embedder, sword_lstm):
-  token_atom_sequence = sword_sequence_for_token(type_content_data, token_en)
+def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_index, metrics_shape, token_metrics, token_lstm, token_embedder, linear_sword_output_w, sword_embedder, sword_lstm):
   atom_length_in_float = tf.cast(tf.shape(token_atom_sequence)[-1], float_type)
   
   def decode_one_sword_cond(w, w_len, *_):
@@ -111,17 +110,17 @@ def decode_swords_of_one_token(training, type_content_data, token_en, metrics_in
   cell = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_cell"]][-1]])
   h = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_h"]][-1]])
   
-  if training:
-    beam_mrr_of_this_node, beam_accurate_of_this_node = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
-  else:
-    beam_mrr_of_this_node, beam_accurate_of_this_node = compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence)
+#   if training:
+#     beam_mrr_of_this_node, beam_accurate_of_this_node = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+#   else:
+#     beam_mrr_of_this_node, beam_accurate_of_this_node = compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence)
+  t_array = sword_metrics[metrics_index["token_sword_beam"]]
+  sword_metrics[metrics_index["token_sword_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
   
   new_cell, new_h = token_lstm(token_embedder.compute_h(token_en), cell, h)
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
   token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length)
   
-  token_metrics[metrics_index["token_sword_beam_accurate"]] = token_metrics[metrics_index["token_sword_beam_accurate"]] + beam_accurate_of_this_node
-  token_metrics[metrics_index["token_sword_beam_mrr"]] = token_metrics[metrics_index["token_sword_beam_mrr"]] + beam_mrr_of_this_node
   token_metrics_res = tf.while_loop(decode_one_sword_cond, decode_one_sword_body, [0, tf.shape(token_atom_sequence)[-1], cell, h, *token_metrics], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), tf.TensorShape([1, num_units]), *metrics_shape], parallel_iterations=1)
   r_token_metrics = list(token_metrics_res[4:])
   r_token_metrics[metrics_index["token_count"]] = r_token_metrics[metrics_index["token_count"]] + 1
@@ -129,11 +128,17 @@ def decode_swords_of_one_token(training, type_content_data, token_en, metrics_in
   return r_token_metrics
 
 
-def compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, oracle_atoms):
+def compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, oracle_atoms):
   atom_length = tf.shape(oracle_atoms)[-1]
   computed_ens = compute_beam_sequences(linear_sword_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, atom_length)
-  mrr, accurate = compute_beam_accurates(computed_ens, oracle_atoms)
-  return mrr, accurate
+  return computed_ens
+
+
+# def compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, oracle_atoms):
+#   atom_length = tf.shape(oracle_atoms)[-1]
+#   computed_ens = compute_beam_sequences(linear_sword_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, atom_length)
+#   mrr, accurate = compute_beam_accurates(computed_ens, oracle_atoms)
+#   return mrr, accurate
 
 
 def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, begin_cell, begin_h, atom_length):
@@ -162,6 +167,7 @@ def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, beg
 
   def atom_sequence_decoding_body(i, i_len, cells, hs, probs, computed_ens):  # accurates
     beam_size = top_ks[-1]
+    
     ''' use h to decode '''
     ''' next char embedding '''
     

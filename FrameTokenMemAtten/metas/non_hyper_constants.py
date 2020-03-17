@@ -49,6 +49,13 @@ training_mode = 0
 validating_mode = 1
 testing_mode = 2
 
+'''
+length threshold for an example
+'''
+max_threshold_example_length = 2000
+
+
+
 
 
 
