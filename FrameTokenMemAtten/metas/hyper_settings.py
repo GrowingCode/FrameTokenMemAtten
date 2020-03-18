@@ -5,6 +5,11 @@ contingent_parameters_num = 20
 use_dup_model = 1
 accumulated_token_max_length = 600
 compute_token_memory = 1
+''' is_dup_mode '''
+simple_is_dup = 0
+mlp_is_dup = 1
+sigmoid_is_dup = 2
+is_dup_mode=sigmoid_is_dup
 ''' attention algorithm '''
 v_attention = 0
 stand_attention = 1
@@ -30,6 +35,26 @@ gradient_clip_abs_range = 500.0
 whether compose tokens
 '''
 compose_tokens_of_a_statement = 0
+
+
+'''
+additional composite configuration
+'''
+composite_config_func = "empty_config"
+
+if composite_config_func == "empty_config":
+  pass
+
+if composite_config_func == "only_sword_decode":
+  use_dup_model = 0
+  atom_decode_mode = sword_decode
+
+if composite_config_func == "only_sword_decode_with_tokens_compose":
+  use_dup_model = 0
+  atom_decode_mode = sword_decode
+  compose_tokens_of_a_statement = 1
+
+
 
 
 

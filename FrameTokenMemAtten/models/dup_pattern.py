@@ -1,18 +1,14 @@
 import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type
-from metas.hyper_settings import top_ks, mrr_max, num_units
+from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
+  simple_is_dup, mlp_is_dup, sigmoid_is_dup
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
 
-simple_is_dup = 0
-mlp_is_dup = 1
-sigmoid_is_dup = 2
-
 class PointerNetwork():
   
-  def __init__(self, is_dup_mode=simple_is_dup):
-    self.is_dup_mode = is_dup_mode
+  def __init__(self):
     self.dup_w = tf.Variable(random_uniform_variable_initializer(20, 102, [num_units, num_units]))
     if is_dup_mode == simple_is_dup:
       self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080, [num_units, num_units]))
@@ -36,15 +32,15 @@ class PointerNetwork():
     return dup_logits, dup_cared_h
   
   def compute_is_dup_logits(self, dup_max_arg_acc_h, h):
-    if self.is_dup_mode == simple_is_dup:
+    if is_dup_mode == simple_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_dup_w), dup_max_arg_acc_h, transpose_b=True))
       is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_not_dup_w), dup_max_arg_acc_h, transpose_b=True))
       result = tf.convert_to_tensor([is_not_dup_logit, is_dup_logit])
-    elif self.is_dup_mode == mlp_is_dup:
+    elif is_dup_mode == mlp_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_dup_w), self.is_dup_h, transpose_b=True))
       is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_not_dup_w), self.is_not_dup_h, transpose_b=True))
       result = tf.convert_to_tensor([is_not_dup_logit, is_dup_logit])
-    elif self.is_dup_mode == sigmoid_is_dup:
+    elif is_dup_mode == sigmoid_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_dup_h, transpose_b=True))
       result = is_dup_logit
     else:
@@ -70,7 +66,7 @@ class PointerNetwork():
     r_dup_accurate = tf.stack([tf.tile([tf.constant(r_val, float_type)], [len(top_ks)]), dup_accurate])[pre_exist]
     r_dup_loss = tf.stack([tf.constant(0.0, float_type), dup_loss])[pre_exist]
     ''' compute is_dup '''
-    if self.is_dup_mode < sigmoid_is_dup:
+    if is_dup_mode < sigmoid_is_dup:
       is_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[pre_exist], logits=[is_dup_logits])
       predict_to_use_pre_exist = tf.cast(tf.argmax(is_dup_logits), int_type)
     else:
