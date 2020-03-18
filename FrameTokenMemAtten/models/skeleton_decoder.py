@@ -18,6 +18,7 @@ from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
   decode_swords_of_one_token
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
+from models.embed_merger import EmbedMerger
 
 
 class SkeletonDecodeModel():
@@ -70,6 +71,11 @@ class SkeletonDecodeModel():
           self.dup_mem_nn = NTMOneDirection()
           self.dup_forward_token_lstm = YLSTMCell()
           self.dup_backward_token_lstm = YLSTMCell()
+      
+      if compose_tokens_of_a_statement:
+        self.tokens_merger = EmbedMerger()
+        self.compose_lstm_cell = YLSTMCell()
+        
     else:
       number_of_subwords = self.type_content_data[all_token_summary][TotalNumberOfSubWord] + 1
       self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
@@ -178,11 +184,17 @@ class SkeletonDecodeModel():
     leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [stmt_end-stmt_start+1])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [stmt_end-stmt_start+1])
     
+    if compose_tokens_of_a_statement:
+      begin_cell = tf.convert_to_tensor([stmt_metrics[metrics_index["token_accumulated_cell"]][-1]])
+      begin_h = tf.convert_to_tensor([stmt_metrics[metrics_index["token_accumulated_h"]][-1]])
+    
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
     
     if compute_token_memory:
-      
+      '''
+      compute token memory and compute repetition
+      '''
       embeds, dup_embeds = tf.zeros([0, num_units], float_type), tf.zeros([0, num_units], float_type)
       _, _, embeds, dup_embeds = tf.while_loop(self.token_embed_cond, self.token_embed_body, [stmt_start, stmt_end, embeds, dup_embeds], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
       
@@ -191,14 +203,14 @@ class SkeletonDecodeModel():
       if use_dup_model:
         stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = dup_ini_f_cell
         stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = dup_ini_f_h
-      f_res = tf.while_loop(self.forward_loop_cond, self.forward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)  # , name="SequenceLSTMAllGraph_decode_sequence_while_loop"
+      f_res = tf.while_loop(self.forward_loop_cond, self.forward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
       stmt_metrics = list(f_res[4:])
       stmt_metrics[self.metrics_index["loop_backward_cells"]] = ini_b_cell
       stmt_metrics[self.metrics_index["loop_backward_hs"]] = ini_b_h
       if use_dup_model:
         stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = dup_ini_b_cell
         stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = dup_ini_b_h
-      f_res = tf.while_loop(self.backward_loop_cond, self.backward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)  # , name="SequenceLSTMAllGraph_decode_sequence_while_loop"
+      f_res = tf.while_loop(self.backward_loop_cond, self.backward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
       stmt_metrics = list(f_res[4:])
       
       mem_acc_en = stmt_metrics[self.metrics_index["memory_accumulated_en"]]
@@ -209,6 +221,17 @@ class SkeletonDecodeModel():
       if use_dup_model:
         dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h = self.dup_mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1]]), tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1]]))
         _, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
+      
+      if compose_tokens_of_a_statement:
+        '''
+        compute BiLSTM composition of tokens of a statement
+        '''
+        self.tokens_merger = EmbedMerger()
+        merged_tokens_embed = self.tokens_merger(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], stmt_metrics[self.metrics_index["loop_backward_hs"]][0])
+        end_cell, end_h = self.compose_lstm_cell(merged_tokens_embed, begin_cell, begin_h)
+        stmt_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[metrics_index["token_accumulated_cell"]], end_cell, accumulated_token_max_length)
+        stmt_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[metrics_index["token_accumulated_h"]], end_h, accumulated_token_max_length)
+      
     return stmt_metrics
   
   def token_iterate_cond(self, i, i_len, *_):

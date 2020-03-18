@@ -104,3 +104,5 @@ def update_one_variable(local_token_index, type_content_en, decode_dup_f_cell, d
   new_dup_accumulated_h = tf.concat([before_part_dup_accumulated_h, curr_part_dup_accumulated_h, after_part_dup_accumulated_h], axis=0)
   return new_dup_accumulated_en, new_dup_accumulated_cell, new_dup_accumulated_h
 
+
+

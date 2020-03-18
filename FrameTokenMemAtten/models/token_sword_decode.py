@@ -72,14 +72,14 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
     token_metrics[metrics_index["token_mrr"]] = before_token_mrr + tf.stack([after_token_mrr - before_token_mrr, r_dup_mrr], axis=0)[predict_to_use_pre_exist]
     
     new_dup_token_cell, new_dup_token_h = dup_token_lstm(dup_token_embedder.compute_h(oracle_type_content_en), dup_cell, dup_h)
-    token_metrics[metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_cell"]], new_dup_token_cell, accumulated_token_max_length+1)
-    token_metrics[metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_h"]], new_dup_token_h, accumulated_token_max_length+1)
+    token_metrics[metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_cell"]], new_dup_token_cell, accumulated_token_max_length)
+    token_metrics[metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_h"]], new_dup_token_h, accumulated_token_max_length)
     
   token_metrics[metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(token_metrics[metrics_index["token_accumulated_en"]], [oracle_type_content_en], accumulated_token_max_length)
   ''' predict next node '''
   new_cell, new_h = token_lstm(token_embedder.compute_h(oracle_type_content_en), cell, h)
-  token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length+1)
-  token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length+1)
+  token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
+  token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length)
   return tuple(token_metrics)
 
 
