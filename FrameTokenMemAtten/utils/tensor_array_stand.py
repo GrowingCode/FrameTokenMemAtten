@@ -1,4 +1,5 @@
 import tensorflow as tf
+from metas.non_hyper_constants import max_threshold_example_length
 
 
 def make_sure_shape_of_tensor_array(t_array):

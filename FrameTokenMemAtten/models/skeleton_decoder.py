@@ -3,7 +3,8 @@ from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
-  create_metrics_contingent_index, default_metrics_meta
+  create_metrics_contingent_index, default_metrics_meta,\
+  special_handle_metrics_meta
 from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
   concat_in_fixed_length_one_dimension
 from models.lstm import YLSTMCell
@@ -12,7 +13,7 @@ from inputs.atom_embeddings import AtomSimpleEmbed, BiLSTMEmbed,\
   sword_sequence_for_token
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary, SkeletonNum,\
-  TokenNum, TotalNumberOfSubWord, max_threshold_example_length
+  TokenNum, TotalNumberOfSubWord
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -30,7 +31,7 @@ class SkeletonDecodeModel():
   
   def __init__(self, type_content_data):
     self.type_content_data = type_content_data
-    self.statistical_metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta()
+    self.statistical_metrics_meta = default_metrics_meta + self.create_extra_default_metrics_meta() + special_handle_metrics_meta
     self.metrics_meta = self.statistical_metrics_meta + self.create_in_use_tensors_meta()
     self.metrics_name = [metric_m[0] for metric_m in self.metrics_meta]
     self.metrics_shape = [metric_m[1] for metric_m in self.metrics_meta]
@@ -98,8 +99,8 @@ class SkeletonDecodeModel():
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
-    f_res = f_res[2:2+len(self.statistical_metrics_meta)]
-    f_res = post_process_decoder_output(f_res, self.metrics_index)
+    f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
+    f_res = list(post_process_decoder_output(f_res, self.metrics_index))
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):
@@ -305,7 +306,8 @@ class SkeletonDecodeModel():
 
 def post_process_decoder_output(model_metrics, metrics_index):
   t_array = model_metrics[metrics_index["atom_beam"]]
-  model_metrics[metrics_index["atom_beam"]] = make_sure_shape_of_tensor_array(t_array, max_threshold_example_length)
+  model_metrics[metrics_index["atom_beam"]] = make_sure_shape_of_tensor_array(t_array)
+  return model_metrics
 
 
 
