@@ -1,7 +1,7 @@
 import tensorflow as tf
 from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
-  atom_decode_mode, token_decode, sword_decode
+  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta
 from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
@@ -12,7 +12,7 @@ from inputs.atom_embeddings import AtomSimpleEmbed, BiLSTMEmbed,\
   sword_sequence_for_token
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary, SkeletonNum,\
-  TokenNum, TotalNumberOfSubWord
+  TokenNum, TotalNumberOfSubWord, max_threshold_example_length
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -185,8 +185,8 @@ class SkeletonDecodeModel():
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [stmt_end-stmt_start+1])
     
     if compose_tokens_of_a_statement:
-      begin_cell = tf.convert_to_tensor([stmt_metrics[metrics_index["token_accumulated_cell"]][-1]])
-      begin_h = tf.convert_to_tensor([stmt_metrics[metrics_index["token_accumulated_h"]][-1]])
+      begin_cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]])
+      begin_h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]])
     
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
@@ -229,8 +229,8 @@ class SkeletonDecodeModel():
         self.tokens_merger = EmbedMerger()
         merged_tokens_embed = self.tokens_merger(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], stmt_metrics[self.metrics_index["loop_backward_hs"]][0])
         end_cell, end_h = self.compose_lstm_cell(merged_tokens_embed, begin_cell, begin_h)
-        stmt_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[metrics_index["token_accumulated_cell"]], end_cell, accumulated_token_max_length)
-        stmt_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[metrics_index["token_accumulated_h"]], end_h, accumulated_token_max_length)
+        stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], end_cell, accumulated_token_max_length)
+        stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], end_h, accumulated_token_max_length)
       
     return stmt_metrics
   

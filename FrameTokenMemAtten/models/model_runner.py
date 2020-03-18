@@ -13,7 +13,8 @@ from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 from inputs.example_data_loader import build_skeleton_feed_dict
 import tensorflow as tf
-from utils.tensor_array_stand import make_sure_shape_of_tensor_array
+from utils.tensor_array_stand import make_sure_shape_of_tensor_array,\
+  convert_tensor_array_to_lists_of_tensors
 
 
 class ModelRunner():
@@ -248,7 +249,7 @@ class ModelRunner():
 #         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
         for np_array in part_np_arrays:
           part_metric = self.model_running_one_example(training, np_array[0], np_array[1], np_array[2])
-          TODO sdds
+          #TODO
           part_metric = part_metric[0:-1]
           part_metric = model_output(part_metric, self.model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
