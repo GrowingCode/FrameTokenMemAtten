@@ -2,9 +2,9 @@ top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
 num_units = 128
 contingent_parameters_num = 20
-use_dup_model = 1
+use_dup_model = 0
 accumulated_token_max_length = 600
-compute_token_memory = 1
+compute_token_memory = 0
 ''' is_dup_mode '''
 simple_is_dup = 0
 mlp_is_dup = 1
@@ -40,10 +40,17 @@ compose_tokens_of_a_statement = 0
 '''
 additional composite configuration
 '''
-composite_config_func = "empty_config"
+composite_config_func = "only_token_decode"
 
-if composite_config_func == "empty_config":
+if composite_config_func == "only_token_decode":
   pass
+
+if composite_config_func == "only_token_decode_with_dup":
+  use_dup_model = 1
+  
+if composite_config_func == "only_token_decode_with_memory_dup":
+  use_dup_model = 1
+  compute_token_memory = 1
 
 if composite_config_func == "only_sword_decode":
   use_dup_model = 0
@@ -52,6 +59,7 @@ if composite_config_func == "only_sword_decode":
 if composite_config_func == "only_sword_decode_with_tokens_compose":
   use_dup_model = 0
   atom_decode_mode = sword_decode
+  compute_token_memory = 1
   compose_tokens_of_a_statement = 1
 
 
