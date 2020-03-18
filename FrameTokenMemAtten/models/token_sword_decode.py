@@ -1,4 +1,3 @@
-from inputs.atom_embeddings import sword_sequence_for_token
 from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks
 from metas.non_hyper_constants import int_type, float_type
@@ -153,7 +152,7 @@ def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, beg
     n_probs = tf.gather(probs, n_atom_ens) + prob_scalar
     n_computed_ens = tf.zeros([0, tf.shape(computed_en)[-1] + 1], int_type)
     for _ in range(top_n):
-      n_cell, n_h = sword_lstm(sword_embedder.compute_sword_h(n_atom_ens[i]), cell, h)
+      n_cell, n_h = sword_lstm(sword_embedder.compute_h(n_atom_ens[i]), cell, h)
       n_cells = tf.concat([n_cells, n_cell], axis=0)
       n_hs = tf.concat([n_hs, n_h], axis=0)
       n_computed_en = tf.concat([computed_en, [n_atom_ens[i]]], axis=0)
