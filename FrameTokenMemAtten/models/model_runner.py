@@ -13,6 +13,7 @@ from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 from inputs.example_data_loader import build_skeleton_feed_dict
 import tensorflow as tf
+from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 
 
 class ModelRunner():
@@ -63,9 +64,11 @@ class ModelRunner():
     self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [3, None])
     self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
+    self.test_metrics = list(self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False))
+    self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(t_array))
 #     with tf.device('/GPU:0'):
-    self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
+    self.train_metrics = list(self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True))
+    self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     self.train_op = self.optimizer.apply_gradients(gvs)
   
@@ -245,6 +248,8 @@ class ModelRunner():
 #         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
         for np_array in part_np_arrays:
           part_metric = self.model_running_one_example(training, np_array[0], np_array[1], np_array[2])
+          TODO sdds
+          part_metric = part_metric[0:-1]
           part_metric = model_output(part_metric, self.model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
@@ -339,7 +344,7 @@ def merge_metric(all_metrics, part_metric):
 def compute_average(dict_t):
   r = {}
   for k in dict_t:
-    if not k.endswith('_count'):
+    if not k.endswith('_count') and not k.endswith('_beam'):
       idx = k.find('_')
       assert idx > 0
       first_k_part = k[0:idx]
@@ -387,7 +392,7 @@ def info_of_train_stop_test_start(average_accuracy):
   
 
 def model_output(tensors, tensors_meta):
-  assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
+#   assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
   numpy_dict = {}
   for i, t in enumerate(tensors):
     numpy_dict[tensors_meta[i][0]] = t
