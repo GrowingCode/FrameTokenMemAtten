@@ -304,8 +304,8 @@ class SkeletonDecodeModel():
 
 
 def post_process_decoder_output(model_metrics, metrics_index):
-  t_array = model_metrics[metrics_index["token_sword_beam"]]
-  model_metrics[metrics_index["token_sword_beam"]] = make_sure_shape_of_tensor_array(t_array, max_threshold_example_length)
+  t_array = model_metrics[metrics_index["atom_beam"]]
+  model_metrics[metrics_index["atom_beam"]] = make_sure_shape_of_tensor_array(t_array, max_threshold_example_length)
 
 
 

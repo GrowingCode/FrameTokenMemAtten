@@ -114,8 +114,8 @@ def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_
 #     beam_mrr_of_this_node, beam_accurate_of_this_node = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
 #   else:
 #     beam_mrr_of_this_node, beam_accurate_of_this_node = compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence)
-  t_array = sword_metrics[metrics_index["token_sword_beam"]]
-  sword_metrics[metrics_index["token_sword_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
+  t_array = sword_metrics[metrics_index["atom_beam"]]
+  sword_metrics[metrics_index["atom_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
   
   new_cell, new_h = token_lstm(token_embedder.compute_h(token_en), cell, h)
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
