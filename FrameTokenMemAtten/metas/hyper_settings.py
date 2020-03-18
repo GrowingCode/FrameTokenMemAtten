@@ -40,7 +40,7 @@ compose_tokens_of_a_statement = 0
 '''
 additional composite configuration
 '''
-composite_config_func = "only_sword_decode"
+composite_config_func = "only_token_decode"
 
 if composite_config_func == "only_token_decode":
   pass

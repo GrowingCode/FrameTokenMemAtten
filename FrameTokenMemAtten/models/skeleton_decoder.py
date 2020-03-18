@@ -52,6 +52,9 @@ class SkeletonDecodeModel():
       self.mem_nn = NTMOneDirection()
       self.forward_token_lstm = YLSTMCell()
       self.backward_token_lstm = YLSTMCell()
+      if compose_tokens_of_a_statement:
+        self.tokens_merger = EmbedMerger()
+        self.compose_lstm_cell = YLSTMCell()
     
     self.token_lstm = YLSTMCell()
     if atom_decode_mode == token_decode:
@@ -73,10 +76,6 @@ class SkeletonDecodeModel():
           self.dup_forward_token_lstm = YLSTMCell()
           self.dup_backward_token_lstm = YLSTMCell()
       
-      if compose_tokens_of_a_statement:
-        self.tokens_merger = EmbedMerger()
-        self.compose_lstm_cell = YLSTMCell()
-        
     else:
       number_of_subwords = self.type_content_data[all_token_summary][TotalNumberOfSubWord] + 1
       self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
@@ -84,7 +83,7 @@ class SkeletonDecodeModel():
       self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
       self.sword_embedder = AtomSimpleEmbed(self.one_hot_sword_embedding)
       self.sword_lstm = YLSTMCell()
-  
+      
   def create_extra_default_metrics_meta(self):
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
   
@@ -227,8 +226,7 @@ class SkeletonDecodeModel():
         '''
         compute BiLSTM composition of tokens of a statement
         '''
-        self.tokens_merger = EmbedMerger()
-        merged_tokens_embed = self.tokens_merger(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], stmt_metrics[self.metrics_index["loop_backward_hs"]][0])
+        merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
         end_cell, end_h = self.compose_lstm_cell(merged_tokens_embed, begin_cell, begin_h)
         stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], end_cell, accumulated_token_max_length)
         stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], end_h, accumulated_token_max_length)
