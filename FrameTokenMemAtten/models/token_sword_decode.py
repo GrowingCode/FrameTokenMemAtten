@@ -83,7 +83,7 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
 
 
 def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_index, metrics_shape, token_metrics, token_lstm, token_embedder, linear_sword_output_w, sword_embedder, sword_lstm):
-  atom_length_in_float = tf.cast(tf.shape(token_atom_sequence)[-1], float_type)
+#   atom_length_in_float = tf.cast(tf.shape(token_atom_sequence)[-1], float_type)
   
   def decode_one_sword_cond(w, w_len, *_):
     return tf.less(w, w_len)
@@ -101,9 +101,10 @@ def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_
     sword_metrics[metrics_index["sword_mrr"]] = sword_metrics[metrics_index["sword_mrr"]] + mrr_of_this_node
     sword_metrics[metrics_index["sword_count"]] = sword_metrics[metrics_index["sword_count"]] + 1
     
-    sword_metrics[metrics_index["all_loss"]] = sword_metrics[metrics_index["all_loss"]] + loss_of_this_node / atom_length_in_float
-    sword_metrics[metrics_index["all_accurate"]] = sword_metrics[metrics_index["all_accurate"]] + accurate_of_this_node / atom_length_in_float
-    sword_metrics[metrics_index["all_mrr"]] = sword_metrics[metrics_index["all_mrr"]] + mrr_of_this_node / atom_length_in_float
+    sword_metrics[metrics_index["all_loss"]] = sword_metrics[metrics_index["all_loss"]] + loss_of_this_node# / atom_length_in_float
+    sword_metrics[metrics_index["all_accurate"]] = sword_metrics[metrics_index["all_accurate"]] + accurate_of_this_node# / atom_length_in_float
+    sword_metrics[metrics_index["all_mrr"]] = sword_metrics[metrics_index["all_mrr"]] + mrr_of_this_node# / atom_length_in_float
+    sword_metrics[metrics_index["all_count"]] = sword_metrics[metrics_index["all_count"]] + 1
     return (w + 1, w_len, new_sword_c, new_sword_h, *sword_metrics)
   
   cell = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_cell"]][-1]])
@@ -123,7 +124,6 @@ def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_
   token_metrics_res = tf.while_loop(decode_one_sword_cond, decode_one_sword_body, [0, tf.shape(token_atom_sequence)[-1], cell, h, *token_metrics], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), tf.TensorShape([1, num_units]), *metrics_shape], parallel_iterations=1)
   r_token_metrics = list(token_metrics_res[4:])
   r_token_metrics[metrics_index["token_count"]] = r_token_metrics[metrics_index["token_count"]] + 1
-  r_token_metrics[metrics_index["all_count"]] = r_token_metrics[metrics_index["all_count"]] + 1
   return r_token_metrics
 
 
