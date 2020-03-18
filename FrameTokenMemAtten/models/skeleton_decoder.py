@@ -81,7 +81,7 @@ class SkeletonDecodeModel():
       number_of_subwords = self.type_content_data[all_token_summary][TotalNumberOfSubWord] + 1
       self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
       self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
-      self.token_embedder = BiLSTMEmbed(self.one_hot_sword_embedding)
+      self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
       self.sword_embedder = AtomSimpleEmbed(self.one_hot_sword_embedding)
       self.sword_lstm = YLSTMCell()
   

@@ -114,8 +114,8 @@ def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_
 #     beam_mrr_of_this_node, beam_accurate_of_this_node = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
 #   else:
 #     beam_mrr_of_this_node, beam_accurate_of_this_node = compute_atom_sequence_beam_accurate(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence)
-  t_array = sword_metrics[metrics_index["atom_beam"]]
-  sword_metrics[metrics_index["atom_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
+  t_array = token_metrics[metrics_index["atom_beam"]]
+  token_metrics[metrics_index["atom_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
   
   new_cell, new_h = token_lstm(token_embedder.compute_h(token_en), cell, h)
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
@@ -165,7 +165,7 @@ def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, beg
 
   ''' body '''
 
-  def atom_sequence_decoding_body(i, i_len, cells, hs, probs, computed_ens):  # accurates
+  def atom_sequence_decoding_body(i, i_len, cells, hs, probs, computed_ens):
     beam_size = top_ks[-1]
     
     ''' use h to decode '''
@@ -202,8 +202,9 @@ def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, beg
   i_len = atom_length  # tf.shape(oracle_atoms)[-1]
   cells = begin_cell
   hs = begin_h
+  probs = tf.zeros([1], float_type)
   computed_ens = tf.zeros([1, 0], int_type)
-  _, _, _, _, computed_ens = tf.while_loop(atom_sequence_decoding_cond, atom_sequence_decoding_body, [i, i_len, cells, hs, computed_ens], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), tf.TensorShape([None, None])])
+  _, _, _, _, _, computed_ens = tf.while_loop(atom_sequence_decoding_cond, atom_sequence_decoding_body, [i, i_len, cells, hs, probs, computed_ens], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), tf.TensorShape([None]), tf.TensorShape([None, None])])
   return computed_ens
   
   
