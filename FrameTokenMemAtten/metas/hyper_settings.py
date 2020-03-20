@@ -28,7 +28,7 @@ token_decode = 1
 atom_decode_mode = token_decode
 
 ignore_restrain_count = 0
-restrain_maximum_count = 3
+restrain_maximum_count = 2
 max_train_epoch = 30
 valid_epoch_period = 1
 
