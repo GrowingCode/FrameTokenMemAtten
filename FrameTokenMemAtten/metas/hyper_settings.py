@@ -6,9 +6,9 @@ use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
 ''' token_embedder_mode '''
-token_mode = 0
+token_only_mode = 0
 swords_compose_mode = 1
-token_embedder_mode = token_mode
+token_embedder_mode = token_only_mode
 ''' dup_mode '''
 max_repetition_mode = 0
 attention_repetition_mode = 1

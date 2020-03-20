@@ -2,7 +2,7 @@ import tensorflow as tf
 from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
-  token_embedder_mode, swords_compose_mode
+  token_embedder_mode, swords_compose_mode, token_only_mode
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta,\
   special_handle_metrics_meta
@@ -87,7 +87,7 @@ class SkeletonDecodeModel():
     else:
       assert False, "Wrong atom_decode_mode"
       
-    if r_token_embedder_mode == token_decode:
+    if r_token_embedder_mode == token_only_mode:
       self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
       self.token_embedder = AtomSimpleEmbed(self.one_hot_token_embedding)
     elif r_token_embedder_mode == swords_compose_mode:
