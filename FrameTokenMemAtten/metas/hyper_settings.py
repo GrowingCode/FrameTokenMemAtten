@@ -67,6 +67,11 @@ if composite_config_func == "token_decode_with_swords_comp_embed_with_dup":
   use_dup_model = 1
   token_embedder_mode = swords_compose_mode
   
+if composite_config_func == "token_decode_with_swords_comp_embed_with_tokens_compose":
+  token_embedder_mode = swords_compose_mode
+  compute_token_memory = 1
+  compose_tokens_of_a_statement = 1
+  
 if composite_config_func == "token_decode_with_swords_comp_embed_with_memory_dup":
   use_dup_model = 1
   compute_token_memory = 1
