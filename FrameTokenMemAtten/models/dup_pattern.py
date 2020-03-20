@@ -47,8 +47,8 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     return result
 
-  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits):
-    total_length = tf.shape(accumulated_en)[-1]
+  def compute_dup_loss(self, training, oracle_relative, is_dup_logits, dup_logits):
+    total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)# * pre_exist
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
@@ -57,7 +57,7 @@ class PointerNetwork():
     if training:
       dup_mrr, dup_accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
     else:
-      dup_mrr, dup_accurate = compute_dup_accurate(accumulated_en, oracle_en, dup_logits)
+      dup_mrr, dup_accurate = compute_dup_accurate(specified_index, dup_logits)
     ''' maximize the most likely '''
     dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[specified_index], logits=[dup_logits])
     dup_loss = tf.reduce_sum(dup_losses)
@@ -87,12 +87,13 @@ def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, dup_logi
   return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
 
 
-def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, dup_logits):
+# oracle_token_sequence, oracle_type_content_en
+def compute_top_k_accurate(specified_index, dup_logits):
   dup_size = tf.shape(dup_logits)[0]
   r_r = tf.minimum(dup_size, mrr_max)
   _, indices_r = tf.nn.top_k(dup_logits, r_r)
-  selected_tokens = tf.gather(oracle_token_sequence, indices_r)
-  zero_one = tf.cast(tf.equal(oracle_type_content_en, selected_tokens), int_type)
+#   selected_tokens = tf.gather(oracle_token_sequence, indices_r)
+  zero_one = tf.cast(tf.equal(specified_index, indices_r), int_type)
   accs = tf.reduce_sum(zero_one)
   mrr = tf.cond(accs > 0, lambda: tf.math.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one) + 1, float_type)), lambda: tf.constant(0.0, float_type))
   result = tf.zeros([0], float_type)
@@ -100,8 +101,8 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, dup_lo
     k = top_ks[i]
     r_k = tf.minimum(k, dup_size)
     _, indices = tf.nn.top_k(dup_logits, r_k)
-    selected_tokens = tf.gather(oracle_token_sequence, indices)
-    true_false = tf.equal(oracle_type_content_en, selected_tokens)
+#     selected_tokens = tf.gather(oracle_token_sequence, indices)
+    true_false = tf.equal(specified_index, indices)
     accs = tf.reduce_sum(tf.cast(true_false, tf.int32))
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
