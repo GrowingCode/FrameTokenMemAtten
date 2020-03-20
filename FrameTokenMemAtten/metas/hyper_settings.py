@@ -23,8 +23,8 @@ v_attention = 0
 stand_attention = 1
 attention_algorithm = stand_attention
 ''' decode mode '''
-sword_decode = 0
-token_decode = 1
+token_decode = 0
+sword_decode = 1
 atom_decode_mode = token_decode
 
 ignore_restrain_count = 0
@@ -52,6 +52,10 @@ composite_config_func = "only_token_decode"
 
 if composite_config_func == "only_token_decode":
   pass
+
+if composite_config_func == "only_token_decode_with_tokens_compose":
+  compute_token_memory = 1
+  compose_tokens_of_a_statement = 1
 
 if composite_config_func == "only_token_decode_with_dup":
   use_dup_model = 1
