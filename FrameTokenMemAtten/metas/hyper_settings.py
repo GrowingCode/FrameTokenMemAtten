@@ -5,6 +5,10 @@ contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
+''' token_embedder_mode '''
+token_mode = 0
+swords_compose_mode = 1
+token_embedder_mode = token_mode
 ''' dup_mode '''
 max_repetition_mode = 0
 attention_repetition_mode = 1
@@ -55,17 +59,37 @@ if composite_config_func == "only_token_decode_with_dup":
 if composite_config_func == "only_token_decode_with_memory_dup":
   use_dup_model = 1
   compute_token_memory = 1
+  
+if composite_config_func == "token_decode_with_swords_comp_embed":
+  token_embedder_mode = swords_compose_mode
+
+if composite_config_func == "token_decode_with_swords_comp_embed_with_dup":
+  use_dup_model = 1
+  token_embedder_mode = swords_compose_mode
+  
+if composite_config_func == "token_decode_with_swords_comp_embed_with_memory_dup":
+  use_dup_model = 1
+  compute_token_memory = 1
+  token_embedder_mode = swords_compose_mode
 
 if composite_config_func == "only_sword_decode":
   use_dup_model = 0
   atom_decode_mode = sword_decode
+  token_embedder_mode = swords_compose_mode
 
 if composite_config_func == "only_sword_decode_with_tokens_compose":
   use_dup_model = 0
   atom_decode_mode = sword_decode
+  token_embedder_mode = swords_compose_mode
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
 
+
+'''
+configuration hard checking
+'''
+if atom_decode_mode == sword_decode:
+  assert token_embedder_mode == swords_compose_mode
 
 
 

@@ -1,7 +1,8 @@
 import tensorflow as tf
 from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
-  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement
+  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
+  token_embedder_mode, swords_compose_mode
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta,\
   special_handle_metrics_meta
@@ -48,6 +49,7 @@ class SkeletonDecodeModel():
     self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
     self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
     self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
+    
     if compute_token_memory:
       self.mem_nn = NTMOneDirection()
       self.forward_token_lstm = YLSTMCell()
@@ -57,11 +59,12 @@ class SkeletonDecodeModel():
         self.compose_lstm_cell = YLSTMCell()
     
     self.token_lstm = YLSTMCell()
+    r_token_embedder_mode = token_embedder_mode
+    number_of_tokens = self.type_content_data[all_token_summary][TokenNum] + 1
+    number_of_subwords = self.type_content_data[all_token_summary][TotalNumberOfSubWord] + 1
+    
     if atom_decode_mode == token_decode:
-      number_of_tokens = self.type_content_data[all_token_summary][TokenNum] + 1
-      self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
       self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
-      self.token_embedder = AtomSimpleEmbed(self.one_hot_token_embedding)
       
       self.dup_token_embedder, self.dup_token_lstm, self.token_pointer = None, None, None
       if use_dup_model:
@@ -76,13 +79,24 @@ class SkeletonDecodeModel():
           self.dup_forward_token_lstm = YLSTMCell()
           self.dup_backward_token_lstm = YLSTMCell()
       
-    else:
-      number_of_subwords = self.type_content_data[all_token_summary][TotalNumberOfSubWord] + 1
-      self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
+    elif atom_decode_mode == sword_decode:
       self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
-      self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
-      self.sword_embedder = AtomSimpleEmbed(self.one_hot_sword_embedding)
       self.sword_lstm = YLSTMCell()
+      r_token_embedder_mode = swords_compose_mode
+      
+    else:
+      assert False, "Wrong atom_decode_mode"
+      
+    if r_token_embedder_mode == token_decode:
+      self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
+      self.token_embedder = AtomSimpleEmbed(self.one_hot_token_embedding)
+    elif r_token_embedder_mode == swords_compose_mode:
+      self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
+      self.sword_embedder = AtomSimpleEmbed(self.one_hot_sword_embedding)
+      self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
+    else:
+      assert False, "Wrong token_embedder_mode"
+      
       
   def create_extra_default_metrics_meta(self):
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
