@@ -1,7 +1,8 @@
 import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
-  simple_is_dup, mlp_is_dup, sigmoid_is_dup
+  simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode,\
+  repetition_mode, max_repetition_mode
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -22,13 +23,22 @@ class PointerNetwork():
       self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
     else:
       assert False, "Unrecognized is_dup_mode!"
-    self.point_atten = YAttention()
+    if repetition_mode == attention_repetition_mode:
+      self.point_atten = YAttention()
   
   def compute_logits(self, accumulated_h, h):
     dup_logits_imd = tf.matmul(h, self.dup_w)
     dup_logits = tf.matmul(dup_logits_imd, accumulated_h, transpose_b=True)
     dup_logits = tf.squeeze(dup_logits, axis=[0])
-    dup_cared_h = self.point_atten.compute_attention_context(accumulated_h, h)
+    if repetition_mode == max_repetition_mode:
+      dup_max_arg = tf.argmax(dup_logits)
+      dup_max_arg = tf.cast(dup_max_arg, int_type)
+      dup_max_arg_acc_h = tf.expand_dims(accumulated_h[dup_max_arg], axis=0)
+      dup_cared_h = dup_max_arg_acc_h
+    elif repetition_mode == attention_repetition_mode:
+      dup_cared_h = self.point_atten.compute_attention_context(accumulated_h, h)
+    else:
+      assert False, "Unrecognized repetition_mode!"
     return dup_logits, dup_cared_h
   
   def compute_is_dup_logits(self, dup_max_arg_acc_h, h):

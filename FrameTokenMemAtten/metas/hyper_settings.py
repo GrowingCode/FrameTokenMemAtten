@@ -5,11 +5,15 @@ contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
+''' dup_mode '''
+max_repetition_mode = 0
+attention_repetition_mode = 1
+repetition_mode = max_repetition_mode
 ''' is_dup_mode '''
 simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
-is_dup_mode=sigmoid_is_dup
+is_dup_mode=simple_is_dup
 ''' attention algorithm '''
 v_attention = 0
 stand_attention = 1
