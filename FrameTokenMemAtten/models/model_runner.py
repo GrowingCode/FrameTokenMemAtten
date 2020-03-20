@@ -257,10 +257,11 @@ class ModelRunner():
 #         token_info_np_arrays.clear()
 #         token_info_start_np_arrays.clear()
 #         token_info_end_np_arrays.clear()
+        batch_size = len(part_np_arrays)
         part_np_arrays.clear()
         one_unit_count = 0
         end_time = time.time()
-        print("batch_size:" + str(len(part_np_arrays)) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
+        print("batch_size:" + str(batch_size) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
   
 #   def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):

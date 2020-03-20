@@ -92,9 +92,9 @@ class PointerNetwork():
     return total_mrr, total_accurate, total_loss, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist
 
 
-def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, dup_logits):
+def compute_dup_accurate(specified_index, dup_logits):
   dup_size = tf.shape(dup_logits)[0]
-  return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
+  return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(specified_index, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
 
 
 # oracle_token_sequence, oracle_type_content_en
