@@ -103,6 +103,12 @@ if composite_config_func == "only_sword_decode_with_tokens_compose":
 if composite_config_func == "not_skeleton_only_token_decode":
   treat_first_element_as_skeleton = 0
   build_feed_dict = build_statement_feed_dict
+  
+if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
+  treat_first_element_as_skeleton = 0
+  build_feed_dict = build_statement_feed_dict
+  compute_token_memory = 1
+  compose_tokens_of_a_statement = 1
 
 '''
 configuration hard checking
@@ -111,7 +117,8 @@ if atom_decode_mode == sword_decode:
   assert token_embedder_mode == swords_compose_mode
 if treat_first_element_as_skeleton == 0:
   assert build_feed_dict == build_statement_feed_dict
-
+if compose_tokens_of_a_statement == 1:
+  assert compute_token_memory == 1
 
 
 
