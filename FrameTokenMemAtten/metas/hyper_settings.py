@@ -1,3 +1,9 @@
+from inputs.example_data_loader import build_skeleton_feed_dict,\
+  build_statement_feed_dict
+
+
+build_feed_dict = build_skeleton_feed_dict
+''' statistics '''
 top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
 num_units = 128
@@ -5,6 +11,8 @@ contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
+''' whether skeleton '''
+treat_first_element_as_skeleton = 1
 ''' token_embedder_mode '''
 token_mode = 0
 swords_compose_mode = 1
@@ -26,12 +34,11 @@ attention_algorithm = stand_attention
 sword_decode = 0
 token_decode = 1
 atom_decode_mode = token_decode
-
+''' training hyper '''
 ignore_restrain_count = 0
 restrain_maximum_count = 3
 max_train_epoch = 30
 valid_epoch_period = 1
-
 '''
 actually each example in one batch is still trained one by one
 just truncate the whole large data
@@ -84,12 +91,17 @@ if composite_config_func == "only_sword_decode_with_tokens_compose":
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
 
+if composite_config_func == "not_skeleton_only_token_decode":
+  treat_first_element_as_skeleton = 0
+  build_feed_dict = build_statement_feed_dict
 
 '''
 configuration hard checking
 '''
 if atom_decode_mode == sword_decode:
   assert token_embedder_mode == swords_compose_mode
+if treat_first_element_as_skeleton == 0:
+  assert build_feed_dict == build_statement_feed_dict
 
 
 

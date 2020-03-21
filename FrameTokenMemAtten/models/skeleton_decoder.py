@@ -2,7 +2,7 @@ import tensorflow as tf
 from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
-  token_embedder_mode, swords_compose_mode
+  token_embedder_mode, swords_compose_mode, treat_first_element_as_skeleton
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta,\
   special_handle_metrics_meta
@@ -125,40 +125,48 @@ class SkeletonDecodeModel():
     stmt_start = self.token_info_start_tensor[i]
     stmt_end = self.token_info_end_tensor[i]
     
-    ''' handle skeleton '''
-    skt_id = self.token_info_tensor[0][stmt_start]
-    cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]])
-    h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]])
-    o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_id, h)
+    stmt_start_offset = 0
     
-    stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node
-    stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node
-    stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node
-    stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
-    
-    stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node
-    stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node
-    stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node
-    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
-    
-    next_cell, next_h = self.skeleton_lstm_cell(tf.convert_to_tensor([self.one_hot_skeleton_embedding[skt_id]]), cell, h)
-    stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], next_cell, accumulated_token_max_length)
-    stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], next_h, accumulated_token_max_length)
-    
-    stmt_metrics[self.metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(stmt_metrics[self.metrics_index["token_accumulated_en"]], [skt_id], accumulated_token_max_length)
-    
-    if use_dup_model:
-      dup_cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1]])
-      dup_h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1]])
-      next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(tf.convert_to_tensor([self.one_dup_hot_skeleton_embedding[skt_id]]), dup_cell, dup_h)
-      stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]], next_dup_cell, accumulated_token_max_length)
-      stmt_metrics[self.metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]], next_dup_h, accumulated_token_max_length)
+    if treat_first_element_as_skeleton:
+      stmt_start_offset = 1
+      ''' handle skeleton '''
+      skt_id = self.token_info_tensor[0][stmt_start]
+      cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]])
+      h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]])
+      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_id, h)
+      skt_id_valid = tf.cast(tf.greater(skt_id, 2), float_type)
       
+      stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
+      
+      stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
+      
+      next_cell, next_h = self.skeleton_lstm_cell(tf.convert_to_tensor([self.one_hot_skeleton_embedding[skt_id]]), cell, h)
+      stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], next_cell, accumulated_token_max_length)
+      stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], next_h, accumulated_token_max_length)
+      
+      stmt_metrics[self.metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(stmt_metrics[self.metrics_index["token_accumulated_en"]], [skt_id], accumulated_token_max_length)
+      
+      if use_dup_model:
+        dup_cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1]])
+        dup_h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1]])
+        next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(tf.convert_to_tensor([self.one_dup_hot_skeleton_embedding[skt_id]]), dup_cell, dup_h)
+        stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]], next_dup_cell, accumulated_token_max_length)
+        stmt_metrics[self.metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]], next_dup_h, accumulated_token_max_length)
+      
+    else:
+      stmt_start_offset = 0
+      skt_id = 0
+    
+    ini_cells_hs = []
     '''
     iterate tokens
     '''
-    ini_cells_hs = []
-    
     ini_f_cell = tf.convert_to_tensor([self.skeleton_forward_cell_h[0][skt_id]])
     ini_f_h = tf.convert_to_tensor([self.skeleton_forward_cell_h[1][skt_id]])
     ini_b_cell = tf.convert_to_tensor([self.skeleton_backward_cell_h[0][skt_id]])
@@ -178,7 +186,7 @@ class SkeletonDecodeModel():
       ini_cells_hs.append(dup_ini_b_cell)
       ini_cells_hs.append(dup_ini_b_h)
     
-    stmt_metrics = self.itearate_tokens(stmt_start+1, stmt_end, ini_cells_hs, stmt_metrics)
+    stmt_metrics = self.itearate_tokens(stmt_start+stmt_start_offset, stmt_end, ini_cells_hs, stmt_metrics)
     
     return (i + 1, i_len, *stmt_metrics)
   

@@ -4,14 +4,13 @@ import time
 from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
-  gradient_clip_abs_range
+  gradient_clip_abs_range, build_feed_dict
 from metas.non_hyper_constants import data_dir, model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode, int_type,\
   model_storage_parent_dir
 from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
-from inputs.example_data_loader import build_skeleton_feed_dict
 import tensorflow as tf
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array,\
   convert_tensor_array_to_lists_of_tensors
@@ -318,7 +317,7 @@ def load_examples(data_file_name, mode_info):
   start_time = time.time()
   examples = []
   for r_data in raw_datas:
-    examples.append(build_skeleton_feed_dict(r_data))
+    examples.append(build_feed_dict(r_data))
   end_time = time.time()
   print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   return examples

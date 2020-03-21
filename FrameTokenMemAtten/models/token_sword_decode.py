@@ -9,6 +9,7 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
 
 
 def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
+  en_valid = tf.cast(tf.greater(oracle_type_content_en, 2), float_type)
   ''' typical token swords prediction '''
   cell = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_cell"]][-1]])
   h = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_h"]][-1]])
@@ -19,16 +20,16 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
   before_token_mrr = token_metrics[metrics_index["token_mrr"]]
   ''' decode and compute sword level accurate '''
   mrr_of_this_node, accurate_of_this_node, loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, linear_token_output_w, oracle_type_content_en, h)
-  token_metrics[metrics_index["token_loss"]] = token_metrics[metrics_index["token_loss"]] + loss_of_this_node
-  token_metrics[metrics_index["token_accurate"]] = token_metrics[metrics_index["token_accurate"]] + accurate_of_this_node
-  token_metrics[metrics_index["token_mrr"]] = token_metrics[metrics_index["token_mrr"]] + mrr_of_this_node
-  token_metrics[metrics_index["token_lm_loss"]] = token_metrics[metrics_index["token_lm_loss"]] + loss_of_this_node
-  token_metrics[metrics_index["token_lm_accurate"]] = token_metrics[metrics_index["token_lm_accurate"]] + accurate_of_this_node
-  token_metrics[metrics_index["token_lm_mrr"]] = token_metrics[metrics_index["token_lm_mrr"]] + mrr_of_this_node
+  token_metrics[metrics_index["token_loss"]] = token_metrics[metrics_index["token_loss"]] + loss_of_this_node * en_valid
+  token_metrics[metrics_index["token_accurate"]] = token_metrics[metrics_index["token_accurate"]] + accurate_of_this_node * en_valid
+  token_metrics[metrics_index["token_mrr"]] = token_metrics[metrics_index["token_mrr"]] + mrr_of_this_node * en_valid
+  token_metrics[metrics_index["token_lm_loss"]] = token_metrics[metrics_index["token_lm_loss"]] + loss_of_this_node * en_valid
+  token_metrics[metrics_index["token_lm_accurate"]] = token_metrics[metrics_index["token_lm_accurate"]] + accurate_of_this_node * en_valid
+  token_metrics[metrics_index["token_lm_mrr"]] = token_metrics[metrics_index["token_lm_mrr"]] + mrr_of_this_node * en_valid
   token_metrics[metrics_index["token_count"]] = token_metrics[metrics_index["token_count"]] + 1
-  token_metrics[metrics_index["all_loss"]] = token_metrics[metrics_index["all_loss"]] + loss_of_this_node
-  token_metrics[metrics_index["all_accurate"]] = token_metrics[metrics_index["all_accurate"]] + accurate_of_this_node
-  token_metrics[metrics_index["all_mrr"]] = token_metrics[metrics_index["all_mrr"]] + mrr_of_this_node
+  token_metrics[metrics_index["all_loss"]] = token_metrics[metrics_index["all_loss"]] + loss_of_this_node * en_valid
+  token_metrics[metrics_index["all_accurate"]] = token_metrics[metrics_index["all_accurate"]] + accurate_of_this_node * en_valid
+  token_metrics[metrics_index["all_mrr"]] = token_metrics[metrics_index["all_mrr"]] + mrr_of_this_node * en_valid
   token_metrics[metrics_index["all_count"]] = token_metrics[metrics_index["all_count"]] + 1
   
   after_accurate = token_metrics[metrics_index["all_accurate"]]
