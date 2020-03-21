@@ -121,7 +121,7 @@ def build_statement_feed_dict(line):
 #   one_swords, one_token_sword_start, one_token_sword_end, 
 #   , stmt_sword_variable_info, stmt_sword_variable_info_start, stmt_sword_variable_info_end
 # stmt_variable_info, stmt_variable_info_start, stmt_variable_info_end, 
-  return (sequence_decodes_np_array, sequence_decodes_start, sequence_decodes_end, stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end)
+  return (sequence_decodes_np_array[0:3,:], sequence_decodes_start, sequence_decodes_end, stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end)
 
   
 # def get_size_of_one_sequence_example(one_example):
