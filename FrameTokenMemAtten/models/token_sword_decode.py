@@ -44,7 +44,7 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
     dup_h = tf.convert_to_tensor([token_metrics[metrics_index["dup_token_accumulated_h"]][-1]])
     dup_n_size = tf.shape(token_metrics[metrics_index["dup_token_accumulated_h"]])[0]
     dup_acc_hs = tf.slice(token_metrics[metrics_index["dup_token_accumulated_h"]], [0, 0], [dup_n_size - 1, num_units])
-#     dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
+    dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
     
     r_var_relative = oracle_type_content_var_relative
     
