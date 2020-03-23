@@ -120,10 +120,10 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
       r_selected_tokens = tf.gather(oracle_token_sequence, indices)
       zero_one = tf.cast(tf.equal(oracle_type_content_en, r_selected_tokens), int_type)
     elif repetition_accuracy_mode == exact_accurate:
-      true_false = tf.equal(specified_index, indices)
+      zero_one = tf.cast(tf.equal(specified_index, indices), tf.int32)
     else:
       assert False, "Unrecognized repetition mode!"
-    accs = tf.reduce_sum(tf.cast(true_false, tf.int32))
+    accs = tf.reduce_sum(zero_one)
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
 
