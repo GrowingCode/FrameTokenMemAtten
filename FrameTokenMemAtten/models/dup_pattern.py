@@ -2,7 +2,8 @@ import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode,\
-  repetition_mode, max_repetition_mode
+  repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode,\
+  exact_accurate
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -57,7 +58,7 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     return result
 
-  def compute_dup_loss(self, training, oracle_relative, is_dup_logits, dup_logits):
+  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits):
     total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)# * pre_exist
@@ -67,7 +68,7 @@ class PointerNetwork():
     if training:
       dup_mrr, dup_accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
     else:
-      dup_mrr, dup_accurate = compute_dup_accurate(specified_index, dup_logits)
+      dup_mrr, dup_accurate = compute_dup_accurate(accumulated_en, oracle_en, specified_index, dup_logits)
     ''' maximize the most likely '''
     dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[specified_index], logits=[dup_logits])
     dup_loss = tf.reduce_sum(dup_losses)
@@ -92,18 +93,22 @@ class PointerNetwork():
     return total_mrr, total_accurate, total_loss, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist
 
 
-def compute_dup_accurate(specified_index, dup_logits):
+def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
   dup_size = tf.shape(dup_logits)[0]
-  return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(specified_index, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
+  return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
 
 
-# oracle_token_sequence, oracle_type_content_en
-def compute_top_k_accurate(specified_index, dup_logits):
+def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
   dup_size = tf.shape(dup_logits)[0]
   r_r = tf.minimum(dup_size, mrr_max)
   _, indices_r = tf.nn.top_k(dup_logits, r_r)
-#   selected_tokens = tf.gather(oracle_token_sequence, indices_r)
-  zero_one = tf.cast(tf.equal(specified_index, indices_r), int_type)
+  if repetition_accuracy_mode == en_match:
+    selected_tokens = tf.gather(oracle_token_sequence, indices_r)
+    zero_one = tf.cast(tf.equal(oracle_type_content_en, selected_tokens), int_type)
+  elif repetition_accuracy_mode == exact_accurate:
+    zero_one = tf.cast(tf.equal(specified_index, indices_r), int_type)
+  else:
+    assert False, "Unrecognized repetition mode!"
   accs = tf.reduce_sum(zero_one)
   mrr = tf.cond(accs > 0, lambda: tf.math.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one) + 1, float_type)), lambda: tf.constant(0.0, float_type))
   result = tf.zeros([0], float_type)
@@ -111,8 +116,13 @@ def compute_top_k_accurate(specified_index, dup_logits):
     k = top_ks[i]
     r_k = tf.minimum(k, dup_size)
     _, indices = tf.nn.top_k(dup_logits, r_k)
-#     selected_tokens = tf.gather(oracle_token_sequence, indices)
-    true_false = tf.equal(specified_index, indices)
+    if repetition_accuracy_mode == en_match:
+      r_selected_tokens = tf.gather(oracle_token_sequence, indices)
+      zero_one = tf.cast(tf.equal(oracle_type_content_en, r_selected_tokens), int_type)
+    elif repetition_accuracy_mode == exact_accurate:
+      true_false = tf.equal(specified_index, indices)
+    else:
+      assert False, "Unrecognized repetition mode!"
     accs = tf.reduce_sum(tf.cast(true_false, tf.int32))
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result

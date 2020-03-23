@@ -26,6 +26,10 @@ simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
 is_dup_mode=simple_is_dup
+''' dup accuracy mode '''
+en_match = 0
+exact_accurate = 1
+repetition_accuracy_mode = en_match
 ''' attention algorithm '''
 v_attention = 0
 stand_attention = 1
