@@ -56,7 +56,8 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
 #     r_var_relative_valid = tf.cast(tf.greater(r_var_relative, 0), int_type)
 #     a_r_op = tf.Assert(tf.logical_or(tf.cast(1-r_var_relative_valid, bool_type), tf.equal(dup_acc_ens[tf.shape(dup_acc_ens)[0]-r_var_relative*r_var_relative_valid-1+r_var_relative_valid], oracle_type_content_en)), ["invalid variable relative"])
 #     a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
-#     with tf.control_dependencies([a_r_op, a_op]):
+#     p_op = tf.print(["dup_acc_ens_size:", tf.shape(dup_acc_ens)[0], "dup_acc_hs_size:", tf.shape(dup_acc_hs)[0]])
+#     with tf.control_dependencies([p_op]):
     dup_logits, dup_max_arg_acc_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
     is_dup_logits = token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_h)
     dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist = token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits)
