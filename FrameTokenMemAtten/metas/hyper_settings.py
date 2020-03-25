@@ -20,12 +20,12 @@ token_embedder_mode = token_only_mode
 ''' dup_mode '''
 max_repetition_mode = 0
 attention_repetition_mode = 1
-repetition_mode = max_repetition_mode
+repetition_mode = attention_repetition_mode
 ''' is_dup_mode '''
 simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
-is_dup_mode=simple_is_dup
+is_dup_mode=sigmoid_is_dup
 ''' dup accuracy mode '''
 en_match = 0
 exact_accurate = 1

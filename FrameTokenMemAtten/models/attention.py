@@ -18,8 +18,8 @@ class YAttention():
       self.w = tf.Variable(random_uniform_variable_initializer(2033, 132, [num_units, num_units]))
     else:
       print("Strange Error! Unrecognized attention algorithm")
-        
-  def compute_attention_context(self, atten_hs, h):
+      
+  def compute_attention_logits(self, atten_hs, h):
     if attention_algorithm == v_attention:
       atten_size = tf.shape(atten_hs)[0]
       ons = tf.ones([atten_size], float_type)
@@ -33,6 +33,10 @@ class YAttention():
       logits = tf.squeeze(logits, axis=0)
     else:
       print("Strange Error! Unrecognized attention algorithm")
+    return logits
+    
+  def compute_attention_context(self, atten_hs, h):
+    logits = self.compute_attention_logits(atten_hs, h)
     alpha = tf.nn.softmax(logits)
     c_t = tf.matmul([alpha], atten_hs)
     return c_t
