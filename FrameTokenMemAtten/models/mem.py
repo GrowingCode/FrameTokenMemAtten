@@ -1,5 +1,5 @@
 import tensorflow as tf
-from metas.hyper_settings import compute_token_memory, num_units
+from metas.hyper_settings import num_units
 from metas.non_hyper_constants import float_type, int_type
 from models.lstm import YLSTMCell
 from utils.initializer import random_uniform_variable_initializer
@@ -14,7 +14,7 @@ class NTMOneDirection():
     self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
     self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525, [1, num_units]))
   
-  def compute_variables_in_statement(self, var_info, token_info, forward_memory_cell, forward_memory_h, loop_forward_cell, loop_forward_h, loop_backward_cell, loop_backward_h, decode_f_cell, decode_f_h, inner_statement_as_a_whole = 1):  # @UnusedVariable
+  def compute_variables_in_statement(self, var_info, token_info, forward_memory_cell, forward_memory_h, loop_forward_cell, loop_forward_h, loop_backward_cell, loop_backward_h):
     '''
     compute updated discrete embedding
     '''
@@ -50,8 +50,7 @@ class NTMOneDirection():
     discrete_memory_tokens = tf.zeros([0], int_type)
     discrete_forward_memory_cell = tf.zeros([0, num_units], float_type)
     discrete_forward_memory_h = tf.zeros([0, num_units], float_type)
-    if compute_token_memory:
-      _, _, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = tf.while_loop(updated_embed_loop_cond, updated_embed_loop_body, [0, tf.shape(var_info)[-1]-1, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
+    _, _, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = tf.while_loop(updated_embed_loop_cond, updated_embed_loop_body, [0, tf.shape(var_info)[-1]-1, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
     return discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h
     
   def update_memory_with_variables_in_statement(self, memory_en, forward_memory_cell, forward_memory_h, stmt_var, stmt_en, stmt_forward_memory_cell, stmt_forward_memory_h):

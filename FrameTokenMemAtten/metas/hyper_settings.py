@@ -11,6 +11,7 @@ contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
+take_lstm_states_as_memory_states = 0
 ''' whether skeleton '''
 treat_first_element_as_skeleton = 1
 ''' token_embedder_mode '''
@@ -83,6 +84,17 @@ if composite_config_func == "only_token_decode_with_memory_dup_v_atten":
   use_dup_model = 1
   compute_token_memory = 1
   attention_algorithm = v_attention
+  
+if composite_config_func == "only_token_decode_with_memory_dup_with_lstm_states":
+  use_dup_model = 1
+  compute_token_memory = 1
+  take_lstm_states_as_memory_states = 1
+  
+if composite_config_func == "only_token_decode_with_memory_dup_v_atten_with_lstm_states":
+  use_dup_model = 1
+  compute_token_memory = 1
+  attention_algorithm = v_attention
+  take_lstm_states_as_memory_states = 1
   
 if composite_config_func == "token_decode_with_swords_comp_embed":
   token_embedder_mode = swords_compose_mode

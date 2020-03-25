@@ -1,9 +1,17 @@
 import tensorflow as tf
-from metas.non_hyper_constants import int_type
 
 
-a = tf.ones([2,3], int_type)
-b = a[-2:-1,:]
-print(b)
+sess = tf.compat.v1.InteractiveSession()
+a = tf.convert_to_tensor([[1, 1, 1], [2, 2, 2]])
+b = a[-1:,:]
+c = a[0:,:]
+print(sess.run([b, c]))
+sess.close()
+
+'''
+[array([[2, 2, 2]]), 
+array([[1, 1, 1],
+       [2, 2, 2]])]
+'''
 
 

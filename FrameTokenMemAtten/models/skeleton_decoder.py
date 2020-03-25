@@ -2,7 +2,8 @@ import tensorflow as tf
 from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
-  token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton
+  token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
+  take_lstm_states_as_memory_states
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta,\
   special_handle_metrics_meta
@@ -203,8 +204,9 @@ class SkeletonDecodeModel():
     '''
     leaf info also means variable info
     '''
-    leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [stmt_end-stmt_start+1])
-    token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [stmt_end-stmt_start+1])
+    info_length = stmt_end-stmt_start+1
+    leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
+    token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [info_length])
     
     if compose_tokens_of_a_statement:
       begin_cell = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]])
@@ -217,31 +219,37 @@ class SkeletonDecodeModel():
       '''
       compute token memory and compute repetition
       '''
-      embeds, dup_embeds = tf.zeros([0, num_units], float_type), tf.zeros([0, num_units], float_type)
-      _, _, embeds, dup_embeds = tf.while_loop(self.token_embed_cond, self.token_embed_body, [stmt_start, stmt_end, embeds, dup_embeds], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
-      
-      stmt_metrics[self.metrics_index["loop_forward_cells"]] = ini_f_cell
-      stmt_metrics[self.metrics_index["loop_forward_hs"]] = ini_f_h
-      if use_dup_model:
-        stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = dup_ini_f_cell
-        stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = dup_ini_f_h
-      f_res = tf.while_loop(self.forward_loop_cond, self.forward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
-      stmt_metrics = list(f_res[4:])
-      stmt_metrics[self.metrics_index["loop_backward_cells"]] = ini_b_cell
-      stmt_metrics[self.metrics_index["loop_backward_hs"]] = ini_b_h
-      if use_dup_model:
-        stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = dup_ini_b_cell
-        stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = dup_ini_b_h
-      f_res = tf.while_loop(self.backward_loop_cond, self.backward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
-      stmt_metrics = list(f_res[4:])
+      if take_lstm_states_as_memory_states:
+        discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = leaf_info, token_info, stmt_metrics[self.metrics_index["token_accumulated_cell"]][-info_length:, :], stmt_metrics[self.metrics_index["token_accumulated_h"]][-info_length:, :]
+        if use_dup_model:
+          dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h = leaf_info, token_info, stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-info_length:, :], stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-info_length:, :]
+      else:
+        embeds, dup_embeds = tf.zeros([0, num_units], float_type), tf.zeros([0, num_units], float_type)
+        _, _, embeds, dup_embeds = tf.while_loop(self.token_embed_cond, self.token_embed_body, [stmt_start, stmt_end, embeds, dup_embeds], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
+        
+        stmt_metrics[self.metrics_index["loop_forward_cells"]] = ini_f_cell
+        stmt_metrics[self.metrics_index["loop_forward_hs"]] = ini_f_h
+        if use_dup_model:
+          stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = dup_ini_f_cell
+          stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = dup_ini_f_h
+        f_res = tf.while_loop(self.forward_loop_cond, self.forward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
+        stmt_metrics = list(f_res[4:])
+        stmt_metrics[self.metrics_index["loop_backward_cells"]] = ini_b_cell
+        stmt_metrics[self.metrics_index["loop_backward_hs"]] = ini_b_h
+        if use_dup_model:
+          stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = dup_ini_b_cell
+          stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = dup_ini_b_h
+        f_res = tf.while_loop(self.backward_loop_cond, self.backward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
+        stmt_metrics = list(f_res[4:])
+        
+        discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = self.mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]], stmt_metrics[self.metrics_index["loop_forward_cells"]], stmt_metrics[self.metrics_index["loop_forward_hs"]], stmt_metrics[self.metrics_index["loop_backward_cells"]], stmt_metrics[self.metrics_index["loop_backward_hs"]])# , tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]]), tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]])
+        if use_dup_model:
+          dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h = self.dup_mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], stmt_metrics[self.metrics_index["dup_loop_backward_hs"]])# , tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1]]), tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1]])
       
       mem_acc_en = stmt_metrics[self.metrics_index["memory_accumulated_en"]]
-      discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = self.mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]], stmt_metrics[self.metrics_index["loop_forward_cells"]], stmt_metrics[self.metrics_index["loop_forward_hs"]], stmt_metrics[self.metrics_index["loop_backward_cells"]], stmt_metrics[self.metrics_index["loop_backward_hs"]], tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1]]), tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]]))
       updated_memory_accumulated_en, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]] = self.mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]], discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h)
       stmt_metrics[self.metrics_index["memory_accumulated_en"]] = updated_memory_accumulated_en
-      
       if use_dup_model:
-        dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h = self.dup_mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1]]), tf.convert_to_tensor([stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1]]))
         _, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
       
       if compose_tokens_of_a_statement:
