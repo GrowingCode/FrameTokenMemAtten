@@ -71,9 +71,18 @@ if composite_config_func == "only_token_decode_with_tokens_compose":
 if composite_config_func == "only_token_decode_with_dup":
   use_dup_model = 1
   
+if composite_config_func == "only_token_decode_with_dup_v_atten":
+  use_dup_model = 1
+  attention_algorithm = v_attention
+  
 if composite_config_func == "only_token_decode_with_memory_dup":
   use_dup_model = 1
   compute_token_memory = 1
+  
+if composite_config_func == "only_token_decode_with_memory_dup_v_atten":
+  use_dup_model = 1
+  compute_token_memory = 1
+  attention_algorithm = v_attention
   
 if composite_config_func == "token_decode_with_swords_comp_embed":
   token_embedder_mode = swords_compose_mode
