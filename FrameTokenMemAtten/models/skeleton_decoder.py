@@ -15,7 +15,7 @@ from inputs.atom_embeddings import AtomSimpleEmbed, BiLSTMEmbed,\
   sword_sequence_for_token
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary, SkeletonNum,\
-  TokenNum, TotalNumberOfSubWord
+  TokenNum, TotalNumberOfSubWord, int_type
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -127,7 +127,6 @@ class SkeletonDecodeModel():
     stmt_end = self.token_info_end_tensor[i]
     
     stmt_start_offset = 0
-    
     if treat_first_element_as_skeleton:
       stmt_start_offset = 1
       ''' handle skeleton '''
@@ -159,10 +158,40 @@ class SkeletonDecodeModel():
         next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(tf.convert_to_tensor([self.one_dup_hot_skeleton_embedding[skt_id]]), dup_cell, dup_h)
         stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]], next_dup_cell, accumulated_token_max_length)
         stmt_metrics[self.metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]], next_dup_h, accumulated_token_max_length)
-      
+    
+    else:
+      stmt_start_offset = 0
+    
+    '''
+    this step ignores the statement with no type content tokens (only with skeleton token). 
+    '''
+    r_stmt_start = stmt_start + stmt_start_offset
+    itearate_tokens_continue = tf.cast(stmt_end >= r_stmt_start, int_type)
+    f_res = tf.while_loop(self.itearate_tokens_cond, self.itearate_tokens_body, [tf.constant(0, int_type), itearate_tokens_continue, i, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
+    stmt_metrics = f_res[3:]
+    return (i + 1, i_len, *stmt_metrics)
+  
+  def itearate_tokens_cond(self, ctn_start, ctn_end, *_):
+    return tf.less(ctn_start, ctn_end)
+  
+  def itearate_tokens_body(self, ctn_start, ctn_end, i, *stmt_metrics):
+    res_stmt_metrics = self.itearate_tokens(i, stmt_metrics)
+    return (ctn_start+1, ctn_end, i, *res_stmt_metrics)
+  
+  def itearate_tokens(self, i, stmt_metrics):
+    
+    b_stmt_start = self.token_info_start_tensor[i]
+    stmt_end = self.token_info_end_tensor[i]
+    
+    stmt_start_offset = 0
+    if treat_first_element_as_skeleton:
+      stmt_start_offset = 1
+      skt_id = self.token_info_tensor[0][b_stmt_start]
     else:
       stmt_start_offset = 0
       skt_id = 0
+    
+    stmt_start = b_stmt_start + stmt_start_offset
     
     ini_cells_hs = []
     '''
@@ -186,12 +215,7 @@ class SkeletonDecodeModel():
       ini_cells_hs.append(dup_ini_f_h)
       ini_cells_hs.append(dup_ini_b_cell)
       ini_cells_hs.append(dup_ini_b_h)
-    
-    stmt_metrics = self.itearate_tokens(stmt_start+stmt_start_offset, stmt_end, ini_cells_hs, stmt_metrics)
-    
-    return (i + 1, i_len, *stmt_metrics)
-  
-  def itearate_tokens(self, stmt_start, stmt_end, ini_cells_hs, stmt_metrics):
+      
     ini_f_cell = ini_cells_hs[0]
     ini_f_h = ini_cells_hs[1]
     ini_b_cell = ini_cells_hs[2]
