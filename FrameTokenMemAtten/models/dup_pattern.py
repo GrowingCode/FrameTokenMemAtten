@@ -3,7 +3,7 @@ from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode,\
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode,\
-  exact_accurate
+  exact_accurate, dup_share_parameters
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -26,7 +26,10 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     self.dup_point_atten = YAttention()
     if repetition_mode == attention_repetition_mode:
-      self.is_dup_point_atten = YAttention()
+      if dup_share_parameters:
+        self.is_dup_point_atten = self.dup_point_atten
+      else:
+        self.is_dup_point_atten = YAttention()
   
   def compute_logits(self, accumulated_h, h):
     dup_logits = self.dup_point_atten.compute_attention_logits(accumulated_h, h)

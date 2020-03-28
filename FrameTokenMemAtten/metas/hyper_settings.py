@@ -22,6 +22,8 @@ token_embedder_mode = token_only_mode
 max_repetition_mode = 0
 attention_repetition_mode = 1
 repetition_mode = attention_repetition_mode
+''' dup share parameters '''
+dup_share_parameters = 0
 ''' is_dup_mode '''
 simple_is_dup = 0
 mlp_is_dup = 1
@@ -71,6 +73,10 @@ if composite_config_func == "only_token_decode_with_tokens_compose":
 
 if composite_config_func == "only_token_decode_with_dup":
   use_dup_model = 1
+  
+if composite_config_func == "only_token_decode_with_dup_share_dup_parameters":
+  use_dup_model = 1
+  dup_share_parameters = 1
   
 if composite_config_func == "only_token_decode_with_dup_v_atten":
   use_dup_model = 1
@@ -133,6 +139,12 @@ if composite_config_func == "not_skeleton_only_token_decode_with_dup":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
+  
+if composite_config_func == "not_skeleton_only_token_decode_with_dup_share_dup_parameters":
+  build_feed_dict = build_statement_feed_dict
+  treat_first_element_as_skeleton = 0
+  use_dup_model = 1
+  dup_share_parameters = 1
   
 if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
   build_feed_dict = build_statement_feed_dict
