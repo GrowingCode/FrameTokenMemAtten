@@ -63,7 +63,7 @@ class PointerNetwork():
   def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits):
     total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
-    pre_exist = tf.cast(pre_real_exist, int_type)# * pre_exist
+    pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
     ''' compute dup '''
     ''' compute accurate '''

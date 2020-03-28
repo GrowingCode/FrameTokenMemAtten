@@ -51,12 +51,12 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
     if compute_token_memory:
       dup_acc_hs = token_metrics[metrics_index["dup_memory_hs"]]
       dup_acc_ens = token_metrics[metrics_index["memory_accumulated_en"]]
-      r_var_relative = tf.shape(dup_acc_hs)[-1] - oracle_type_content_var
+      r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
     
 #     r_var_relative_valid = tf.cast(tf.greater(r_var_relative, 0), int_type)
 #     a_r_op = tf.Assert(tf.logical_or(tf.cast(1-r_var_relative_valid, bool_type), tf.equal(dup_acc_ens[tf.shape(dup_acc_ens)[0]-r_var_relative*r_var_relative_valid-1+r_var_relative_valid], oracle_type_content_en)), ["invalid variable relative"])
 #     a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
-#     p_op = tf.print(["dup_acc_ens_size:", tf.shape(dup_acc_ens)[0], "dup_acc_hs_size:", tf.shape(dup_acc_hs)[0], "dup_acc_ens:", dup_acc_ens, "oracle_type_content_en:", oracle_type_content_en, "r_var_relative:", r_var_relative], summarize = 500)
+#     p_op = tf.print(["dup_acc_ens_size:", tf.shape(dup_acc_ens)[0], "dup_acc_hs_size:", tf.shape(dup_acc_hs)[0], "dup_acc_ens:", dup_acc_ens, "oracle_type_content_en:", oracle_type_content_en, "oracle_type_content_var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize = 500)
 #     with tf.control_dependencies([p_op]):
     dup_logits, dup_max_arg_acc_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
     is_dup_logits = token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_h)
