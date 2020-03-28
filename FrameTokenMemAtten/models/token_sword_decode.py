@@ -11,8 +11,8 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
 def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
   en_valid = tf.cast(tf.greater(oracle_type_content_en, 2), float_type)
   ''' typical token swords prediction '''
-  cell = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_cell"]][-1]])
-  h = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_h"]][-1]])
+  cell = tf.expand_dims(token_metrics[metrics_index["token_accumulated_cell"]][-1], 0)
+  h = tf.expand_dims(token_metrics[metrics_index["token_accumulated_h"]][-1], 0)
   ''' for attention use '''
   before_accurate = token_metrics[metrics_index["all_accurate"]]
   before_mrr = token_metrics[metrics_index["all_mrr"]]
@@ -40,8 +40,8 @@ def decode_one_token(training, oracle_type_content_en, oracle_type_content_var, 
   ''' dup token prediction '''
   if use_dup_model:
     ''' compute duplicate pattern '''
-    dup_cell = tf.convert_to_tensor([token_metrics[metrics_index["dup_token_accumulated_cell"]][-1]])
-    dup_h = tf.convert_to_tensor([token_metrics[metrics_index["dup_token_accumulated_h"]][-1]])
+    dup_cell = tf.expand_dims(token_metrics[metrics_index["dup_token_accumulated_cell"]][-1], 0)
+    dup_h = tf.expand_dims(token_metrics[metrics_index["dup_token_accumulated_h"]][-1], 0)
     dup_n_size = tf.shape(token_metrics[metrics_index["dup_token_accumulated_h"]])[0]
     dup_acc_hs = tf.slice(token_metrics[metrics_index["dup_token_accumulated_h"]], [0, 0], [dup_n_size - 1, num_units])
     dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
@@ -109,8 +109,8 @@ def decode_swords_of_one_token(training, token_en, token_atom_sequence, metrics_
     sword_metrics[metrics_index["all_count"]] = sword_metrics[metrics_index["all_count"]] + 1
     return (w + 1, w_len, new_sword_c, new_sword_h, *sword_metrics)
   
-  cell = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_cell"]][-1]])
-  h = tf.convert_to_tensor([token_metrics[metrics_index["token_accumulated_h"]][-1]])
+  cell = tf.expand_dims(token_metrics[metrics_index["token_accumulated_cell"]][-1], 0)
+  h = tf.expand_dims(token_metrics[metrics_index["token_accumulated_h"]][-1], 0)
   
 #   if training:
 #     beam_mrr_of_this_node, beam_accurate_of_this_node = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)

@@ -88,7 +88,7 @@ def update_one_variable(local_token_index, type_content_en, decode_dup_f_cell, d
 #   a_op = tf.Assert(r_after_part_start >= 0, ["after_part_start", after_part_start, "r_after_part_start", r_after_part_start])
 #   with tf.control_dependencies([a_op]):# , p_op
   before_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [before_part[0]], [before_part[1]])
-  curr_part_dup_accumulated_en = tf.slice(tf.convert_to_tensor([type_content_en]), [curr_part[0]], [curr_part[1]])
+  curr_part_dup_accumulated_en = tf.slice(tf.expand_dims(type_content_en, 0), [curr_part[0]], [curr_part[1]])
   after_part_dup_accumulated_en = tf.slice(dup_accumulated_en, [after_part[0]], [after_part[1]])
   new_dup_accumulated_en = tf.concat([before_part_dup_accumulated_en, curr_part_dup_accumulated_en, after_part_dup_accumulated_en], axis=0)
   ''' slice and concatenate cell '''

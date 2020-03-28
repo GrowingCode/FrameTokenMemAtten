@@ -48,11 +48,11 @@ class PointerNetwork():
     if is_dup_mode == simple_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_dup_w), dup_max_arg_acc_h, transpose_b=True))
       is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_not_dup_w), dup_max_arg_acc_h, transpose_b=True))
-      result = tf.convert_to_tensor([is_not_dup_logit, is_dup_logit])
+      result = tf.stack([is_not_dup_logit, is_dup_logit])
     elif is_dup_mode == mlp_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_dup_w), self.is_dup_h, transpose_b=True))
       is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_not_dup_w), self.is_not_dup_h, transpose_b=True))
-      result = tf.convert_to_tensor([is_not_dup_logit, is_dup_logit])
+      result = tf.stack([is_not_dup_logit, is_dup_logit])
     elif is_dup_mode == sigmoid_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_dup_h, transpose_b=True))
       result = is_dup_logit
