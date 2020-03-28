@@ -83,7 +83,8 @@ class PointerNetwork():
       is_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[pre_exist], logits=[is_dup_logits])
       predict_to_use_pre_exist = tf.cast(tf.argmax(is_dup_logits), int_type)
     else:
-      is_dup_losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=[pre_exist], logits=[is_dup_logits])
+      r_pre_exist = tf.cast(pre_exist, float_type)
+      is_dup_losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=[r_pre_exist], logits=[is_dup_logits])
       predict_to_use_pre_exist = tf.cast(is_dup_logits > 0.5, int_type)
     is_dup_accurate_one = tf.cast(tf.equal(predict_to_use_pre_exist, pre_exist), float_type)
     is_dup_loss = tf.reduce_sum(is_dup_losses)
