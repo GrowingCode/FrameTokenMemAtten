@@ -150,7 +150,7 @@ class SkeletonDecodeModel():
       stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], next_cell, accumulated_token_max_length)
       stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], next_h, accumulated_token_max_length)
       
-      stmt_metrics[self.metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(stmt_metrics[self.metrics_index["token_accumulated_en"]], [skt_id], accumulated_token_max_length)
+      stmt_metrics[self.metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(stmt_metrics[self.metrics_index["token_accumulated_en"]], [skt_id+50000000], accumulated_token_max_length)
       
       if use_dup_model:
         dup_cell = tf.expand_dims(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1], 0)
