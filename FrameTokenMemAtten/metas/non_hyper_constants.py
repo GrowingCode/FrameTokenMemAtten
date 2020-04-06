@@ -15,13 +15,18 @@ np_float_type = np.float32
 np_int_type = np.int32
 
 all_token_summary = "all_token_summary"
+# all_skeleton_id = "all_skeleton_id"
 
-all_skeleton_id = "all_skeleton_id"
-
-TokenNum = "TokenNum"
-TotalNumberOfSubWord = "TotalNumberOfSubWord"
-TotalNumberOfChar = "TotalNumberOfChar"
 SkeletonNum = "SkeletonNum"
+SkeletonHitNum = "SkeletonHitNum"
+TokenNum = "TokenNum"
+TokenHitNum = "TokenHitNum"
+SwordNum = "SwordNum"
+SwordHitNum = "SwordHitNum"
+CharNum = "CharNum"
+CharHitNum = "CharHitNum"
+# TotalNumberOfSubWord = "TotalNumberOfSubWord"
+# TotalNumberOfChar = "TotalNumberOfChar"
 MaximumStringLength = "MaximumStringLength"
 
 all_token_subword_sequences = "all_token_subword_sequences"

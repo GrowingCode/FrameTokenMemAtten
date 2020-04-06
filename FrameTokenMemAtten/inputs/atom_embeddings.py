@@ -1,7 +1,8 @@
 import tensorflow as tf
 from metas.non_hyper_constants import all_token_each_subword_sequence_start,\
-  all_token_each_subword_sequence_end, all_token_subword_sequences, float_type
-from metas.hyper_settings import num_units
+  all_token_each_subword_sequence_end, all_token_subword_sequences, float_type,\
+  all_token_summary, SwordHitNum, int_type, TokenHitNum, SkeletonHitNum
+from metas.hyper_settings import num_units, take_unseen_as_UNK
 from models.embed_merger import EmbedMerger
 from models.lstm import YLSTMCell
 from utils.initializer import random_uniform_variable_initializer
@@ -13,13 +14,47 @@ def sword_sequence_for_token(type_content_data, oracle_token_en):
   return tf.slice(type_content_data[all_token_subword_sequences], [atom_seq_start], [atom_seq_end - atom_seq_start + 1])
 
 
-class AtomSimpleEmbed():
+class AtomEmbed():
   
-  def __init__(self, vocab_embeddings):
+  def __init__(self, type_content_data, vocab_embeddings):
+    self.type_content_data = type_content_data
     self.vocab_embeddings = vocab_embeddings
   
+  def compute_h_util(self, token_en, out_vocab_threshold):
+    if take_unseen_as_UNK:
+      out_of_vocab = tf.cast(token_en >= out_vocab_threshold, int_type)
+      t_en = tf.stack([token_en, 1])[out_of_vocab]
+      res = [self.vocab_embeddings[t_en]]
+    else:
+      res = [self.vocab_embeddings[token_en]]
+    return res
+
+
+class SkeletonAtomEmbed(AtomEmbed):
+  
+  def __init__(self, type_content_data, vocab_embeddings):
+    super(SkeletonAtomEmbed, self).__init__(type_content_data, vocab_embeddings)
+  
   def compute_h(self, token_en):
-    return [self.vocab_embeddings[token_en]]
+    return self.compute_h_util(token_en, self.type_content_data[all_token_summary][SkeletonHitNum])
+
+
+class TokenAtomEmbed(AtomEmbed):
+  
+  def __init__(self, type_content_data, vocab_embeddings):
+    super(TokenAtomEmbed, self).__init__(type_content_data, vocab_embeddings)
+  
+  def compute_h(self, token_en):
+    return self.compute_h_util(token_en, self.type_content_data[all_token_summary][TokenHitNum])
+
+
+class SwordAtomEmbed(AtomEmbed):
+  
+  def __init__(self, type_content_data, vocab_embeddings):
+    super(SwordAtomEmbed, self).__init__(type_content_data, vocab_embeddings)
+  
+  def compute_h(self, token_en):
+    return self.compute_h_util(token_en, self.type_content_data[all_token_summary][SwordHitNum])
 
 
 class BiLSTMEmbed():
@@ -27,6 +62,7 @@ class BiLSTMEmbed():
   def __init__(self, type_content_data, vocab_embeddings):
     self.type_content_data = type_content_data
     self.vocab_embeddings = vocab_embeddings
+    self.sword_embed = SwordAtomEmbed(self.type_content_data, self.vocab_embeddings)
     self.merger = EmbedMerger()
     self.forward_lstm = YLSTMCell()
     self.backward_lstm = YLSTMCell()
@@ -41,7 +77,8 @@ class BiLSTMEmbed():
       return tf.less(e, e_len)
      
     def ea_forward_body(e, e_len, cell, h, accumulated_cell, accumulated_h):
-      e_embed = [self.vocab_embeddings[look_up_indexes[e]]]
+      e_embed = [self.sword_embed.compute_h(look_up_indexes[e])]
+#       e_embed = [self.vocab_embeddings[look_up_indexes[e]]]
       new_cell, new_h = self.forward_lstm(e_embed, cell, h)
       accumulated_cell = tf.concat([accumulated_cell, cell], axis=0)
       accumulated_h = tf.concat([accumulated_h, h], axis=0)
@@ -51,7 +88,8 @@ class BiLSTMEmbed():
       return tf.greater(e, e_start)
      
     def ea_backward_body(e, e_start, cell, h, accumulated_cell, accumulated_h):
-      e_embed = [self.vocab_embeddings[look_up_indexes[e]]]
+      e_embed = [self.sword_embed.compute_h(look_up_indexes[e])]
+#       e_embed = [self.vocab_embeddings[look_up_indexes[e]]]
       new_cell, new_h = self.backward_lstm(e_embed, cell, h)
       accumulated_cell = tf.concat([cell, accumulated_cell], axis=0)
       accumulated_h = tf.concat([h, accumulated_h], axis=0)

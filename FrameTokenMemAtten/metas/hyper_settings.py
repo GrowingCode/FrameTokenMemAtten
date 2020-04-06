@@ -12,6 +12,8 @@ use_dup_model = 0
 accumulated_token_max_length = 600
 compute_token_memory = 0
 take_lstm_states_as_memory_states = 0
+''' take unseen as UNK '''
+take_unseen_as_UNK = 0
 ''' whether skeleton '''
 treat_first_element_as_skeleton = 1
 ''' token_embedder_mode '''
