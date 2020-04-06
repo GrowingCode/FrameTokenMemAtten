@@ -14,8 +14,8 @@ from utils.initializer import random_uniform_variable_initializer
 from inputs.atom_embeddings import BiLSTMEmbed,\
   sword_sequence_for_token, TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
-from metas.non_hyper_constants import float_type, all_token_summary, SkeletonNum,\
-  TokenNum, int_type, SwordNum
+from metas.non_hyper_constants import float_type, all_token_summary,\
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -45,7 +45,7 @@ class SkeletonDecodeModel():
     if treat_first_element_as_skeleton:
       self.skeleton_lstm_cell = YLSTMCell()
       self.skeleton_dup_lstm_cell = YLSTMCell()
-      number_of_skeletons = self.type_content_data[all_token_summary][SkeletonNum] + 1
+      number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
       self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
       self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding)
       self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
@@ -63,8 +63,9 @@ class SkeletonDecodeModel():
     
     self.token_lstm = YLSTMCell()
     r_token_embedder_mode = token_embedder_mode
-    number_of_tokens = self.type_content_data[all_token_summary][TokenNum] + 1
-    number_of_subwords = self.type_content_data[all_token_summary][SwordNum] + 1
+    
+    number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
+    number_of_subwords = self.type_content_data[all_token_summary][SwordHitNum]
     
     if atom_decode_mode == token_decode:
       self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
@@ -133,10 +134,12 @@ class SkeletonDecodeModel():
       stmt_start_offset = 1
       ''' handle skeleton '''
       skt_id = self.token_info_tensor[0][stmt_start]
+      skt_id_valid = tf.cast(tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum])), float_type)
+      skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid, int_type)]
+      
       cell = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1], 0)
       h = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_h"]][-1], 0)
-      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_id, h)
-      skt_id_valid = tf.cast(tf.greater(skt_id, 2), float_type)
+      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
       
       stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
       stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
@@ -297,10 +300,10 @@ class SkeletonDecodeModel():
     oracle_type_content_var = self.token_info_tensor[1][i]
     oracle_type_content_var_relative = self.token_info_tensor[2][i]
     if atom_decode_mode == token_decode:
-      r_stmt_metrics_tuple = decode_one_token(self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.dup_token_lstm, self.dup_token_embedder, self.token_pointer)
+      r_stmt_metrics_tuple = decode_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.dup_token_lstm, self.dup_token_embedder, self.token_pointer)
     elif atom_decode_mode == sword_decode:
       oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
-      r_stmt_metrics_tuple = decode_swords_of_one_token(self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
+      r_stmt_metrics_tuple = decode_swords_of_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
     else:
       assert False
     return (i + 1, i_len, ini_i, *r_stmt_metrics_tuple)

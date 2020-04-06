@@ -58,6 +58,13 @@ testing_mode = 2
 length threshold for an example
 '''
 max_threshold_example_length = 2000
+'''
+default ID
+'''
+UNK_en = 1
+
+
+
 
 
 
