@@ -42,16 +42,18 @@ class SkeletonDecodeModel():
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
     self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
     
+    number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
+    self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
+    self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
+    
     if treat_first_element_as_skeleton:
       self.skeleton_lstm_cell = YLSTMCell()
       self.skeleton_dup_lstm_cell = YLSTMCell()
-      number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
       self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
       self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding)
       self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
       self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
-      self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
-      self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
+      self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
     
     if compute_token_memory:
       self.mem_nn = NTMOneDirection()
@@ -160,7 +162,7 @@ class SkeletonDecodeModel():
       if use_dup_model:
         dup_cell = tf.expand_dims(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]][-1], 0)
         dup_h = tf.expand_dims(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]][-1], 0)
-        next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(tf.expand_dims(self.one_dup_hot_skeleton_embedding[skt_id], 0), dup_cell, dup_h)
+        next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(self.dup_skeleton_embedder.compute_h(skt_id), dup_cell, dup_h)
         stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]], next_dup_cell, accumulated_token_max_length)
         stmt_metrics[self.metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]], next_dup_h, accumulated_token_max_length)
     
