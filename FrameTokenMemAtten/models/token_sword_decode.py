@@ -10,8 +10,9 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
 
 
 def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
-  en_valid = tf.cast(tf.logical_and(tf.greater(oracle_type_content_en, 2), tf.less(oracle_type_content_en, type_content_data[all_token_summary][TokenHitNum])), float_type)
-  out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid, int_type)]
+  en_valid_bool = tf.logical_and(tf.greater(oracle_type_content_en, 2), tf.less(oracle_type_content_en, type_content_data[all_token_summary][TokenHitNum]))
+  en_valid = tf.cast(en_valid_bool, float_type)
+  out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
   ''' typical token swords prediction '''
   cell = tf.expand_dims(token_metrics[metrics_index["token_accumulated_cell"]][-1], 0)
   h = tf.expand_dims(token_metrics[metrics_index["token_accumulated_h"]][-1], 0)
