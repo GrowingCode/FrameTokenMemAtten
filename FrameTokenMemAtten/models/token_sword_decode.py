@@ -1,5 +1,6 @@
 from metas.hyper_settings import use_dup_model, compute_token_memory, \
-  accumulated_token_max_length, num_units, top_ks
+  accumulated_token_max_length, num_units, top_ks, only_memory_mode,\
+  token_memory_mode, memory_concat_mode
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -48,14 +49,24 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
     dup_n_size = tf.shape(token_metrics[metrics_index["dup_token_accumulated_h"]])[0]
     dup_acc_hs = tf.slice(token_metrics[metrics_index["dup_token_accumulated_h"]], [0, 0], [dup_n_size - 1, num_units])
     dup_acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
-    
     r_var_relative = oracle_type_content_var_relative
     
     if compute_token_memory:
-      dup_acc_hs = token_metrics[metrics_index["dup_memory_hs"]]
-      dup_acc_ens = token_metrics[metrics_index["memory_accumulated_en"]]
-      r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
-    
+      if token_memory_mode == only_memory_mode:
+        dup_acc_hs = token_metrics[metrics_index["dup_memory_hs"]]
+        dup_acc_ens = token_metrics[metrics_index["memory_accumulated_en"]]
+        r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
+      elif token_memory_mode == memory_concat_mode:
+        ''' other parameters inherit from the standard duplicate pattern '''
+#         dup_m_size = tf.shape(token_metrics[metrics_index["dup_memory_concat_h"]])[0]
+#         a_op = tf.Assert(tf.equal(dup_n_size-1, dup_m_size), ["Strange error, two accumulated_h should be equal!"])
+#         p_op = tf.print(["dup_n_size-1:", dup_n_size-1, "dup_m_size:", dup_m_size])
+#         with tf.control_dependencies([a_op, p_op]):
+        dup_acc_hs = token_metrics[metrics_index["dup_memory_concat_h"]]
+#         dup_acc_hs = tf.slice(token_metrics[metrics_index["dup_memory_concat_h"]], [0, 0], [dup_n_size - 1, num_units])
+      else:
+        assert False, "error! unrecognized token_memory_mode!"
+      
 #     r_var_relative_valid = tf.cast(tf.greater(r_var_relative, 0), int_type)
 #     a_r_op = tf.Assert(tf.logical_or(tf.cast(1-r_var_relative_valid, bool_type), tf.equal(dup_acc_ens[tf.shape(dup_acc_ens)[0]-r_var_relative*r_var_relative_valid-1+r_var_relative_valid], oracle_type_content_en)), ["invalid variable relative"])
 #     a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
@@ -78,6 +89,11 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
     new_dup_token_cell, new_dup_token_h = dup_token_lstm(dup_token_embedder.compute_h(oracle_type_content_en), dup_cell, dup_h)
     token_metrics[metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_cell"]], new_dup_token_cell, accumulated_token_max_length)
     token_metrics[metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_h"]], new_dup_token_h, accumulated_token_max_length)
+    
+    if compute_token_memory:
+      if token_memory_mode == memory_concat_mode:
+        token_metrics[metrics_index["dup_memory_concat_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_memory_concat_cell"]], [token_metrics[metrics_index["dup_memory_concat_cell"]][0]], accumulated_token_max_length)
+        token_metrics[metrics_index["dup_memory_concat_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_memory_concat_h"]], [token_metrics[metrics_index["dup_memory_concat_h"]][0]], accumulated_token_max_length)
     
   token_metrics[metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(token_metrics[metrics_index["token_accumulated_en"]], [oracle_type_content_en], accumulated_token_max_length)
   ''' predict next node '''

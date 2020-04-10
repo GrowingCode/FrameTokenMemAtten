@@ -3,7 +3,8 @@ from metas.hyper_settings import top_ks, num_units, contingent_parameters_num,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
   token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
-  take_lstm_states_as_memory_states
+  take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
+  memory_concat_mode
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors,\
   create_metrics_contingent_index, default_metrics_meta,\
   special_handle_metrics_meta
@@ -41,6 +42,7 @@ class SkeletonDecodeModel():
     self.metrics_index = {value:key for key, value in self.index_metrics.items()}
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
     self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
+    self.contingent_parameters_for_idle = tf.Variable(random_uniform_variable_initializer(20, 50, [2, 1, num_units]))
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
     self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
@@ -108,7 +110,7 @@ class SkeletonDecodeModel():
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
   
   def create_in_use_tensors_meta(self):
-    result = [("token_accumulated_en", tf.TensorShape([None])), ("token_accumulated_cell", tf.TensorShape([None, num_units])), ("token_accumulated_h", tf.TensorShape([None, num_units])), ("dup_token_accumulated_cell", tf.TensorShape([None, num_units])), ("dup_token_accumulated_h", tf.TensorShape([None, num_units])), ("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("memory_accumulated_en", tf.TensorShape([None])), ("memory_cells", tf.TensorShape([None, num_units])), ("memory_hs", tf.TensorShape([None, num_units])), ("dup_memory_cells", tf.TensorShape([None, num_units])), ("dup_memory_hs", tf.TensorShape([None, num_units]))]
+    result = [("token_accumulated_en", tf.TensorShape([None])), ("token_accumulated_cell", tf.TensorShape([None, num_units])), ("token_accumulated_h", tf.TensorShape([None, num_units])), ("dup_token_accumulated_cell", tf.TensorShape([None, num_units])), ("dup_token_accumulated_h", tf.TensorShape([None, num_units])), ("dup_memory_concat_cell", tf.TensorShape([None, num_units])), ("dup_memory_concat_h", tf.TensorShape([None, num_units])), ("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("memory_accumulated_en", tf.TensorShape([None])), ("memory_cells", tf.TensorShape([None, num_units])), ("memory_hs", tf.TensorShape([None, num_units])), ("dup_memory_cells", tf.TensorShape([None, num_units])), ("dup_memory_hs", tf.TensorShape([None, num_units]))]
     return result
   
   def __call__(self, token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = True):
@@ -165,7 +167,10 @@ class SkeletonDecodeModel():
         next_dup_cell, next_dup_h = self.skeleton_dup_lstm_cell(self.dup_skeleton_embedder.compute_h(skt_id), dup_cell, dup_h)
         stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_cell"]], next_dup_cell, accumulated_token_max_length)
         stmt_metrics[self.metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_token_accumulated_h"]], next_dup_h, accumulated_token_max_length)
-    
+        if compute_token_memory and token_memory_mode == memory_concat_mode:
+          stmt_metrics[self.metrics_index["dup_memory_concat_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_memory_concat_cell"]], self.contingent_parameters_for_idle[0], accumulated_token_max_length)
+          stmt_metrics[self.metrics_index["dup_memory_concat_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_memory_concat_h"]], self.contingent_parameters_for_idle[1], accumulated_token_max_length)
+        
     else:
       stmt_start_offset = 0
     
@@ -194,9 +199,11 @@ class SkeletonDecodeModel():
     if treat_first_element_as_skeleton:
       stmt_start_offset = 1
       skt_id = self.token_info_tensor[0][b_stmt_start]
+      skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
+      skt_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
     else:
       stmt_start_offset = 0
-      skt_id = 0
+      skt_use_id = 0
     
     stmt_start = b_stmt_start + stmt_start_offset
     
@@ -204,20 +211,20 @@ class SkeletonDecodeModel():
     '''
     iterate tokens
     '''
-    ini_f_cell = tf.expand_dims(self.skeleton_forward_cell_h[skt_id][0], 0)
-    ini_f_h = tf.expand_dims(self.skeleton_forward_cell_h[skt_id][1], 0)
-    ini_b_cell = tf.expand_dims(self.skeleton_backward_cell_h[skt_id][0], 0)
-    ini_b_h = tf.expand_dims(self.skeleton_backward_cell_h[skt_id][1], 0)
+    ini_f_cell = tf.expand_dims(self.skeleton_forward_cell_h[skt_use_id][0], 0)
+    ini_f_h = tf.expand_dims(self.skeleton_forward_cell_h[skt_use_id][1], 0)
+    ini_b_cell = tf.expand_dims(self.skeleton_backward_cell_h[skt_use_id][0], 0)
+    ini_b_h = tf.expand_dims(self.skeleton_backward_cell_h[skt_use_id][1], 0)
     ini_cells_hs.append(ini_f_cell)
     ini_cells_hs.append(ini_f_h)
     ini_cells_hs.append(ini_b_cell)
     ini_cells_hs.append(ini_b_h)
     
     if use_dup_model:
-      dup_ini_f_cell = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_id][0], 0)
-      dup_ini_f_h = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_id][1], 0)
-      dup_ini_b_cell =  tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_id][0], 0)
-      dup_ini_b_h = tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_id][1], 0)
+      dup_ini_f_cell = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_use_id][0], 0)
+      dup_ini_f_h = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_use_id][1], 0)
+      dup_ini_b_cell =  tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_use_id][0], 0)
+      dup_ini_b_h = tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_use_id][1], 0)
       ini_cells_hs.append(dup_ini_f_cell)
       ini_cells_hs.append(dup_ini_f_h)
       ini_cells_hs.append(dup_ini_b_cell)
@@ -281,7 +288,20 @@ class SkeletonDecodeModel():
       updated_memory_accumulated_en, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]] = self.mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["memory_cells"]], stmt_metrics[self.metrics_index["memory_hs"]], discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h)
       stmt_metrics[self.metrics_index["memory_accumulated_en"]] = updated_memory_accumulated_en
       if use_dup_model:
-        _, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
+        if token_memory_mode == only_memory_mode:
+          _, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(mem_acc_en, stmt_metrics[self.metrics_index["dup_memory_cells"]], stmt_metrics[self.metrics_index["dup_memory_hs"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
+        elif token_memory_mode == memory_concat_mode:
+          n_len = tf.shape(stmt_metrics[self.metrics_index["dup_memory_concat_cell"]])[0]
+          stmt_metrics[self.metrics_index["dup_memory_concat_cell"]] = tf.slice(stmt_metrics[self.metrics_index["dup_memory_concat_cell"]], [0, 0], [n_len-info_length, num_units])
+          stmt_metrics[self.metrics_index["dup_memory_concat_h"]] = tf.slice(stmt_metrics[self.metrics_index["dup_memory_concat_h"]], [0, 0], [n_len-info_length, num_units])
+#           mem_len = tf.shape(dup_discrete_forward_memory_cell)[0]
+#           a_op = tf.Assert(tf.equal(mem_len, info_length), ["Strange error, computed memory_cell and real info_length should be equal!"])
+#           p_op = tf.print(["mem_len:", mem_len, "info_len:", info_length])
+#           with tf.control_dependencies([a_op, p_op]):
+          stmt_metrics[self.metrics_index["dup_memory_concat_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_memory_concat_cell"]], dup_discrete_forward_memory_cell, accumulated_token_max_length)
+          stmt_metrics[self.metrics_index["dup_memory_concat_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_memory_concat_h"]], dup_discrete_forward_memory_h, accumulated_token_max_length)
+        else:
+          assert False, "error! unrecognized token_memory_mode!"
       
       if compose_tokens_of_a_statement:
         '''

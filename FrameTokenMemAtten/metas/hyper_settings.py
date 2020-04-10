@@ -10,8 +10,12 @@ num_units = 128
 contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
-compute_token_memory = 0
 take_lstm_states_as_memory_states = 0
+''' memory mode '''
+compute_token_memory = 0
+only_memory_mode = 0
+memory_concat_mode = 1
+token_memory_mode = only_memory_mode
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1
 ''' whether skeleton '''
@@ -92,6 +96,11 @@ if composite_config_func == "only_token_decode_with_memory_dup_v_atten":
   use_dup_model = 1
   compute_token_memory = 1
   attention_algorithm = v_attention
+  
+if composite_config_func == "only_token_decode_with_memory_dup_with_memory_concat":
+  use_dup_model = 1
+  compute_token_memory = 1
+  token_memory_mode = memory_concat_mode
   
 if composite_config_func == "only_token_decode_with_memory_dup_with_lstm_states":
   use_dup_model = 1
