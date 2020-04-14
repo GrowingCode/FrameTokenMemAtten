@@ -32,6 +32,7 @@ MaximumStringLength = "MaximumStringLength"
 all_token_subword_sequences = "all_token_subword_sequences"
 all_token_each_subword_sequence_start = "all_token_each_subword_sequence_start"
 all_token_each_subword_sequence_end = "all_token_each_subword_sequence_end"
+all_subword_is_start_end = "all_subword_is_start_end"
 
 all_token_char_sequences = "all_token_char_sequences"
 all_token_each_char_sequence_start = "all_token_each_char_sequence_start"
