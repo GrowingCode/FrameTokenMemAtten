@@ -5,7 +5,7 @@ from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
   gradient_clip_abs_range, build_feed_dict
-from metas.non_hyper_constants import data_dir, model_storage_dir, turn_info, \
+from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode, int_type,\
   model_storage_parent_dir
@@ -22,16 +22,19 @@ class ModelRunner():
     '''
     load training data
     '''
-    self.train_np_arrays = load_examples(data_dir + "/" + "tree_train_data.txt", "train")
+#     data_dir + "/" + "tree_train_data.txt", 
+    self.train_np_arrays = load_examples("train")
     '''
     load valid data
     currently valid data is not considered
     '''
-    self.valid_np_arrays = load_examples(data_dir + "/" + "tree_valid_data.txt", "valid")
+#     data_dir + "/" + "tree_valid_data.txt", 
+    self.valid_np_arrays = load_examples("valid")
     '''
     load test data
     '''
-    self.test_np_arrays = load_examples(data_dir + "/" + "tree_test_data.txt", "test")
+#     data_dir + "/" + "tree_test_data.txt", 
+    self.test_np_arrays = load_examples("test")
     '''
     load type content data
     '''
@@ -308,16 +311,18 @@ class ModelRunner():
 #   return final_result
 
 
-def load_examples(data_file_name, mode_info):
+# data_file_name, 
+def load_examples(mode_info):
   start_time = time.time()
-  with open(data_file_name) as data_file:
-    raw_datas = data_file.readlines()
+#   with open(data_file_name) as data_file:
+#     raw_datas = data_file.readlines()
   end_time = time.time()
   print("reading " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   start_time = time.time()
-  examples = []
-  for r_data in raw_datas:
-    examples.append(build_feed_dict(r_data))
+#   examples = []
+#   for r_data in raw_datas:
+#     examples.append(build_feed_dict(r_data))
+  examples = build_feed_dict(mode_info)
   end_time = time.time()
   print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   return examples
