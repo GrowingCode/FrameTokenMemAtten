@@ -242,6 +242,7 @@ class ModelRunner():
 #       token_info_np_arrays.append(np_array[0])
 #       token_info_start_np_arrays.append(np_array[1])
 #       token_info_end_np_arrays.append(np_array[2])
+      one_unit_count = one_unit_count + 1
       part_np_arrays.append(np_array)
       if (one_unit_count >= max_examples_in_one_batch) or (element_number == length_of_datas-1):
         start_time = time.time()
@@ -252,14 +253,14 @@ class ModelRunner():
 #         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
         for np_array in part_np_arrays:
           part_metric = self.model_running_one_example(training, np_array[0], np_array[1], np_array[2])
-          #TODO
-          part_metric = part_metric[0:-1]
+#           part_metric = part_metric[0:-1]
           part_metric = model_output(part_metric, self.model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
 #         token_info_np_arrays.clear()
 #         token_info_start_np_arrays.clear()
 #         token_info_end_np_arrays.clear()
         batch_size = len(part_np_arrays)
+        assert batch_size == one_unit_count
         part_np_arrays.clear()
         one_unit_count = 0
         end_time = time.time()
@@ -399,7 +400,7 @@ def info_of_train_stop_test_start(average_accuracy):
   
 
 def model_output(tensors, tensors_meta):
-#   assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
+  assert len(tensors) == len(tensors_meta), "tensors length:" + str(len(tensors)) + "#tensors_meta length:" + str(len(tensors_meta))
   numpy_dict = {}
   for i, t in enumerate(tensors):
     numpy_dict[tensors_meta[i][0]] = t
