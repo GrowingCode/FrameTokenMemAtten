@@ -227,10 +227,13 @@ class ModelRunner():
     '''
     all_metrics = {}
     if mode == 0:
+      mode_str = "train"
       np_arrays = self.train_np_arrays
     elif mode == 1:
+      mode_str = "validate"
       np_arrays = self.valid_np_arrays
     else:
+      mode_str = "test"
       np_arrays = self.test_np_arrays
     part_np_arrays = []
 #     token_info_np_arrays = []
@@ -264,7 +267,7 @@ class ModelRunner():
         part_np_arrays.clear()
         one_unit_count = 0
         end_time = time.time()
-        print("batch_size:" + str(batch_size) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
+        print("mode:" + mode_str + "#batch_size:" + str(batch_size) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
   
 #   def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
