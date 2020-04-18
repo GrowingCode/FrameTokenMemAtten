@@ -1,8 +1,11 @@
 from inputs.example_data_loader import build_skeleton_feed_dict,\
-  build_statement_feed_dict
+  build_statement_feed_dict, build_sequence_feed_dict
 
 
 build_feed_dict = build_skeleton_feed_dict
+sequence_decode_mode = 0
+skeleton_decode_mode = 1
+model_run_mode = skeleton_decode_mode
 ''' statistics '''
 top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
@@ -162,6 +165,10 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose"
   treat_first_element_as_skeleton = 0
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
+  
+if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
+  build_feed_dict = build_sequence_feed_dict
+  model_run_mode = sequence_decode_mode
 
 '''
 configuration hard checking

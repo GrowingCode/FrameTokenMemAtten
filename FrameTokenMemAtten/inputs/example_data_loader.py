@@ -143,6 +143,33 @@ def build_statement_feed_dict(mode):
   return examples
   
   
+def build_sequence_feed_dict(mode):
+  pfx = "sequence"
+  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", ) as data_file:
+    raw_datas = data_file.readlines()
+  
+  examples = []
+  
+  for line in raw_datas:
+    raw_sequence_decode_str = line.strip()
+#     sequence_decode_str = raw_sequence_decode_str.split("$")[2]
+    sequence_decode_str = raw_sequence_decode_str
+    strs = sequence_decode_str.split("#")
+    
+    i = 0
+    sequence_token_info = np.zeros([0, len(strs[0].split())], np_int_type)
+    while (i < 1):
+      one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
+      sequence_token_info = np.concatenate((sequence_token_info, one_dim), axis=0)
+      i = i + 1
+    
+    assert i == 1
+    
+    examples.append((sequence_token_info, np.zeros(1, dtype=np_int_type), np.zeros(1, dtype=np_int_type)-1))
+  
+  return examples
+  
+  
 # def get_size_of_one_sequence_example(one_example):
 #   return one_example[0]
 def validate_relatives(one_swords, e_info):
