@@ -1,5 +1,5 @@
 import tensorflow as tf
-from metas.hyper_settings import top_ks, num_units,\
+from metas.hyper_settings import num_units,\
   use_dup_model, accumulated_token_max_length, compute_token_memory,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
   token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\

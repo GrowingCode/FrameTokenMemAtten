@@ -32,18 +32,22 @@ class SequenceDecodeModel(BasicDecodeModel):
     self.token_info_tensor = token_info_tensor
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
-    f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [0, tf.shape(self.token_info_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
+    sequence_length = tf.shape(self.token_info_tensor)[-1]
+    end_index = sequence_length - 1
+#     p_op = tf.print(["sequence_length:", sequence_length])
+#     with tf.control_dependencies([p_op]):
+    f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [0, end_index, *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
     return f_res
   
   def token_iterate_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
   
-  def token_iterate_body(self, i, i_len, ini_i, *stmt_metrics_tuple):
+  def token_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
     oracle_type_content_en = self.token_info_tensor[0][i]
     r_stmt_metrics_tuple = decode_one_token(self.type_content_data, self.training, oracle_type_content_en, -1, -1, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder)
-    return (i + 1, i_len, ini_i, *r_stmt_metrics_tuple)
+    return (i + 1, i_len, *r_stmt_metrics_tuple)
   
 
 

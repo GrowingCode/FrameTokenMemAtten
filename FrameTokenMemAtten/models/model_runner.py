@@ -71,7 +71,7 @@ class ModelRunner():
     '''
     build graph of logic 
     '''
-    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [3, None])
+    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
     self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
