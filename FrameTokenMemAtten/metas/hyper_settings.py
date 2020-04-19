@@ -166,7 +166,7 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose"
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   
-if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
+if composite_config_func == "sequence_only_token_decode":
   build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
 
