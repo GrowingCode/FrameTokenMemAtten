@@ -157,7 +157,8 @@ def build_sequence_feed_dict(mode):
     strs = sequence_decode_str.split("#")
     
     i = 0
-    sequence_token_info = np.zeros([0, len(strs[0].split())], np_int_type)
+    seq_length = len(strs[0].split())
+    sequence_token_info = np.zeros([0, seq_length], np_int_type)
     while (i < 1):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
       sequence_token_info = np.concatenate((sequence_token_info, one_dim), axis=0)
@@ -165,7 +166,7 @@ def build_sequence_feed_dict(mode):
     
     assert i == 1
     
-    examples.append((sequence_token_info, np.zeros(1, dtype=np_int_type), np.zeros(1, dtype=np_int_type)-1))
+    examples.append((sequence_token_info, np.array([0]), np.array([seq_length-1])))
   
   return examples
   
