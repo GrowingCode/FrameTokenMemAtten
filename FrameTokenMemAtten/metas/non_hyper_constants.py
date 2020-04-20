@@ -56,9 +56,10 @@ validating_mode = 1
 testing_mode = 2
 
 '''
-initialize range
+initialize settings
 '''
 initialize_range = 1.0
+initialize_seed_base = 0;
 '''
 length threshold for an example
 '''
