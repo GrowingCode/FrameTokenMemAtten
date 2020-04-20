@@ -1,4 +1,4 @@
-from metas.hyper_settings import num_units
+from metas.hyper_settings import num_units, use_layer_norm
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
@@ -72,11 +72,12 @@ class YLSTMCell():
     self.activation = activation
     self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units]))
     self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
-    self.norm_weights = []
-    self.norm_biases = []
-    for _ in range(4):
-      self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
-      self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    if use_layer_norm:
+      self.norm_weights = []
+      self.norm_biases = []
+      for _ in range(4):
+        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
+        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
   
   def __call__(self, inputs, c, h):
     """
@@ -88,10 +89,11 @@ class YLSTMCell():
     res = tf.matmul(linear_input, self.w)
     res = tf.add(res, self.b)
     i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
-    i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
-    j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
-    f = layer_normalization(f, self.norm_weights[2], self.norm_biases[2])
-    o = layer_normalization(o, self.norm_weights[3], self.norm_biases[3])
+    if use_layer_norm:
+      i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
+      j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
+      f = layer_normalization(f, self.norm_weights[2], self.norm_biases[2])
+      o = layer_normalization(o, self.norm_weights[3], self.norm_biases[3])
     '''
     compute cell
     '''

@@ -14,6 +14,10 @@ contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
 take_lstm_states_as_memory_states = 0
+'''
+basic lstm mode
+'''
+use_layer_norm=1
 ''' memory mode '''
 compute_token_memory = 0
 only_memory_mode = 0
