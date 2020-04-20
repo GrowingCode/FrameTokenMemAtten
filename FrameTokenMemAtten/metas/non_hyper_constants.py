@@ -56,6 +56,10 @@ validating_mode = 1
 testing_mode = 2
 
 '''
+initialize range
+'''
+initialize_range = 1.0
+'''
 length threshold for an example
 '''
 max_threshold_example_length = 2000
