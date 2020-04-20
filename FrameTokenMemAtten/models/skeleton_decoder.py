@@ -15,7 +15,7 @@ from inputs.atom_embeddings import BiLSTMEmbed,\
   sword_sequence_for_token, TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary,\
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, zero_tensor
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -304,7 +304,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         mc_cell, mc_h = None, None
         
         if compose_mode == attention_compose:
-          mc_cell, mc_h = zero_tensor, merged_tokens_embed
+          mc_cell, mc_h = tf.zeros([1, num_units], dtype=float_type), merged_tokens_embed
         
         if compose_mode == stand_compose:
           mc_cell, mc_h = self.compose_lstm_cell(merged_tokens_embed, se_cell, se_h)

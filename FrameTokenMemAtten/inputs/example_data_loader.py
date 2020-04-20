@@ -1,5 +1,5 @@
 import numpy as np
-from metas.non_hyper_constants import np_int_type, data_dir
+from metas.non_hyper_constants import data_dir, np_int_type
 
 
 def build_skeleton_feed_dict(mode):

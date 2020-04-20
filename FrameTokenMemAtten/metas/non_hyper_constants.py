@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import os
-from metas.hyper_settings import num_units
 
 
 home_dir = os.path.expanduser('~')
@@ -64,9 +63,6 @@ max_threshold_example_length = 2000
 default ID
 '''
 UNK_en = 1
-'''
-'''
-zero_tensor = tf.zeros([1, num_units], dtype=float_type)
 
 
 
