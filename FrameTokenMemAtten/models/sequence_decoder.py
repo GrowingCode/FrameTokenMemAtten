@@ -18,7 +18,7 @@ class SequenceDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SequenceDecodeModel, self).__init__(type_content_data)
-    self.token_lstm = YLSTMCell()
+    self.token_lstm = YLSTMCell(0)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
     self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))

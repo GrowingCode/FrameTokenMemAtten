@@ -64,8 +64,8 @@ class BiLSTMEmbed():
     self.vocab_embeddings = vocab_embeddings
     self.sword_embed = SwordAtomEmbed(self.type_content_data, self.vocab_embeddings)
     self.merger = EmbedMerger()
-    self.forward_lstm = YLSTMCell()
-    self.backward_lstm = YLSTMCell()
+    self.forward_lstm = YLSTMCell(15)
+    self.backward_lstm = YLSTMCell(25)
     self.ini_forward_cell = tf.Variable(random_uniform_variable_initializer(881, 882, [1, num_units]))
     self.ini_forward_h = tf.Variable(random_uniform_variable_initializer(883, 884, [1, num_units]))
     self.ini_backward_cell = tf.Variable(random_uniform_variable_initializer(885, 886, [1, num_units]))

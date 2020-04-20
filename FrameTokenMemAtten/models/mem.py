@@ -10,7 +10,7 @@ class NTMOneDirection():
   
   def __init__(self):
     self.merger = EmbedMerger()
-    self.memory_update_lstm = YLSTMCell()
+    self.memory_update_lstm = YLSTMCell(30)
     self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
     self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525, [1, num_units]))
   

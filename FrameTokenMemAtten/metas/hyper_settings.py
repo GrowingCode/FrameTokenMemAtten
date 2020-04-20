@@ -66,6 +66,10 @@ gradient_clip_abs_range = 500.0
 whether compose tokens
 '''
 compose_tokens_of_a_statement = 0
+stand_compose = 0
+attention_compose = 1
+three_way_compose = 2
+compose_mode = stand_compose
 
 
 '''

@@ -4,17 +4,18 @@ from metas.hyper_settings import num_units,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
   token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
   take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
-  memory_concat_mode
+  memory_concat_mode, compose_mode, stand_compose, attention_compose,\
+  three_way_compose
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
   concat_in_fixed_length_one_dimension
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, Y3DirectLSTMCell
 from utils.initializer import random_uniform_variable_initializer
 from inputs.atom_embeddings import BiLSTMEmbed,\
   sword_sequence_for_token, TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from metas.non_hyper_constants import float_type, all_token_summary,\
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, zero_tensor
 from models.mem import NTMOneDirection
 from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import decode_one_token,\
@@ -39,8 +40,8 @@ class SkeletonDecodeModel(BasicDecodeModel):
     self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
     
     if treat_first_element_as_skeleton:
-      self.skeleton_lstm_cell = YLSTMCell()
-      self.skeleton_dup_lstm_cell = YLSTMCell()
+      self.skeleton_lstm_cell = YLSTMCell(1)
+      self.skeleton_dup_lstm_cell = YLSTMCell(2)
       self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
       self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding)
       self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
@@ -49,13 +50,19 @@ class SkeletonDecodeModel(BasicDecodeModel):
     
     if compute_token_memory:
       self.mem_nn = NTMOneDirection()
-      self.forward_token_lstm = YLSTMCell()
-      self.backward_token_lstm = YLSTMCell()
+      self.forward_token_lstm = YLSTMCell(3)
+      self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
-        self.tokens_merger = EmbedMerger()
-        self.compose_lstm_cell = YLSTMCell()
+        if compose_mode == stand_compose or compose_mode == attention_compose:
+          self.tokens_merger = EmbedMerger()
+        if compose_mode == stand_compose:
+          self.compose_lstm_cell = YLSTMCell(5)
+          self.compose_for_stmt_lstm_cell = YLSTMCell(6)
+        if compose_mode == three_way_compose:
+          self.compose_lstm_cell = Y3DirectLSTMCell(7)
+          self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(8)
     
-    self.token_lstm = YLSTMCell()
+    self.token_lstm = YLSTMCell(0)
     r_token_embedder_mode = token_embedder_mode
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
@@ -68,18 +75,18 @@ class SkeletonDecodeModel(BasicDecodeModel):
       if use_dup_model:
         self.one_dup_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(252, 226, [number_of_tokens, num_units]))
         self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.one_dup_hot_token_embedding)
-        self.dup_token_lstm = YLSTMCell()
+        self.dup_token_lstm = YLSTMCell(9)
         self.token_pointer = PointerNetwork()
         self.dup_skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(155, 572, [number_of_skeletons, 2, num_units]))
         self.dup_skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(152, 572, [number_of_skeletons, 2, num_units]))
         if compute_token_memory:
           self.dup_mem_nn = NTMOneDirection()
-          self.dup_forward_token_lstm = YLSTMCell()
-          self.dup_backward_token_lstm = YLSTMCell()
+          self.dup_forward_token_lstm = YLSTMCell(10)
+          self.dup_backward_token_lstm = YLSTMCell(11)
       
     elif atom_decode_mode == sword_decode:
       self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
-      self.sword_lstm = YLSTMCell()
+      self.sword_lstm = YLSTMCell(12)
       r_token_embedder_mode = swords_compose_mode
       
     else:
@@ -228,9 +235,9 @@ class SkeletonDecodeModel(BasicDecodeModel):
     leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [info_length])
     
-    if compose_tokens_of_a_statement:
-      begin_cell = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1], 0)
-      begin_h = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_h"]][-1], 0)
+#     if compose_tokens_of_a_statement:
+#       begin_cell = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1], 0)
+#       begin_h = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_h"]][-1], 0)
     
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
@@ -289,10 +296,33 @@ class SkeletonDecodeModel(BasicDecodeModel):
         '''
         compute BiLSTM composition of tokens of a statement
         '''
-        merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
-        end_cell, end_h = self.compose_lstm_cell(merged_tokens_embed, begin_cell, begin_h)
-        stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], end_cell, accumulated_token_max_length)
-        stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], end_h, accumulated_token_max_length)
+        
+        se_cell, se_h = [stmt_metrics[self.metrics_index["memory_concat_cell"]][-1]], [stmt_metrics[self.metrics_index["memory_concat_h"]][-1]]
+        if compose_mode == stand_compose or compose_mode == attention_compose:
+          merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+        
+        mc_cell, mc_h = None, None
+        
+        if compose_mode == attention_compose:
+          mc_cell, mc_h = zero_tensor, merged_tokens_embed
+        
+        if compose_mode == stand_compose:
+          mc_cell, mc_h = self.compose_lstm_cell(merged_tokens_embed, se_cell, se_h)
+          for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(merged_tokens_embed, se_cell, se_h)
+        
+        if compose_mode == three_way_compose:
+          fl_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
+          fl_h = [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]]
+          bl_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
+          bl_h = [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]]
+          mc_cell, mc_h = self.compose_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
+          for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
+        
+        stmt_metrics[self.metrics_index["memory_concat_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_cell"]], mc_cell, accumulated_token_max_length)
+        stmt_metrics[self.metrics_index["memory_concat_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_h"]], mc_h, accumulated_token_max_length)
+        
+        stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], for_stmt_cell, accumulated_token_max_length)
+        stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], for_stmt_h, accumulated_token_max_length)
       
     return stmt_metrics
   

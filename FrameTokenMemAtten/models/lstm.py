@@ -4,12 +4,45 @@ from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
 
 
-class Y2DLSTMCell():
+class Y3DirectLSTMCell():
   
-  def __init__(self, forget_bias=0.0, activation=tf.nn.tanh):
+  def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.w = tf.Variable(random_uniform_variable_initializer(111, 777, [3 * num_units, 5 * num_units]))
+    self.weights = tf.Variable(random_uniform_variable_initializer(111, 777+num_desc, [3 * num_units, 6 * num_units]))
+    self.biases = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
+    self.norm_weights = []
+    self.norm_biases = []
+    for _ in range(7):
+      self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
+      self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    
+  def __call__(self, c1, h1, c2, h2, c3, h3):
+    linear_input = tf.concat([h1, h2, h3], 1)
+    res = tf.matmul(linear_input, self.weights)
+    res = tf.add(res, self.biases)
+    i, j, f, f2, f3, o = tf.split(value=res, num_or_size_splits=6, axis=1)
+    i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
+    j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
+    f = layer_normalization(f, self.norm_weights[2], self.norm_biases[2])
+    f2 = layer_normalization(f2, self.norm_weights[3], self.norm_biases[3])
+    f3 = layer_normalization(f3, self.norm_weights[4], self.norm_biases[4])
+    o = layer_normalization(o, self.norm_weights[5], self.norm_biases[5])
+    new_cell = (c1 * tf.nn.sigmoid(f + self.forget_bias) + 
+                c2 * tf.nn.sigmoid(f2 + self.forget_bias) + 
+                c3 * tf.nn.sigmoid(f3 + self.forget_bias) + 
+             self.activation(j) * tf.nn.sigmoid(i))
+    new_cell = layer_normalization(new_cell, self.norm_weights[6], self.norm_biases[6])
+    new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
+    return new_cell, new_h
+
+
+class Y2DLSTMCell():
+  
+  def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
+    self.forget_bias = forget_bias
+    self.activation = activation
+    self.w = tf.Variable(random_uniform_variable_initializer(111, 777+num_desc, [3 * num_units, 5 * num_units]))
     self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     self.norm_weights = []
     self.norm_biases = []
@@ -34,10 +67,10 @@ class Y2DLSTMCell():
 
 class YLSTMCell():
   
-  def __init__(self, forget_bias=0.0, activation=tf.nn.tanh):
+  def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.w = tf.Variable(random_uniform_variable_initializer(9, 88, [2 * num_units, 4 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units]))
     self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     self.norm_weights = []
     self.norm_biases = []
