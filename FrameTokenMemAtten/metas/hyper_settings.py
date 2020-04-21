@@ -72,7 +72,8 @@ whether compose tokens
 compose_tokens_of_a_statement = 0
 stand_compose = 0
 attention_compose = 1
-three_way_compose = 2
+two_way_compose = 2
+three_way_compose = 3
 compose_mode = stand_compose
 compose_share_parameters = 0
 '''

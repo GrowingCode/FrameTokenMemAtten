@@ -6,11 +6,11 @@ from metas.hyper_settings import num_units,\
   take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
   memory_concat_mode, compose_mode, stand_compose, attention_compose,\
   three_way_compose, decode_attention_way, decode_no_attention,\
-  compose_share_parameters
+  compose_share_parameters, two_way_compose
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
   concat_in_fixed_length_one_dimension
-from models.lstm import YLSTMCell, Y3DirectLSTMCell
+from models.lstm import YLSTMCell, Y3DirectLSTMCell, Y2DirectLSTMCell
 from utils.initializer import random_uniform_variable_initializer
 from inputs.atom_embeddings import BiLSTMEmbed,\
   sword_sequence_for_token, TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
@@ -63,10 +63,15 @@ class SkeletonDecodeModel(BasicDecodeModel):
           self.compose_lstm_cell = YLSTMCell(5)
           if not compose_share_parameters:
             self.compose_for_stmt_lstm_cell = YLSTMCell(6)
-        if compose_mode == three_way_compose:
-          self.compose_lstm_cell = Y3DirectLSTMCell(7)
+        if compose_mode == two_way_compose:
+          self.compose_meger = Y2DirectLSTMCell(50)
+          self.compose_lstm_cell = Y2DirectLSTMCell(7)
           if not compose_share_parameters:
-            self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(8)
+            self.compose_for_stmt_lstm_cell = Y2DirectLSTMCell(8)
+        if compose_mode == three_way_compose:
+          self.compose_lstm_cell = Y3DirectLSTMCell(9)
+          if not compose_share_parameters:
+            self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(10)
     
     self.token_attention = None
     if decode_attention_way > decode_no_attention:
@@ -245,10 +250,6 @@ class SkeletonDecodeModel(BasicDecodeModel):
     leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [info_length])
     
-#     if compose_tokens_of_a_statement:
-#       begin_cell = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_cell"]][-1], 0)
-#       begin_h = tf.expand_dims(stmt_metrics[self.metrics_index["token_accumulated_h"]][-1], 0)
-    
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
     
@@ -324,11 +325,21 @@ class SkeletonDecodeModel(BasicDecodeModel):
           else:
             for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(merged_tokens_embed, se_cell, se_h)
         
-        if compose_mode == three_way_compose:
+        if compose_mode == two_way_compose or compose_mode == three_way_compose:
           fl_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
           fl_h = [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]]
           bl_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
           bl_h = [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]]
+        
+        if compose_mode == two_way_compose:
+          merged_cell, merged_h = self.compose_merger(fl_cell, fl_h, bl_cell, bl_h)
+          mc_cell, mc_h = self.compose_lstm_cell(se_cell, se_h, merged_cell, merged_h)
+          if compose_share_parameters:
+            for_stmt_cell, for_stmt_h = mc_cell, mc_h
+          else:
+            for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(se_cell, se_h, merged_cell, merged_h)
+        
+        if compose_mode == three_way_compose:
           mc_cell, mc_h = self.compose_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
           if compose_share_parameters:
             for_stmt_cell, for_stmt_h = mc_cell, mc_h
