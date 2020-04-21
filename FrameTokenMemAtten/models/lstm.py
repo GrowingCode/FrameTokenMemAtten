@@ -10,7 +10,7 @@ class Y3DirectLSTMCell():
     self.forget_bias = forget_bias
     self.activation = activation
     self.weights = tf.Variable(random_uniform_variable_initializer(111, 777+num_desc, [3 * num_units, 6 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
+    self.biases = tf.Variable(zero_variable_initializer([1, 6 * num_units]))
     if use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []

@@ -68,6 +68,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
           if not compose_share_parameters:
             self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(8)
     
+    self.token_attention = None
     if decode_attention_way > decode_no_attention:
       self.token_attention = YAttention(10)
     
