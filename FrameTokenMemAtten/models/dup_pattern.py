@@ -24,12 +24,12 @@ class PointerNetwork():
       self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
     else:
       assert False, "Unrecognized is_dup_mode!"
-    self.dup_point_atten = YAttention()
+    self.dup_point_atten = YAttention(100)
     if repetition_mode == attention_repetition_mode:
       if dup_share_parameters:
         self.is_dup_point_atten = self.dup_point_atten
       else:
-        self.is_dup_point_atten = YAttention()
+        self.is_dup_point_atten = YAttention(200)
   
   def compute_logits(self, accumulated_h, h):
     dup_logits = self.dup_point_atten.compute_attention_logits(accumulated_h, h)

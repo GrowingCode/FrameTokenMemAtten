@@ -5,7 +5,8 @@ from metas.hyper_settings import num_units,\
   token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
   take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
   memory_concat_mode, compose_mode, stand_compose, attention_compose,\
-  three_way_compose
+  three_way_compose, decode_attention_way, decode_no_attention,\
+  compose_share_parameters
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
   concat_in_fixed_length_one_dimension
@@ -23,6 +24,7 @@ from models.token_sword_decode import decode_one_token,\
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from models.embed_merger import EmbedMerger
 from models.basic_decoder import BasicDecodeModel
+from models.attention import YAttention
 
 
 class SkeletonDecodeModel(BasicDecodeModel):
@@ -55,12 +57,19 @@ class SkeletonDecodeModel(BasicDecodeModel):
       if compose_tokens_of_a_statement:
         if compose_mode == stand_compose or compose_mode == attention_compose:
           self.tokens_merger = EmbedMerger()
+        if compose_mode == attention_compose:
+          self.compose_attention = YAttention(50)
         if compose_mode == stand_compose:
           self.compose_lstm_cell = YLSTMCell(5)
-          self.compose_for_stmt_lstm_cell = YLSTMCell(6)
+          if not compose_share_parameters:
+            self.compose_for_stmt_lstm_cell = YLSTMCell(6)
         if compose_mode == three_way_compose:
           self.compose_lstm_cell = Y3DirectLSTMCell(7)
-          self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(8)
+          if not compose_share_parameters:
+            self.compose_for_stmt_lstm_cell = Y3DirectLSTMCell(8)
+    
+    if decode_attention_way > decode_no_attention:
+      self.token_attention = YAttention(10)
     
     self.token_lstm = YLSTMCell(0)
     r_token_embedder_mode = token_embedder_mode
@@ -302,13 +311,17 @@ class SkeletonDecodeModel(BasicDecodeModel):
           merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
         
         mc_cell, mc_h = None, None
+        for_stmt_cell, for_stmt_h = None, None
         
         if compose_mode == attention_compose:
           mc_cell, mc_h = tf.zeros([1, num_units], dtype=float_type), merged_tokens_embed
         
         if compose_mode == stand_compose:
           mc_cell, mc_h = self.compose_lstm_cell(merged_tokens_embed, se_cell, se_h)
-          for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(merged_tokens_embed, se_cell, se_h)
+          if compose_share_parameters:
+            for_stmt_cell, for_stmt_h = mc_cell, mc_h
+          else:
+            for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(merged_tokens_embed, se_cell, se_h)
         
         if compose_mode == three_way_compose:
           fl_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
@@ -316,13 +329,18 @@ class SkeletonDecodeModel(BasicDecodeModel):
           bl_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
           bl_h = [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]]
           mc_cell, mc_h = self.compose_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
-          for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
+          if compose_share_parameters:
+            for_stmt_cell, for_stmt_h = mc_cell, mc_h
+          else:
+            for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(se_cell, se_h, fl_cell, fl_h, bl_cell, bl_h)
         
-        stmt_metrics[self.metrics_index["memory_concat_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_cell"]], mc_cell, accumulated_token_max_length)
-        stmt_metrics[self.metrics_index["memory_concat_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_h"]], mc_h, accumulated_token_max_length)
+        if mc_cell != None and mc_h != None:
+          stmt_metrics[self.metrics_index["memory_concat_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_cell"]], mc_cell, accumulated_token_max_length)
+          stmt_metrics[self.metrics_index["memory_concat_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["memory_concat_h"]], mc_h, accumulated_token_max_length)
         
-        stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], for_stmt_cell, accumulated_token_max_length)
-        stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], for_stmt_h, accumulated_token_max_length)
+        if for_stmt_cell != None and for_stmt_h != None:
+          stmt_metrics[self.metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_cell"]], for_stmt_cell, accumulated_token_max_length)
+          stmt_metrics[self.metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["token_accumulated_h"]], for_stmt_h, accumulated_token_max_length)
       
     return stmt_metrics
   
@@ -335,7 +353,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     oracle_type_content_var = self.token_info_tensor[1][i]
     oracle_type_content_var_relative = self.token_info_tensor[2][i]
     if atom_decode_mode == token_decode:
-      r_stmt_metrics_tuple = decode_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.dup_token_lstm, self.dup_token_embedder, self.token_pointer)
+      r_stmt_metrics_tuple = decode_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, self.metrics_index, stmt_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.token_attention, self.dup_token_lstm, self.dup_token_embedder, self.token_pointer)
     elif atom_decode_mode == sword_decode:
       oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
       r_stmt_metrics_tuple = decode_swords_of_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)

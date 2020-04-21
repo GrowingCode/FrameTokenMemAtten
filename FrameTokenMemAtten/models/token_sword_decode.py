@@ -1,6 +1,8 @@
 from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks, only_memory_mode,\
-  token_memory_mode, memory_concat_mode
+  token_memory_mode, memory_concat_mode, decode_attention_way,\
+  decode_no_attention, decode_stand_attention, decode_memory_attention,\
+  decode_memory_concat_attention
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -10,7 +12,7 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
   concat_in_fixed_length_one_dimension
 
 
-def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
+def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention=None, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
   en_valid_bool = tf.logical_and(tf.greater(oracle_type_content_en, 2), tf.less(oracle_type_content_en, type_content_data[all_token_summary][TokenHitNum]))
   en_valid = tf.cast(en_valid_bool, float_type)
   out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
@@ -18,12 +20,24 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
   cell = tf.expand_dims(token_metrics[metrics_index["token_accumulated_cell"]][-1], 0)
   h = tf.expand_dims(token_metrics[metrics_index["token_accumulated_h"]][-1], 0)
   ''' for attention use '''
+#   acc_ens = token_metrics[metrics_index["token_accumulated_en"]]
+  if decode_attention_way == decode_no_attention:
+    out_use_h = h
+  elif decode_attention_way == decode_stand_attention:
+    n_size = tf.shape(token_metrics[metrics_index["token_accumulated_h"]])[0]
+    acc_hs = tf.slice(token_metrics[metrics_index["token_accumulated_h"]], [0, 0], [n_size - 1, num_units])
+    out_use_h = token_attention.compute_attention_h(acc_hs, h)
+  elif decode_attention_way == decode_memory_attention:
+    out_use_h = token_attention.compute_attention_h(token_metrics[metrics_index["memory_hs"]], h)
+  elif decode_attention_way == decode_memory_concat_attention:
+    out_use_h = token_attention.compute_attention_h(token_metrics[metrics_index["memory_concat_h"]], h)
+  
   before_accurate = token_metrics[metrics_index["all_accurate"]]
   before_mrr = token_metrics[metrics_index["all_mrr"]]
   before_token_accurate = token_metrics[metrics_index["token_accurate"]]
   before_token_mrr = token_metrics[metrics_index["token_mrr"]]
   ''' decode and compute sword level accurate '''
-  mrr_of_this_node, accurate_of_this_node, loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, linear_token_output_w, out_use_en, h)
+  mrr_of_this_node, accurate_of_this_node, loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, linear_token_output_w, out_use_en, out_use_h)
   token_metrics[metrics_index["token_loss"]] = token_metrics[metrics_index["token_loss"]] + loss_of_this_node * en_valid
   token_metrics[metrics_index["token_accurate"]] = token_metrics[metrics_index["token_accurate"]] + accurate_of_this_node * en_valid
   token_metrics[metrics_index["token_mrr"]] = token_metrics[metrics_index["token_mrr"]] + mrr_of_this_node * en_valid

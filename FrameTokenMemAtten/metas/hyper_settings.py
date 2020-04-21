@@ -74,6 +74,15 @@ stand_compose = 0
 attention_compose = 1
 three_way_compose = 2
 compose_mode = stand_compose
+compose_share_parameters = 0
+'''
+decode attention, high level attention way
+'''
+decode_no_attention = 0
+decode_stand_attention = 1
+decode_memory_attention = 2
+decode_memory_concat_attention = 3
+decode_attention_way = decode_no_attention
 
 
 '''
@@ -187,7 +196,12 @@ if treat_first_element_as_skeleton == 0:
   assert build_feed_dict == build_statement_feed_dict
 if compose_tokens_of_a_statement == 1:
   assert compute_token_memory == 1
-
+if decode_attention_way == decode_memory_concat_attention:
+  if compose_tokens_of_a_statement == 1:
+    assert compose_mode == attention_compose
+  
+  
+    
 
 
 

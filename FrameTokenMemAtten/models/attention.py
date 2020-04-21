@@ -7,15 +7,15 @@ from utils.initializer import random_uniform_variable_initializer
 
 class YAttention():
   
-  def __init__(self):
+  def __init__(self, num_desc):
     if attention_algorithm == v_attention:
-      self.v = tf.Variable(random_uniform_variable_initializer(203, 21, [1, num_units]))
-      self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231, [num_units, num_units]))
-      self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131, [num_units, num_units]))
-      self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135, [2*num_units, num_units]))
-      self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145, [2*num_units, num_units]))
+      self.v = tf.Variable(random_uniform_variable_initializer(203, 21 + num_desc, [1, num_units]))
+      self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231 + num_desc, [num_units, num_units]))
+      self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131 + num_desc, [num_units, num_units]))
+      self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units]))
+      self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145 + num_desc, [2*num_units, num_units]))
     elif attention_algorithm == stand_attention:
-      self.w = tf.Variable(random_uniform_variable_initializer(2033, 132, [num_units, num_units]))
+      self.w = tf.Variable(random_uniform_variable_initializer(2033, 132 + num_desc, [num_units, num_units]))
     else:
       print("Strange Error! Unrecognized attention algorithm")
       
