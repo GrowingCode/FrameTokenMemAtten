@@ -12,12 +12,12 @@ class YAttention():
       self.v = tf.Variable(random_uniform_variable_initializer(203, 21 + num_desc, [1, num_units]))
       self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231 + num_desc, [num_units, num_units]))
       self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131 + num_desc, [num_units, num_units]))
-      self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units]))
       self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145 + num_desc, [2*num_units, num_units]))
     elif attention_algorithm == stand_attention:
       self.w = tf.Variable(random_uniform_variable_initializer(2033, 132 + num_desc, [num_units, num_units]))
     else:
       print("Strange Error! Unrecognized attention algorithm")
+    self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units]))
       
   def compute_attention_logits(self, atten_hs, h):
     if attention_algorithm == v_attention:
@@ -42,7 +42,7 @@ class YAttention():
     return c_t
   
   def compute_attention_h(self, atten_hs, h):
-    c_t = self.compute_attention_ctx(atten_hs, h)
+    c_t = self.compute_attention_context(atten_hs, h)
     linear_input = tf.concat([h, c_t], 1)
     c_h = tf.matmul(linear_input, self.w_ctx_h)
     return c_h
