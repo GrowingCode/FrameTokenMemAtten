@@ -9,7 +9,7 @@ class Y2DirectLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.weights = tf.Variable(random_uniform_variable_initializer(22, 888+num_desc, [3 * num_units, 5 * num_units]))
+    self.weights = tf.Variable(random_uniform_variable_initializer(22, 888+num_desc, [2 * num_units, 5 * num_units]))
     self.biases = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     if use_layer_norm:
       self.norm_weights = []

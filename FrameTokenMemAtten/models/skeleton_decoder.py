@@ -64,7 +64,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
           if not compose_share_parameters:
             self.compose_for_stmt_lstm_cell = YLSTMCell(6)
         if compose_mode == two_way_compose:
-          self.compose_meger = Y2DirectLSTMCell(50)
+          self.compose_merger = Y2DirectLSTMCell(50)
           self.compose_lstm_cell = Y2DirectLSTMCell(7)
           if not compose_share_parameters:
             self.compose_for_stmt_lstm_cell = Y2DirectLSTMCell(8)
