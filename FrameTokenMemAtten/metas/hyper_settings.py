@@ -71,11 +71,11 @@ whether compose tokens
 '''
 compose_tokens_of_a_statement = 0
 stand_compose = 0
-attention_compose = 1
+compose_for_attention_use = 1
 two_way_compose = 2
 three_way_compose = 3
 compose_mode = stand_compose
-compose_share_parameters = 0
+compose_share_parameters = 1
 '''
 decode attention, high level attention way
 '''
@@ -167,6 +167,12 @@ if composite_config_func == "not_skeleton_only_token_decode":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   
+if composite_config_func == "not_skeleton_only_token_decode_with_memory_attention":
+  build_feed_dict = build_statement_feed_dict
+  treat_first_element_as_skeleton = 0
+  compose_mode = compose_for_attention_use
+  decode_attention_way = decode_memory_concat_attention
+  
 if composite_config_func == "not_skeleton_only_token_decode_with_dup":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
@@ -199,7 +205,7 @@ if compose_tokens_of_a_statement == 1:
   assert compute_token_memory == 1
 if decode_attention_way == decode_memory_concat_attention:
   if compose_tokens_of_a_statement == 1:
-    assert compose_mode == attention_compose
+    assert compose_mode == compose_for_attention_use
   
   
     

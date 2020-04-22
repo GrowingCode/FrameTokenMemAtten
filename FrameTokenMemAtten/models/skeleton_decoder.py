@@ -4,7 +4,7 @@ from metas.hyper_settings import num_units,\
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
   token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
   take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
-  memory_concat_mode, compose_mode, stand_compose, attention_compose,\
+  memory_concat_mode, compose_mode, stand_compose, compose_for_attention_use,\
   three_way_compose, decode_attention_way, decode_no_attention,\
   compose_share_parameters, two_way_compose
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
@@ -55,9 +55,9 @@ class SkeletonDecodeModel(BasicDecodeModel):
       self.forward_token_lstm = YLSTMCell(3)
       self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
-        if compose_mode == stand_compose or compose_mode == attention_compose:
+        if compose_mode == stand_compose or compose_mode == compose_for_attention_use:
           self.tokens_merger = EmbedMerger()
-        if compose_mode == attention_compose:
+        if compose_mode == compose_for_attention_use:
           self.compose_attention = YAttention(50)
         if compose_mode == stand_compose:
           self.compose_lstm_cell = YLSTMCell(5)
@@ -309,13 +309,13 @@ class SkeletonDecodeModel(BasicDecodeModel):
         '''
         
         se_cell, se_h = [stmt_metrics[self.metrics_index["memory_concat_cell"]][-1]], [stmt_metrics[self.metrics_index["memory_concat_h"]][-1]]
-        if compose_mode == stand_compose or compose_mode == attention_compose:
+        if compose_mode == stand_compose or compose_mode == compose_for_attention_use:
           merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
         
         mc_cell, mc_h = None, None
         for_stmt_cell, for_stmt_h = None, None
         
-        if compose_mode == attention_compose:
+        if compose_mode == compose_for_attention_use:
           mc_cell, mc_h = tf.zeros([1, num_units], dtype=float_type), merged_tokens_embed
         
         if compose_mode == stand_compose:
