@@ -3,7 +3,7 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
-  tree_decode_mode, tree_decode_embed
+  tree_decode_embed, tree_decode_way
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en
@@ -22,9 +22,9 @@ class TreeDecodeModel(BasicDecodeModel):
   def __init__(self, type_content_data):
     super(TreeDecodeModel, self).__init__(type_content_data)
     self.direct_descedent_lstm = YLSTMCell(0)
-    if tree_decode_mode == tree_decode_2d:
+    if tree_decode_way == tree_decode_2d:
       self.two_dimen_lstm = Y2DLSTMCell(1)
-    elif tree_decode_mode == tree_decode_embed:
+    elif tree_decode_way == tree_decode_embed:
       self.one_dimen_lstm = YLSTMCell(2)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
@@ -91,9 +91,9 @@ class TreeDecodeModel(BasicDecodeModel):
 #       with tf.control_dependencies([p_op]):
     en_h = self.token_embedder.compute_h(en)
     next_cell1, next_h1 = self.direct_descedent_lstm(en_h, cell, h)
-    if tree_decode_mode == tree_decode_2d:
+    if tree_decode_way == tree_decode_2d:
       next_cell2, next_h2 = self.two_dimen_lstm(en_h, cell, h, [self.encoded_children_cell[post_order_index]], [self.encoded_children_h[post_order_index]])
-    elif tree_decode_mode == tree_decode_embed:
+    elif tree_decode_way == tree_decode_embed:
       next_cell2, next_h2 = self.one_dimen_lstm([self.encoded_h[post_order_index]], cell, h)
     else:
       print("Unrecognized tree decode mode!")

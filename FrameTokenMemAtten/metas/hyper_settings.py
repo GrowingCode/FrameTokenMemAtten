@@ -11,7 +11,7 @@ model_run_mode = skeleton_decode_mode
 tree_leaf_one_more_lstm_step = 0
 tree_decode_2d = 0
 tree_decode_embed = 1
-tree_decode_mode = tree_decode_2d
+tree_decode_way = tree_decode_2d
 ''' statistics '''
 top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
