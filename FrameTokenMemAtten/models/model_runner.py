@@ -71,7 +71,7 @@ class ModelRunner():
     assert isinstance(self.test_metrics, list)
     self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
 #     with tf.device('/GPU:0'):
-    self.train_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = True)
+    self.train_metrics = self.model(place_holders, training = True)
     self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     self.train_op = self.optimizer.apply_gradients(gvs)
