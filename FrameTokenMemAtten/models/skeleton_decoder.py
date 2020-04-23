@@ -118,10 +118,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
     else:
       assert False, "Wrong token_embedder_mode"
   
-  def __call__(self, token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = True):
-    self.token_info_tensor = token_info_tensor
-    self.token_info_start_tensor = token_info_start_tensor
-    self.token_info_end_tensor = token_info_end_tensor
+  def __call__(self, one_example, training = True):
+    self.token_info_tensor = one_example[0]
+    self.token_info_start_tensor = one_example[1]
+    self.token_info_end_tensor = one_example[2]
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)

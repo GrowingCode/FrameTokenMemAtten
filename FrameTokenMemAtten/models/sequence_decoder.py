@@ -33,9 +33,8 @@ class SequenceDecodeModel(BasicDecodeModel):
     
     self.dup_token_embedder, self.dup_token_lstm, self.token_pointer = None, None, None
   
-  def __call__(self, token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = True):
-    assert token_info_start_tensor != None and token_info_end_tensor != None
-    self.token_info_tensor = token_info_tensor
+  def __call__(self, one_example, training = True):
+    self.token_info_tensor = one_example[0]
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     sequence_length = tf.shape(self.token_info_tensor)[-1]

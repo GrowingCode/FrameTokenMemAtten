@@ -61,13 +61,13 @@ class ModelRunner():
     set up necessary data
     '''
     self.sess = sess
-    self.build_input_place_holder()
+    place_holders = self.build_input_place_holder()
     self.build_model_logic()
     self.optimizer = tf.compat.v1.train.AdamOptimizer()
     '''
     build graph of logic 
     '''
-    self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
+    self.test_metrics = self.model(place_holders, training = False)
     assert isinstance(self.test_metrics, list)
     self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
 #     with tf.device('/GPU:0'):
@@ -80,6 +80,7 @@ class ModelRunner():
     self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
     self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
+    return (self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor)
   
   def build_model_logic(self):
     if model_run_mode == sequence_decode_mode:
