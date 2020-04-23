@@ -1,7 +1,7 @@
 import tensorflow as tf
 from metas.non_hyper_constants import all_token_each_subword_sequence_start,\
   all_token_each_subword_sequence_end, all_token_subword_sequences, float_type,\
-  all_token_summary, SwordHitNum, int_type, TokenHitNum, SkeletonHitNum
+  all_token_summary, SwordHitNum, int_type, TokenHitNum, SkeletonHitNum, UNK_en
 from metas.hyper_settings import num_units, take_unseen_as_UNK
 from models.embed_merger import EmbedMerger
 from models.lstm import YLSTMCell
@@ -23,7 +23,7 @@ class AtomEmbed():
   def compute_h_util(self, token_en, out_vocab_threshold):
     if take_unseen_as_UNK:
       out_of_vocab = tf.cast(token_en >= out_vocab_threshold, int_type)
-      t_en = tf.stack([token_en, 1])[out_of_vocab]
+      t_en = tf.stack([token_en, UNK_en])[out_of_vocab]
       res = [self.vocab_embeddings[t_en]]
     else:
       res = [self.vocab_embeddings[token_en]]

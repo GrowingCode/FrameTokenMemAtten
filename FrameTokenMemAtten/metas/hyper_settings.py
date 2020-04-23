@@ -1,11 +1,17 @@
 from inputs.example_data_loader import build_skeleton_feed_dict,\
-  build_statement_feed_dict, build_sequence_feed_dict
+  build_statement_feed_dict, build_sequence_feed_dict, build_tree_feed_dict
 
 
 build_feed_dict = build_skeleton_feed_dict
 sequence_decode_mode = 0
 skeleton_decode_mode = 1
+tree_decode_mode = 2
 model_run_mode = skeleton_decode_mode
+''' tree decode details '''
+tree_leaf_one_more_lstm_step = 0
+tree_decode_2d = 0
+tree_decode_embed = 1
+tree_decode_mode = tree_decode_2d
 ''' statistics '''
 top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
@@ -193,6 +199,11 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose"
 if composite_config_func == "sequence_only_token_decode":
   build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
+  
+if composite_config_func == "tree_token_decode":
+  build_feed_dict = build_tree_feed_dict
+  model_run_mode = tree_decode_mode
+  
 
 '''
 configuration hard checking

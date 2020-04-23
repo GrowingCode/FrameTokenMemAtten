@@ -23,7 +23,7 @@ class BasicDecodeModel():
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
     self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
     self.contingent_parameters_for_idle = tf.Variable(random_uniform_variable_initializer(20, 50, [2, 1, num_units]))
-      
+    
   def create_extra_default_metrics_meta(self):
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
   

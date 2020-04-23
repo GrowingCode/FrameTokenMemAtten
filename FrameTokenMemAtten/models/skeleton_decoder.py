@@ -1,30 +1,31 @@
-import tensorflow as tf
-from metas.hyper_settings import num_units,\
-  use_dup_model, accumulated_token_max_length, compute_token_memory,\
-  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement,\
-  token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton,\
-  take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode,\
-  memory_concat_mode, compose_mode, stand_compose, compose_for_attention_use,\
-  three_way_compose, decode_attention_way, decode_no_attention,\
-  compose_share_parameters, two_way_compose
-from utils.model_tensors_metrics import create_empty_tensorflow_tensors
-from utils.tensor_concat import concat_in_fixed_length_two_dimension,\
-  concat_in_fixed_length_one_dimension
-from models.lstm import YLSTMCell, Y3DirectLSTMCell, Y2DirectLSTMCell
-from utils.initializer import random_uniform_variable_initializer
-from inputs.atom_embeddings import BiLSTMEmbed,\
+from inputs.atom_embeddings import BiLSTMEmbed, \
   sword_sequence_for_token, TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
-from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
-from metas.non_hyper_constants import float_type, all_token_summary,\
+from metas.hyper_settings import num_units, \
+  use_dup_model, accumulated_token_max_length, compute_token_memory, \
+  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement, \
+  token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton, \
+  take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode, \
+  memory_concat_mode, compose_mode, stand_compose, compose_for_attention_use, \
+  three_way_compose, decode_attention_way, decode_no_attention, \
+  compose_share_parameters, two_way_compose
+from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
-from models.mem import NTMOneDirection
-from models.dup_pattern import PointerNetwork
-from models.token_sword_decode import decode_one_token,\
-  decode_swords_of_one_token
-from utils.tensor_array_stand import make_sure_shape_of_tensor_array
-from models.embed_merger import EmbedMerger
-from models.basic_decoder import BasicDecodeModel
+from metas.tensor_constants import zero_tensor
 from models.attention import YAttention
+from models.basic_decoder import BasicDecodeModel
+from models.dup_pattern import PointerNetwork
+from models.embed_merger import EmbedMerger
+from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
+from models.lstm import YLSTMCell, Y3DirectLSTMCell, Y2DirectLSTMCell
+from models.mem import NTMOneDirection
+from models.token_sword_decode import decode_one_token, \
+  decode_swords_of_one_token
+import tensorflow as tf
+from utils.initializer import random_uniform_variable_initializer
+from utils.model_tensors_metrics import create_empty_tensorflow_tensors
+from utils.tensor_array_stand import make_sure_shape_of_tensor_array
+from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
+  concat_in_fixed_length_one_dimension
 
 
 class SkeletonDecodeModel(BasicDecodeModel):
@@ -316,7 +317,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         for_stmt_cell, for_stmt_h = None, None
         
         if compose_mode == compose_for_attention_use:
-          mc_cell, mc_h = tf.zeros([1, num_units], dtype=float_type), merged_tokens_embed
+          mc_cell, mc_h = zero_tensor, merged_tokens_embed
         
         if compose_mode == stand_compose:
           mc_cell, mc_h = self.compose_lstm_cell(merged_tokens_embed, se_cell, se_h)

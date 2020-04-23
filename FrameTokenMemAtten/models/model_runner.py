@@ -61,19 +61,12 @@ class ModelRunner():
     set up necessary data
     '''
     self.sess = sess
-    if model_run_mode == sequence_decode_mode:
-      self.model = SequenceDecodeModel(self.type_content_data)
-    elif model_run_mode == skeleton_decode_mode:
-      self.model = SkeletonDecodeModel(self.type_content_data)
-    else:
-      assert False, "Unrecognized model run mode!"
+    self.build_input_place_holder()
+    self.build_model_logic()
     self.optimizer = tf.compat.v1.train.AdamOptimizer()
     '''
     build graph of logic 
     '''
-    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
-    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.test_metrics = self.model(self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor, training = False)
     assert isinstance(self.test_metrics, list)
     self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
@@ -82,6 +75,23 @@ class ModelRunner():
     self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     self.train_op = self.optimizer.apply_gradients(gvs)
+  
+  def build_input_place_holder(self):
+    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
+    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
+  
+  def build_model_logic(self):
+    if model_run_mode == sequence_decode_mode:
+      self.model = SequenceDecodeModel(self.type_content_data)
+    elif model_run_mode == skeleton_decode_mode:
+      self.model = SkeletonDecodeModel(self.type_content_data)
+    else:
+      assert False, "Unrecognized model run mode!"
+    
+  def build_feed_dict(self, one_example):
+    feed_dict = {self.skeleton_token_info_tensor:one_example[0], self.skeleton_token_info_start_tensor:one_example[1], self.skeleton_token_info_end_tensor:one_example[2]}
+    return feed_dict
   
   def train(self):
     turn = 0
@@ -243,32 +253,17 @@ class ModelRunner():
       mode_str = "test"
       np_arrays = self.test_np_arrays
     part_np_arrays = []
-#     token_info_np_arrays = []
-#     token_info_start_np_arrays = []
-#     token_info_end_np_arrays = []
     one_unit_count = 0
     length_of_datas = len(np_arrays)
     for element_number, np_array in enumerate(np_arrays):
-#       token_info_np_arrays.append(np_array[0])
-#       token_info_start_np_arrays.append(np_array[1])
-#       token_info_end_np_arrays.append(np_array[2])
       one_unit_count = one_unit_count + 1
       part_np_arrays.append(np_array)
       if (one_unit_count >= max_examples_in_one_batch) or (element_number == length_of_datas-1):
         start_time = time.time()
-#         token_info_dataset = tf.data.Dataset.from_generator(lambda: token_info_np_arrays, int_type, tf.TensorShape([None, None])).batch(1)  # @UndefinedVariable
-#         token_info_start_dataset = tf.data.Dataset.from_generator(lambda: token_info_start_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
-#         token_info_end_dataset = tf.data.Dataset.from_generator(lambda: token_info_end_np_arrays, int_type, tf.TensorShape([None])).batch(1)  # @UndefinedVariable
-#         part_metric = model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset)
-#         part_tensor_arrays = convert_numpy_to_tensor(part_np_arrays)
         for np_array in part_np_arrays:
-          part_metric = self.model_running_one_example(training, np_array[0], np_array[1], np_array[2])
-#           part_metric = part_metric[0:-1]
+          part_metric = self.model_running_one_example(training, np_array)
           part_metric = model_output(part_metric, self.model.statistical_metrics_meta)
           merge_metric(all_metrics, part_metric)
-#         token_info_np_arrays.clear()
-#         token_info_start_np_arrays.clear()
-#         token_info_end_np_arrays.clear()
         batch_size = len(part_np_arrays)
         assert batch_size == one_unit_count
         part_np_arrays.clear()
@@ -277,62 +272,21 @@ class ModelRunner():
         print("mode:" + mode_str + "#batch_size:" + str(batch_size) + "#time_cost:" + str(round(end_time-start_time, 1)) +"s")
     return all_metrics
   
-#   def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
-#     if training:
-#       with tf.GradientTape() as tape:
-#         metrics = self.model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
-#       cared_variables = self.model.trainable_variables
-#       grads = tape.gradient(metrics[self.model.metrics_index["all_loss"]], cared_variables)
-#       grads_vs = clip_gradients(grads, cared_variables)
-#       self.optimizer.apply_gradients(grads_vs)
-#     else:
-#       metrics = self.model(token_info_tensor, token_info_start_tensor, token_info_end_tensor, training = training)
-#     return metrics
-  
-  def model_running_one_example(self, training, token_info_tensor, token_info_start_tensor, token_info_end_tensor):
-    feed_dict = {self.skeleton_token_info_tensor:token_info_tensor, self.skeleton_token_info_start_tensor:token_info_start_tensor, self.skeleton_token_info_end_tensor:token_info_end_tensor}
+  def model_running_one_example(self, training, one_example):
+    feed_dict = self.build_feed_dict(one_example)
     if training:
       r_metrics = self.sess.run([self.train_op, *self.train_metrics], feed_dict=feed_dict)
       metrics = r_metrics[1:]
     else:
       metrics = self.sess.run([*self.test_metrics], feed_dict=feed_dict)
     return metrics
-  
-  
-# @tf.function
-# def model_running_data_set(model, mode, optimizer, token_info_dataset, token_info_start_dataset, token_info_end_dataset):
-#   '''
-#   put raw data into many batches, each batch contains many training examples
-#   each example has the following shape: (input_unit, input_unit, ...)
-#   for an example input_unit is ast_encodes_tensor or ast_decodes_tensor or sequence_decodes_tensor
-#   for each input_unit, the shape is [3 or 4, ast_node_num or sequence_num]
-#   3 or 4 is the first dimension of ast tensor or sequence tensor for one Java code
-#   '''
-#   token_info_tensor_iterator = iter(token_info_dataset)
-#   token_info_start_tensor_iterator = iter(token_info_start_dataset)
-#   token_info_end_tensor_iterator = iter(token_info_end_dataset)
-#   initial_metric = list(create_empty_tensorflow_tensors(model.statistical_metrics_meta, None, None))
-#   r_len = len(model.statistical_metrics_meta)  
-#   final_result = initial_metric
-#   model.statistical_metrics_meta
-#   token_info_tensor, token_info_start_tensor, token_info_end_tensor = token_info_tensor_iterator.get_next()[0], token_info_start_tensor_iterator.get_next()[0], token_info_end_tensor_iterator.get_next()[0]
-#   output_result = model_running_one_example(model, mode, optimizer, token_info_tensor, token_info_start_tensor, token_info_end_tensor)
-#   for i in range(r_len):
-#     final_result[i] += output_result[i]
-#   return final_result
 
 
-# data_file_name, 
 def load_examples(mode_info):
   start_time = time.time()
-#   with open(data_file_name) as data_file:
-#     raw_datas = data_file.readlines()
   end_time = time.time()
   print("reading " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   start_time = time.time()
-#   examples = []
-#   for r_data in raw_datas:
-#     examples.append(build_feed_dict(r_data))
   examples = build_feed_dict(mode_info)
   end_time = time.time()
   print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
