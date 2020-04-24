@@ -57,15 +57,16 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings(training, com
   return mrr, accurate, loss
 
 
-def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(training, computed_embeddings, ens_in_range, computed_embeddings_in_range, en, output):
+def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(training, computed_embeddings, ens_in_range, en, output):
   '''
   public class for computing loss and accurate
   '''
+  computed_embeddings_in_range = tf.gather(computed_embeddings, ens_in_range)
   indexes = tf.where(tf.equal(en, ens_in_range))
   indexes_len = tf.shape(indexes)[0]
   exist = tf.cast(tf.greater(indexes_len, 0), int_type)
   indexes = tf.concat([indexes, [[0]]], axis=0)
-  oracle_index = indexes[0][0]
+  oracle_index = tf.cast(indexes[0][0], int_type)
   logits = compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings_in_range, output)
   loss = linear_loss(oracle_index, logits)
   '''
