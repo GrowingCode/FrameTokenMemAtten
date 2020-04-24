@@ -1,6 +1,6 @@
 import tensorflow as tf
 from models.lstm import Y2DirectLSTMCell, Y2DLSTMCell, YLSTMCell
-from metas.non_hyper_constants import int_type, float_type
+from metas.non_hyper_constants import int_type
 from metas.hyper_settings import num_units, tree_leaf_one_more_lstm_step
 from metas.tensor_constants import zero_tensor
 from utils.initializer import random_uniform_variable_initializer
@@ -81,8 +81,7 @@ class EncodeOneAST():
       encoded_children_h = tf.concat([encoded_children_h, c_h], axis=0)
       return i+1, i_len, encoded_cell, encoded_h, encoded_children_cell, encoded_children_h
     
-    encoded_cell, encoded_h = tf.zeros([1, num_units], float_type), tf.zeros([1, num_units], float_type)
-    encoded_children_cell, encoded_children_h = tf.zeros([1, num_units], float_type), tf.zeros([1, num_units], float_type)
+    encoded_cell, encoded_h, encoded_children_cell, encoded_children_h = zero_tensor, zero_tensor, zero_tensor, zero_tensor
     _, _, encoded_cell, encoded_h, encoded_children_cell, encoded_children_h = tf.while_loop(encode_cond, encode_body, [1, tf.shape(post_order_node_child_start)[-1], encoded_cell, encoded_h, encoded_children_cell, encoded_children_h], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units])], parallel_iterations=1)
     return encoded_cell, encoded_h, encoded_children_cell, encoded_children_h
   

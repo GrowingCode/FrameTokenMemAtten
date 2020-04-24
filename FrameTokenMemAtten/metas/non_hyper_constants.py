@@ -38,6 +38,10 @@ all_token_char_sequences = "all_token_char_sequences"
 all_token_each_char_sequence_start = "all_token_each_char_sequence_start"
 all_token_each_char_sequence_end = "all_token_each_char_sequence_end"
 
+all_token_grammar_ids = "all_token_grammar_ids"
+all_token_grammar_start = "all_token_grammar_start"
+all_token_grammar_end = "all_token_grammar_end"
+
 model_storage_parent_dir = 'zoot'
 model_storage_dir = "zoot_run_info_record"
 model_config = "model_config.txt"

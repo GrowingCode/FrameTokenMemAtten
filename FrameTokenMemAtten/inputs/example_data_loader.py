@@ -141,10 +141,12 @@ def build_tree_feed_dict(mode):
     i = i + 1
     pre_post_order_node_post_order_index = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
+    pre_post_order_node_parent_grammar_index = [int(id_str) for id_str in strs[i].split()]
+    i = i + 1
     
-    assert i == 7
+    assert i == 8
     
-    examples.append((post_order_node_type_content_en, post_order_node_child_start, post_order_node_child_end, post_order_node_children, pre_post_order_node_type_content_en, pre_post_order_node_state, pre_post_order_node_post_order_index))
+    examples.append((post_order_node_type_content_en, post_order_node_child_start, post_order_node_child_end, post_order_node_children, pre_post_order_node_type_content_en, pre_post_order_node_state, pre_post_order_node_post_order_index, pre_post_order_node_parent_grammar_index))
   
   return examples
   
