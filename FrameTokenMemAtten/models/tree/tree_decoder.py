@@ -80,8 +80,8 @@ class TreeDecodeModel(BasicDecodeModel):
     else:
       start_idx = self.type_content_data[all_token_grammar_start][grammar_idx]
       end_idx = self.type_content_data[all_token_grammar_end][grammar_idx]
-      out_range = tf.slice(self.type_content_data[all_token_grammar_ids], [start_idx], [end_idx-start_idx+1])
-      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(self.training, self.linear_token_output_w, out_range, out_use_en, p_a_h)
+      ens_range = tf.slice(self.type_content_data[all_token_grammar_ids], [start_idx], [end_idx-start_idx+1])
+      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(self.training, self.linear_token_output_w, ens_range, out_use_en, p_a_h)
     
     mrr_of_this_node = tf.stack([0.0, o_mrr_of_this_node])[node_acc_valid]
     accurate_of_this_node = tf.stack([tf.zeros([len(top_ks)], float_type), o_accurate_of_this_node])[node_acc_valid]

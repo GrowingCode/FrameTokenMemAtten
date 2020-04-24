@@ -6,7 +6,7 @@ from metas.hyper_settings import top_ks, mrr_max
 def compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings, to_decode_embed):
   processed_to_decode_embed = to_decode_embed
   logits_raw = tf.matmul(processed_to_decode_embed, computed_embeddings, transpose_b=True)
-  logits = tf.squeeze(logits_raw)
+  logits = tf.squeeze(logits_raw, axis=[0])
   return logits
 
 
@@ -68,6 +68,8 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_ra
   indexes = tf.concat([indexes, [[0]]], axis=0)
   oracle_index = tf.cast(indexes[0][0], int_type)
   logits = compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings_in_range, output)
+#   p_op = tf.print(["shape_of_logits:", tf.shape(logits), "indexes:", indexes, "oracle_index:", oracle_index, "ens_in_range:", ens_in_range, "shape_computed_embeddings_in_range:", tf.shape(computed_embeddings_in_range)])
+#   with tf.control_dependencies([p_op]):
   loss = linear_loss(oracle_index, logits)
   '''
   the following two functions are to compute accurate
