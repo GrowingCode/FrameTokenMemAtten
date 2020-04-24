@@ -56,3 +56,34 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings(training, com
     mrr, accurate = compute_linear_accurate(oracle_index_in_computed_embeddings, logits)
   return mrr, accurate, loss
 
+
+def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(training, computed_embeddings, ens_in_range, computed_embeddings_in_range, en, output):
+  '''
+  public class for computing loss and accurate
+  '''
+  indexes = tf.where(tf.equal(en, ens_in_range))
+  indexes_len = tf.shape(indexes)[0]
+  exist = tf.cast(tf.greater(indexes_len, 0), int_type)
+  indexes = tf.concat([indexes, [[0]]], axis=0)
+  oracle_index = indexes[0][0]
+  logits = compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings_in_range, output)
+  loss = linear_loss(oracle_index, logits)
+  '''
+  the following two functions are to compute accurate
+  compute accuracy for type and content
+  '''
+  if training:
+    mrr, accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  else:
+    mrr, accurate = compute_linear_accurate(oracle_index, logits)
+  
+  mrr_stand, accurate_stand, loss_stand = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, computed_embeddings, en, output)
+  
+  r_mrr = tf.stack([mrr_stand, mrr])[exist]
+  r_accurate = tf.stack([accurate_stand, accurate])[exist]
+  r_loss = tf.stack([loss_stand, loss])[exist]
+  
+  return r_mrr, r_accurate, r_loss
+
+
+
