@@ -21,7 +21,7 @@ class SequenceDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SequenceDecodeModel, self).__init__(type_content_data)
-    self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type))
+    self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
     self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
