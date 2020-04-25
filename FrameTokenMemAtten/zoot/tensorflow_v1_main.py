@@ -3,7 +3,7 @@ from models.model_runner import ModelRunner
 import tensorflow as tf
 from models.tree.tree_model_runner import TreeModelRunner
 from metas.hyper_settings import model_run_mode, tree_decode_mode,\
-  sequence_decode_mode
+  sequence_decode_mode, skeleton_decode_mode
 from models.sequence.sequence_model_runner import SequenceModelRunner
 
 
@@ -13,7 +13,7 @@ if __name__ == '__main__':
   with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
     if model_run_mode == sequence_decode_mode:
       runner = SequenceModelRunner(sess)
-    elif model_run_mode == tree_decode_mode:
+    elif model_run_mode == skeleton_decode_mode:
       runner = ModelRunner(sess)
     elif model_run_mode == tree_decode_mode:
       runner = TreeModelRunner(sess)
