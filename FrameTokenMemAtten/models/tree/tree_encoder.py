@@ -32,14 +32,14 @@ class EncodeOneAST():
         return tf.logical_and(tf.greater_equal(j_len, tf.constant(0, int_type)), tf.less_equal(j, j_len))
       
       def iterate_children_forward_body(j, j_len, f_cell, f_h):
-        f_cell, f_h = self.y_forward([encoded_h[post_order_node_children[j]]], f_cell, f_h)
+        _, (f_cell, f_h) = self.y_forward(tf.expand_dims(encoded_h[post_order_node_children[j]], axis=0), (f_cell, f_h))
         return j+1, j_len, f_cell, f_h
       
       def iterate_children_backward_cond(j, j_len, *_):
         return tf.logical_and(tf.greater_equal(j_len, tf.constant(0, int_type)), tf.less_equal(j, j_len))
       
       def iterate_children_backward_body(j, j_len, b_cell, b_h):
-        b_cell, b_h = self.y_backward([encoded_h[post_order_node_children[j_len]]], b_cell, b_h)
+        _, (b_cell, b_h) = self.y_backward(tf.expand_dims(encoded_h[post_order_node_children[j_len]], axis=0), (b_cell, b_h))
         return j, j_len-1, b_cell, b_h
       
       '''
@@ -65,9 +65,9 @@ class EncodeOneAST():
       en_h = self.token_embedder.compute_h(en)
       
       if tree_leaf_one_more_lstm_step:
-        en_cell, en_h = self.y_leaf_lstm(en_h, [self.tree_leaf_one_more_lstm_begin_cell_h[0]], [self.tree_leaf_one_more_lstm_begin_cell_h[1]])
+        _, (en_cell, en_h) = self.y_leaf_lstm(en_h, (tf.expand_dims(self.tree_leaf_one_more_lstm_begin_cell_h[0], axis=0), tf.expand_dims(self.tree_leaf_one_more_lstm_begin_cell_h[1], axis=0)))
       
-      r_x_cell, r_x_h = self.y_lstm(en_h, f_cell, f_h)
+      _, (r_x_cell, r_x_h) = self.y_lstm(en_h, (f_cell, f_h))
       r_x_cell2, r_x_h2 = self.y2d_lstm(en_h, f_cell, f_h, b_cell, b_h)
       x_cell = tf.stack([en_cell, tf.stack([r_x_cell, r_x_cell2])[c2_select]])[c_select]
       x_h = tf.stack([en_h, tf.stack([r_x_h, r_x_h2])[c2_select]])[c_select]

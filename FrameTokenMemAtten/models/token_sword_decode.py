@@ -2,7 +2,7 @@ from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks, only_memory_mode,\
   token_memory_mode, memory_concat_mode, decode_attention_way,\
   decode_no_attention, decode_stand_attention, decode_memory_attention,\
-  decode_memory_concat_attention, use_tensorflow_lstm_form
+  decode_memory_concat_attention
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -100,7 +100,7 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
     token_metrics[metrics_index["token_accurate"]] = before_token_accurate + tf.stack([after_token_accurate - before_token_accurate, r_dup_accurate], axis=0)[predict_to_use_pre_exist]
     token_metrics[metrics_index["token_mrr"]] = before_token_mrr + tf.stack([after_token_mrr - before_token_mrr, r_dup_mrr], axis=0)[predict_to_use_pre_exist]
     
-    new_dup_token_cell, new_dup_token_h = dup_token_lstm(dup_token_embedder.compute_h(oracle_type_content_en), dup_cell, dup_h)
+    _, (new_dup_token_cell, new_dup_token_h) = dup_token_lstm(dup_token_embedder.compute_h(oracle_type_content_en), (dup_cell, dup_h))
     token_metrics[metrics_index["dup_token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_cell"]], new_dup_token_cell, accumulated_token_max_length)
     token_metrics[metrics_index["dup_token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["dup_token_accumulated_h"]], new_dup_token_h, accumulated_token_max_length)
     
@@ -130,7 +130,7 @@ def decode_swords_of_one_token(type_content_data, training, token_en, token_atom
     mrr_of_this_node, accurate_of_this_node, loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, linear_sword_output_w, oracle_sword_en, sword_h)
     ''' predict next node '''
     e_embed = sword_embedder.compute_h(oracle_sword_en)
-    new_sword_c, new_sword_h = sword_lstm(e_embed, sword_c, sword_h)
+    _, (new_sword_c, new_sword_h) = sword_lstm(e_embed, (sword_c, sword_h))
     ''' final loss and accurate '''
     sword_metrics[metrics_index["sword_loss"]] = sword_metrics[metrics_index["sword_loss"]] + loss_of_this_node  # + dup_loss_of_this_node
     sword_metrics[metrics_index["sword_accurate"]] = sword_metrics[metrics_index["sword_accurate"]] + accurate_of_this_node
@@ -153,7 +153,7 @@ def decode_swords_of_one_token(type_content_data, training, token_en, token_atom
   t_array = token_metrics[metrics_index["atom_beam"]]
   token_metrics[metrics_index["atom_beam"]] = t_array.write(t_array.size(), compute_swords_prediction(linear_sword_output_w, sword_lstm, sword_embedder, cell, h, token_atom_sequence))
   
-  new_cell, new_h = token_lstm(token_embedder.compute_h(token_en), cell, h)
+  _, (new_cell, new_h) = token_lstm(token_embedder.compute_h(token_en), (cell, h))
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
   token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length)
   
@@ -188,7 +188,7 @@ def compute_beam_sequences(linear_atom_output_w, sword_lstm, sword_embedder, beg
     n_probs = tf.gather(probs, n_atom_ens) + prob_scalar
     n_computed_ens = tf.zeros([0, tf.shape(computed_en)[-1] + 1], int_type)
     for _ in range(top_n):
-      n_cell, n_h = sword_lstm(sword_embedder.compute_h(n_atom_ens[i]), cell, h)
+      _, (n_cell, n_h) = sword_lstm(sword_embedder.compute_h(n_atom_ens[i]), (cell, h))
       n_cells = tf.concat([n_cells, n_cell], axis=0)
       n_hs = tf.concat([n_hs, n_h], axis=0)
       n_computed_en = tf.concat([computed_en, [n_atom_ens[i]]], axis=0)

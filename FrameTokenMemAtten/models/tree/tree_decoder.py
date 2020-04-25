@@ -104,7 +104,7 @@ class TreeDecodeModel(BasicDecodeModel):
     if tree_decode_way == tree_decode_2d:
       next_cell2, next_h2 = self.two_dimen_lstm(en_h, cell, h, [self.encoded_children_cell[post_order_index]], [self.encoded_children_h[post_order_index]])
     elif tree_decode_way == tree_decode_embed:
-      next_cell2, next_h2 = self.one_dimen_lstm([self.encoded_h[post_order_index]], cell, h)
+      _, (next_cell2, next_h2) = self.one_dimen_lstm(tf.expand_dims(self.encoded_h[post_order_index], axis=0), (cell, h))
     else:
       print("Unrecognized tree decode mode!")
       assert False
