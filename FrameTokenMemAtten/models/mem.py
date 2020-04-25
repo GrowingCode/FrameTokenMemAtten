@@ -41,7 +41,7 @@ class NTMOneDirection():
       real_id = local_token_valid * local_token_id
       m_cell = tf.stack([self.initial_cell, [forward_memory_cell[real_id]]])[local_token_valid]
       m_h = tf.stack([self.initial_h, [forward_memory_h[real_id]]])[local_token_valid]
-      m_forward_cell, m_forward_h = self.memory_update_lstm(one_mg, m_cell, m_h)
+      _, (m_forward_cell, m_forward_h) = self.memory_update_lstm(one_mg, (m_cell, m_h))
       discrete_forward_memory_cell = tf.concat([discrete_forward_memory_cell, m_forward_cell], axis=0)
       discrete_forward_memory_h = tf.concat([discrete_forward_memory_h, m_forward_h], axis=0)
       return u_start + 1, u_end, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h
