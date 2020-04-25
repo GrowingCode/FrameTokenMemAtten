@@ -2,7 +2,7 @@ from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks, only_memory_mode,\
   token_memory_mode, memory_concat_mode, decode_attention_way,\
   decode_no_attention, decode_stand_attention, decode_memory_attention,\
-  decode_memory_concat_attention
+  decode_memory_concat_attention, use_tensorflow_lstm_form
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -111,7 +111,10 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
     
   token_metrics[metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(token_metrics[metrics_index["token_accumulated_en"]], [oracle_type_content_en], accumulated_token_max_length)
   ''' predict next node '''
-  new_cell, new_h = token_lstm(token_embedder.compute_h(oracle_type_content_en), cell, h)
+  if use_tensorflow_lstm_form:
+    _, (new_cell, new_h) = token_lstm(token_embedder.compute_h(oracle_type_content_en), (cell, h))
+  else:
+    new_cell, new_h = token_lstm(token_embedder.compute_h(oracle_type_content_en), cell, h)
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
   token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length)
   return tuple(token_metrics)

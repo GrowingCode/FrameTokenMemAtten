@@ -25,6 +25,7 @@ take_lstm_states_as_memory_states = 0
 basic lstm mode
 '''
 use_layer_norm = 1
+use_tensorflow_lstm_form = 0
 ''' memory mode '''
 compute_token_memory = 0
 only_memory_mode = 0

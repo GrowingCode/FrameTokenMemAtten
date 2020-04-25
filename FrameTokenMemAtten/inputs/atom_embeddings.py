@@ -24,9 +24,10 @@ class AtomEmbed():
     if take_unseen_as_UNK:
       out_of_vocab = tf.cast(token_en >= out_vocab_threshold, int_type)
       t_en = tf.stack([token_en, UNK_en])[out_of_vocab]
-      res = [self.vocab_embeddings[t_en]]
+      res = self.vocab_embeddings[t_en]
     else:
-      res = [self.vocab_embeddings[token_en]]
+      res = self.vocab_embeddings[token_en]
+    res = tf.expand_dims(res, axis=0)
     return res
 
 

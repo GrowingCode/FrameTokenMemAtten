@@ -7,8 +7,8 @@ from metas.hyper_settings import num_units, decode_attention_way,\
   decode_no_attention
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum
-from models.lstm import YLSTMCell
 from models.attention import YAttention
+from tensorflow_core.python.ops.rnn_cell_impl import LSTMCell
 
 
 class SequenceDecodeModel(BasicDecodeModel):
@@ -20,7 +20,7 @@ class SequenceDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SequenceDecodeModel, self).__init__(type_content_data)
-    self.token_lstm = YLSTMCell(0)
+    self.token_lstm = LSTMCell(num_units)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
     self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
