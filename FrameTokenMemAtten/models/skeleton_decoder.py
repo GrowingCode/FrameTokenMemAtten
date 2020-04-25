@@ -7,9 +7,9 @@ from metas.hyper_settings import num_units, \
   take_lstm_states_as_memory_states, only_memory_mode, token_memory_mode, \
   memory_concat_mode, compose_mode, stand_compose, compose_for_attention_use, \
   three_way_compose, decode_attention_way, decode_no_attention, \
-  compose_share_parameters, two_way_compose
+  compose_share_parameters, two_way_compose, use_tensorflow_lstm_form
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, initialize_range
 from metas.tensor_constants import zero_tensor
 from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
@@ -26,6 +26,7 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
   concat_in_fixed_length_one_dimension
+from tensorflow_core.python.ops.rnn_cell_impl import LSTMCell
 
 
 class SkeletonDecodeModel(BasicDecodeModel):
@@ -53,8 +54,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
     
     if compute_token_memory:
       self.mem_nn = NTMOneDirection()
-      self.forward_token_lstm = YLSTMCell(3)
-      self.backward_token_lstm = YLSTMCell(4)
+      if use_tensorflow_lstm_form:
+        self.forward_token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=200, dtype=float_type), forget_bias=0.0)
+      else:
+        self.forward_token_lstm = YLSTMCell(3)
+      if use_tensorflow_lstm_form:
+        self.backward_token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=300, dtype=float_type), forget_bias=0.0)
+      else:
+        self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
         if compose_mode == stand_compose or compose_mode == compose_for_attention_use:
           self.tokens_merger = EmbedMerger()
@@ -78,7 +85,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
     if decode_attention_way > decode_no_attention:
       self.token_attention = YAttention(10)
     
-    self.token_lstm = YLSTMCell(0)
+    if use_tensorflow_lstm_form:
+      self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
+    else:
+      self.token_lstm = YLSTMCell(0)
     r_token_embedder_mode = token_embedder_mode
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
@@ -396,7 +406,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     stmt_metrics = list(stmt_metrics_tuple)
     f_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
     f_h = [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]]
-    new_f_cell, new_f_h = self.forward_token_lstm([embeds[i]], f_cell, f_h)
+    _, (new_f_cell, new_f_h) = self.forward_token_lstm(tf.expand_dims(embeds[i], axis=0), (f_cell, f_h))
     stmt_metrics[self.metrics_index["loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_cells"]], new_f_cell, accumulated_token_max_length*2)
     stmt_metrics[self.metrics_index["loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_hs"]], new_f_h, accumulated_token_max_length*2)
     if use_dup_model:
@@ -414,7 +424,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     stmt_metrics = list(stmt_metrics_tuple)
     b_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
     b_h = [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]]
-    new_b_cell, new_b_h = self.backward_token_lstm([embeds[i_len]], b_cell, b_h)
+    _, (new_b_cell, new_b_h) = self.backward_token_lstm(tf.expand_dims(embeds[i_len], axis=0), (b_cell, b_h))
     stmt_metrics[self.metrics_index["loop_backward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_backward_cells"]], new_b_cell, accumulated_token_max_length*2)
     stmt_metrics[self.metrics_index["loop_backward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_backward_hs"]], new_b_h, accumulated_token_max_length*2)
     if use_dup_model:

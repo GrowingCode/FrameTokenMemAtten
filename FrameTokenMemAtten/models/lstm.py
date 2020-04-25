@@ -115,12 +115,13 @@ class YLSTMCell():
         self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
   
-  def __call__(self, inputs, c, h):
+  def __call__(self, inputs, state):
     """
     Long short-term memory cell (LSTM)
     @param: inputs (batch,n)
     @param state: the states and hidden unit of the two cells
     """
+    c, h = state
     linear_input = tf.concat([inputs, h], 1)
     res = tf.matmul(linear_input, self.w)
     res = tf.add(res, self.b)
@@ -139,7 +140,7 @@ class YLSTMCell():
     compute h
     '''
     new_h1 = new_c1 * tf.nn.sigmoid(o)
-    return new_c1, new_h1
+    return new_h1, (new_c1, new_h1)
     
   
 def layer_normalization(need_to_normalize_tensor, scale, shift, epsilon=1e-5):

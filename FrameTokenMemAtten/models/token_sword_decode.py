@@ -111,10 +111,7 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
     
   token_metrics[metrics_index["token_accumulated_en"]] = concat_in_fixed_length_one_dimension(token_metrics[metrics_index["token_accumulated_en"]], [oracle_type_content_en], accumulated_token_max_length)
   ''' predict next node '''
-  if use_tensorflow_lstm_form:
-    _, (new_cell, new_h) = token_lstm(token_embedder.compute_h(oracle_type_content_en), (cell, h))
-  else:
-    new_cell, new_h = token_lstm(token_embedder.compute_h(oracle_type_content_en), cell, h)
+  _, (new_cell, new_h) = token_lstm(token_embedder.compute_h(oracle_type_content_en), (cell, h))
   token_metrics[metrics_index["token_accumulated_cell"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_cell"]], new_cell, accumulated_token_max_length)
   token_metrics[metrics_index["token_accumulated_h"]] = concat_in_fixed_length_two_dimension(token_metrics[metrics_index["token_accumulated_h"]], new_h, accumulated_token_max_length)
   return tuple(token_metrics)
