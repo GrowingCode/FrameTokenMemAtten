@@ -68,9 +68,15 @@ class SkeletonDecodeModel(BasicDecodeModel):
         if compose_mode == compose_for_attention_use:
           self.compose_attention = YAttention(50)
         if compose_mode == stand_compose:
-          self.compose_lstm_cell = YLSTMCell(5)
+          if use_tensorflow_lstm_form:
+            self.compose_lstm_cell = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=500, dtype=float_type), forget_bias=0.0)
+          else:
+            self.compose_lstm_cell = YLSTMCell(5)
           if not compose_share_parameters:
-            self.compose_for_stmt_lstm_cell = YLSTMCell(6)
+            if use_tensorflow_lstm_form:
+              self.compose_for_stmt_lstm_cell = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=600, dtype=float_type), forget_bias=0.0)
+            else:
+              self.compose_for_stmt_lstm_cell = YLSTMCell(6)
         if compose_mode == two_way_compose:
           self.compose_merger = Y2DirectLSTMCell(50)
           self.compose_lstm_cell = Y2DirectLSTMCell(7)
