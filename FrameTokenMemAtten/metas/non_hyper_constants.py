@@ -62,7 +62,7 @@ testing_mode = 2
 '''
 initialize settings
 '''
-initialize_range = 1.0
+initialize_range = 0.1
 initialize_seed_base = 0;
 '''
 length threshold for an example
