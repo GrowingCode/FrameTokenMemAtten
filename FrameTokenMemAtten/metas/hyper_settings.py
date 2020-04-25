@@ -8,6 +8,7 @@ skeleton_decode_mode = 1
 tree_decode_mode = 2
 model_run_mode = skeleton_decode_mode
 ''' tree decode details '''
+tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0
 tree_decode_2d = 0
 tree_decode_embed = 1

@@ -3,7 +3,7 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
-  tree_decode_embed, tree_decode_way
+  tree_decode_embed, tree_decode_way, tree_decode_with_grammar
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
@@ -75,14 +75,14 @@ class TreeDecodeModel(BasicDecodeModel):
     h = tf.convert_to_tensor([stmt_metrics[self.metrics_index["token_accumulated_h"]][-1]])
     p_a_h = h
     
-    if self.training:
-      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_token_output_w, out_use_en, p_a_h)
-    else:
+    if (not self.training) and tree_decode_with_grammar:
       start_idx = self.type_content_data[all_token_grammar_start][grammar_idx]
       end_idx = self.type_content_data[all_token_grammar_end][grammar_idx]
       ens_range = tf.slice(self.type_content_data[all_token_grammar_ids], [start_idx], [end_idx-start_idx+1])
       o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range(self.training, self.linear_token_output_w, ens_range, out_use_en, p_a_h)
-    
+    else:
+      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_token_output_w, out_use_en, p_a_h)
+      
     mrr_of_this_node = tf.stack([0.0, o_mrr_of_this_node])[node_acc_valid]
     accurate_of_this_node = tf.stack([tf.zeros([len(top_ks)], float_type), o_accurate_of_this_node])[node_acc_valid]
     loss_of_this_node = tf.stack([0.0, o_loss_of_this_node])[node_acc_valid]
