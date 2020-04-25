@@ -11,7 +11,7 @@ class SequenceModelRunner(ModelRunner):
     super(SequenceModelRunner, self).__init__(sess)
   
   def build_input_place_holder(self):
-    self.token_info_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
     return [self.token_info_tensor]
   
   def build_model_logic(self):
