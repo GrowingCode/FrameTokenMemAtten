@@ -175,6 +175,11 @@ if composite_config_func == "not_skeleton_only_token_decode":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   
+if composite_config_func == "not_skeleton_only_token_decode_with_tensorflow_lstm":
+  build_feed_dict = build_statement_feed_dict
+  treat_first_element_as_skeleton = 0
+  use_tensorflow_lstm_form = 1
+  
 if composite_config_func == "not_skeleton_only_token_decode_with_memory_attention":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
