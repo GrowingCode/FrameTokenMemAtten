@@ -100,7 +100,7 @@ class TreeDecodeModel(BasicDecodeModel):
 #       p_op = tf.print("loss_of_this_node:", loss_of_this_node, "accurate_of_this_node:", accurate_of_this_node)
 #       with tf.control_dependencies([p_op]):
     en_h = self.token_embedder.compute_h(en)
-    next_cell1, next_h1 = self.direct_descedent_lstm(en_h, cell, h)
+    _, (next_cell1, next_h1) = self.direct_descedent_lstm(en_h, (cell, h))
     if tree_decode_way == tree_decode_2d:
       next_cell2, next_h2 = self.two_dimen_lstm(en_h, cell, h, [self.encoded_children_cell[post_order_index]], [self.encoded_children_h[post_order_index]])
     elif tree_decode_way == tree_decode_embed:
