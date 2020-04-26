@@ -25,7 +25,6 @@ class SequenceDecodeModel(BasicDecodeModel):
     super(SequenceDecodeModel, self).__init__(type_content_data)
     if use_tensorflow_lstm_form:
       self.token_lstm = LSTMCell(num_units, initializer=random_uniform_variable_initializer(20, 220), forget_bias=0.0, dtype=float_type)
-      self.token_lstm.build(TensorShape([1, num_units]))
     else:
       self.token_lstm = YLSTMCell(0)
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
