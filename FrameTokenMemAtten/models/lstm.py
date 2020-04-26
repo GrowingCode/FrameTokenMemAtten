@@ -17,8 +17,8 @@ class Y2DirectLSTMCell():
         self.norm_weights = []
         self.norm_biases = []
         for i in range(6):
-          self.norm_weights.append(tf.get_variable("y2direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
-          self.norm_biases.append(tf.get_variable("y2direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
+          self.norm_weights.append(tf.get_variable("y2direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y2direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=zero_variable_initializer()))
     
   def __call__(self, c1, h1, c2, h2):
     linear_input = tf.concat([h1, h2], 1)
@@ -52,8 +52,8 @@ class Y3DirectLSTMCell():
         self.norm_weights = []
         self.norm_biases = []
         for i in range(7):
-          self.norm_weights.append(tf.get_variable("y3direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
-          self.norm_biases.append(tf.get_variable("y3direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
+          self.norm_weights.append(tf.get_variable("y3direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y3direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=zero_variable_initializer()))
     
   def __call__(self, c1, h1, c2, h2, c3, h3):
     linear_input = tf.concat([h1, h2, h3], 1)
@@ -89,8 +89,8 @@ class Y2DLSTMCell():
         self.norm_weights = []
         self.norm_biases = []
         for i in range(6):
-          self.norm_weights.append(tf.get_variable("y2d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
-          self.norm_biases.append(tf.get_variable("y2d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
+          self.norm_weights.append(tf.get_variable("y2d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y2d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=zero_variable_initializer()))
   
   def __call__(self, inputs, c1, h1, c2, h2):
     linear_input = tf.concat([inputs, h1, h2], 1)
@@ -122,8 +122,8 @@ class YLSTMCell():
         self.norm_weights = []
         self.norm_biases = []
         for i in range(5):
-          self.norm_weights.append(tf.get_variable("y1d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
-          self.norm_biases.append(tf.get_variable("y1d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
+          self.norm_weights.append(tf.get_variable("y1d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y1d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, initializer=zero_variable_initializer()))
   
   def __call__(self, inputs, state):
     """

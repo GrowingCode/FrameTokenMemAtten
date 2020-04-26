@@ -16,8 +16,8 @@ class EmbedMerger():
         self.norm_wrights = []
         self.norm_biases = []
         for i in range(4):
-          self.norm_weights.append(tf.get_variable("em_nw" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
-          self.norm_biases.append(tf.get_variable("em_nb" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
+          self.norm_weights.append(tf.get_variable("em_nw" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, initializer=one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("em_nb" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, initializer=zero_variable_initializer()))
   
   def __call__(self, forward_h, backward_h):
     linear_input = tf.concat([forward_h, backward_h], 1)
