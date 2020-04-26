@@ -61,7 +61,7 @@ class ModelRunner():
     self.sess = sess
     place_holders = self.build_input_place_holder()
     self.build_model_logic()
-    self.optimizer = tf.compat.v1.train.AdamOptimizer()
+    self.optimizer = tf.train.AdamOptimizer()
     '''
     build graph of logic 
     '''
@@ -71,13 +71,18 @@ class ModelRunner():
 #     with tf.device('/GPU:0'):
     self.train_metrics = self.model(place_holders, training = True)
     self.train_metrics[-1] = tf.constant(0, int_type)
-    gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
-    self.train_op = self.optimizer.apply_gradients(gvs)
+    gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.trainable_variables(), colocate_gradients_with_ops=True)
+    final_grads = []
+    for (gv, var) in gvs:
+      if gv is not None:
+        grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
+        final_grads.append((grad, var))
+    self.train_op = self.optimizer.apply_gradients(final_grads)
   
   def build_input_place_holder(self):
-    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
-    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.skeleton_token_info_tensor = tf.placeholder(int_type, [None, None])
+    self.skeleton_token_info_start_tensor = tf.placeholder(int_type, [None])
+    self.skeleton_token_info_end_tensor = tf.placeholder(int_type, [None])
     return (self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor)
   
   def build_model_logic(self):
@@ -113,7 +118,7 @@ class ModelRunner():
     if restrain_count >= restrain_maximum_count:
       turn = max_train_epoch
     if turn > 0 and turn < max_train_epoch:
-      tf.compat.v1.train.Saver().restore(self.sess, self.check_point_file)
+      tf.train.Saver().restore(self.sess, self.check_point_file)
     '''
     begin real training procedure
     '''
@@ -176,7 +181,7 @@ class ModelRunner():
             restrain_count = restrain_count + 1
         if to_save_best_model:
           print("========== Saving best model ==========")
-          tf.compat.v1.train.Saver().save(self.sess, self.best_model_file)
+          tf.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
         turn_info.append(dict_to_string(valid_avg))
@@ -188,7 +193,7 @@ class ModelRunner():
         save check point model
         '''
         print("========== Saving check point model ==========")
-        tf.compat.v1.train.Saver().save(self.sess, self.check_point_file)
+        tf.train.Saver().save(self.sess, self.check_point_file)
         '''
         write the turn to file
         '''
@@ -213,7 +218,7 @@ class ModelRunner():
   def test(self):
     print("===== Testing procedure starts! =====")
     print("Restore best model in " + self.best_model_directory)
-    tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
+    tf.train.Saver().restore(self.sess, self.best_model_file)
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score

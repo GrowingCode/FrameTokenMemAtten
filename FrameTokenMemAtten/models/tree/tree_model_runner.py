@@ -11,14 +11,14 @@ class TreeModelRunner(ModelRunner):
     super(TreeModelRunner, self).__init__(sess)
   
   def build_input_place_holder(self):
-    self.post_order_node_type_content_en_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.post_order_node_child_start_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.post_order_node_child_end_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.post_order_node_children_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.pre_post_order_node_type_content_en_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.pre_post_order_node_state_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.pre_post_order_node_post_order_index_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.pre_post_order_node_parent_grammar_index_tensor = tf.compat.v1.placeholder(int_type, [None])
+    self.post_order_node_type_content_en_tensor = tf.placeholder(int_type, [None])
+    self.post_order_node_child_start_tensor = tf.placeholder(int_type, [None])
+    self.post_order_node_child_end_tensor = tf.placeholder(int_type, [None])
+    self.post_order_node_children_tensor = tf.placeholder(int_type, [None])
+    self.pre_post_order_node_type_content_en_tensor = tf.placeholder(int_type, [None])
+    self.pre_post_order_node_state_tensor = tf.placeholder(int_type, [None])
+    self.pre_post_order_node_post_order_index_tensor = tf.placeholder(int_type, [None])
+    self.pre_post_order_node_parent_grammar_index_tensor = tf.placeholder(int_type, [None])
     return (self.post_order_node_type_content_en_tensor, self.post_order_node_child_start_tensor, self.post_order_node_child_end_tensor, self.post_order_node_children_tensor, self.pre_post_order_node_type_content_en_tensor, self.pre_post_order_node_state_tensor, self.pre_post_order_node_post_order_index_tensor, self.pre_post_order_node_parent_grammar_index_tensor)
   
   def build_model_logic(self):

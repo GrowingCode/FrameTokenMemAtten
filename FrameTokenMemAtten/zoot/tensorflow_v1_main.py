@@ -10,7 +10,7 @@ from models.sequence.sequence_model_runner import SequenceModelRunner
 if __name__ == '__main__':
 #   tf.debugging.set_log_device_placement(True)
   check_or_store_configs()
-  with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
+  with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
     if model_run_mode == sequence_decode_mode:
       runner = SequenceModelRunner(sess)
     elif model_run_mode == skeleton_decode_mode:
@@ -19,7 +19,7 @@ if __name__ == '__main__':
       runner = TreeModelRunner(sess)
     else:
       assert False, "unrecognized model_run_mode:" + str(model_run_mode)
-    init_op = tf.compat.v1.global_variables_initializer()
+    init_op = tf.global_variables_initializer()
     sess.run(init_op)
     runner.train()
     runner.test()

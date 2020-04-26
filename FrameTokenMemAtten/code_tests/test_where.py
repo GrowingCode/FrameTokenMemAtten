@@ -12,7 +12,7 @@ oracle_index = a[0][0]
 
 after_a_shape = tf.shape(a)
 
-with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
+with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
   a_v, before_a_shape_v, after_a_shape_v, exist_v, oracle_index_v = sess.run([a, before_a_shape, after_a_shape, exist, oracle_index])
   print(a_v)
   print(before_a_shape_v)

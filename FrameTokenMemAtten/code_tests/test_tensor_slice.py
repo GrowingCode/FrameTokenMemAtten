@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-sess = tf.compat.v1.InteractiveSession()
+sess = tf.InteractiveSession()
 a = tf.convert_to_tensor([[1, 1, 1], [2, 2, 2]])
 b = a[-1:,:]
 c = a[0:,:]
