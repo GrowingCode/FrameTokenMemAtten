@@ -157,7 +157,7 @@ class YLSTMCell():
   
 def layer_normalization(need_to_normalize_tensor, scale, shift, epsilon=1e-5):
   """ Layer normalizes a 2D tensor along its second axis """
-  m, v = tf.nn.moments(need_to_normalize_tensor, [1], keepdims=True)
+  m, v = tf.nn.moments(need_to_normalize_tensor, [1], keep_dims=True)
   ln_initial = (need_to_normalize_tensor - m) / tf.sqrt(v + epsilon)
   return ln_initial * scale + shift
 
