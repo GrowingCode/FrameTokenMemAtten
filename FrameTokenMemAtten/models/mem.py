@@ -9,7 +9,7 @@ from models.embed_merger import EmbedMerger
 class NTMOneDirection():
   
   def __init__(self, num_desc):
-    self.merger = EmbedMerger()
+    self.merger = EmbedMerger(102)
     self.memory_update_lstm = YLSTMCell(30+num_desc)
     with tf.variable_scope(learning_scope):
       self.initial_cell = tf.get_variable("ntm_initial_cell"+str(num_desc), shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(175, 525+num_desc))

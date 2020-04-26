@@ -65,7 +65,7 @@ class BiLSTMEmbed():
     self.type_content_data = type_content_data
     self.vocab_embeddings = vocab_embeddings
     self.sword_embed = SwordAtomEmbed(self.type_content_data, self.vocab_embeddings)
-    self.merger = EmbedMerger()
+    self.merger = EmbedMerger(101)
     self.forward_lstm = YLSTMCell(15)
     self.backward_lstm = YLSTMCell(25)
     with tf.variable_scope(learning_scope):

@@ -28,7 +28,7 @@ def compute_linear_accurate(oracle_type_content_en, logits):
   _, indices_r = tf.nn.top_k(logits, r_r)
   zero_one = tf.cast(tf.equal(oracle_type_content_en, indices_r), int_type)
   accs = tf.reduce_sum(zero_one)
-  mrr = tf.stack([tf.constant(0.0, float_type), tf.math.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one)+1, float_type))])[tf.cast(accs > 0, int_type)]
+  mrr = tf.stack([tf.constant(0.0, float_type), tf.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one)+1, float_type))])[tf.cast(accs > 0, int_type)]
   accurate = tf.zeros([0], float_type)
   for i in range(len(top_ks)):
     k = top_ks[i]

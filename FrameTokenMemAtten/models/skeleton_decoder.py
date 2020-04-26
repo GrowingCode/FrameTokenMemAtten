@@ -67,7 +67,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
         if compose_mode == stand_compose or compose_mode == compose_for_attention_use:
-          self.tokens_merger = EmbedMerger()
+          self.tokens_merger = EmbedMerger(1050)
         if compose_mode == compose_for_attention_use:
           self.compose_attention = YAttention(50)
         if compose_mode == stand_compose:
