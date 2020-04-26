@@ -14,7 +14,7 @@ class Y2DirectLSTMCell():
     if use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []
-      for _ in range(5):
+      for _ in range(6):
         self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
     
@@ -32,6 +32,8 @@ class Y2DirectLSTMCell():
     new_cell = (c1 * tf.nn.sigmoid(f + self.forget_bias) + 
                 c2 * tf.nn.sigmoid(f2 + self.forget_bias) + 
              self.activation(j) * tf.nn.sigmoid(i))
+    if use_layer_norm:
+      new_cell = layer_normalization(new_cell, self.norm_weights[5], self.norm_biases[5])
     new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
     return new_cell, new_h
 
@@ -46,7 +48,7 @@ class Y3DirectLSTMCell():
     if use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []
-      for _ in range(6):
+      for _ in range(7):
         self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
     
@@ -66,7 +68,8 @@ class Y3DirectLSTMCell():
                 c2 * tf.nn.sigmoid(f2 + self.forget_bias) + 
                 c3 * tf.nn.sigmoid(f3 + self.forget_bias) + 
              self.activation(j) * tf.nn.sigmoid(i))
-#     new_cell = layer_normalization(new_cell, self.norm_weights[6], self.norm_biases[6])
+    if use_layer_norm:
+      new_cell = layer_normalization(new_cell, self.norm_weights[6], self.norm_biases[6])
     new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
     return new_cell, new_h
 
@@ -97,6 +100,8 @@ class Y2DLSTMCell():
       f2 = layer_normalization(f2, self.norm_weights[3], self.norm_biases[3])
       o = layer_normalization(o, self.norm_weights[4], self.norm_biases[4])
     new_c = c1 * tf.nn.sigmoid(f) + c2 * tf.nn.sigmoid(f2) + tf.nn.sigmoid(i) * tf.nn.tanh(j)
+    if use_layer_norm:
+      new_c = layer_normalization(new_c, self.norm_weights[5], self.norm_biases[5])
     new_h = self.activation(new_c) * tf.nn.sigmoid(o)
     return new_c, new_h
 
@@ -111,7 +116,7 @@ class YLSTMCell():
     if use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []
-      for _ in range(4):
+      for _ in range(5):
         self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
   
@@ -136,6 +141,8 @@ class YLSTMCell():
     '''
     new_c1 = (c * tf.nn.sigmoid(f + self.forget_bias) + 
              self.activation(j) * tf.nn.sigmoid(i))
+    if use_layer_norm:
+      new_c1 = layer_normalization(new_c1, self.norm_weights[4], self.norm_biases[4])
     '''
     compute h
     '''
