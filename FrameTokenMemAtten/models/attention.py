@@ -1,23 +1,24 @@
 import tensorflow as tf
 from metas.hyper_settings import attention_algorithm, v_attention,\
   stand_attention, num_units
-from metas.non_hyper_constants import float_type
+from metas.non_hyper_constants import float_type, learning_scope
 from utils.initializer import random_uniform_variable_initializer
 
 
 class YAttention():
   
   def __init__(self, num_desc):
-    if attention_algorithm == v_attention:
-      self.v = tf.Variable(random_uniform_variable_initializer(203, 21 + num_desc, [1, num_units]))
-      self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231 + num_desc, [num_units, num_units]))
-      self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131 + num_desc, [num_units, num_units]))
-      self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145 + num_desc, [2*num_units, num_units]))
-    elif attention_algorithm == stand_attention:
-      self.w = tf.Variable(random_uniform_variable_initializer(2033, 132 + num_desc, [num_units, num_units]))
-    else:
-      print("Strange Error! Unrecognized attention algorithm")
-    self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units]))
+    with tf.variable_scope(learning_scope):
+      if attention_algorithm == v_attention:
+        self.v = tf.get_variable("yatten_v"+str(num_desc), shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(203, 21+num_desc))
+        self.w_v = tf.get_variable("yatten_w_v"+str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2033, 231+num_desc))
+        self.w_h = tf.get_variable("yatten_w_h"+str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2033, 131+num_desc))
+        self.w_ctx_c = tf.get_variable("yatten_w_ctx_c"+str(num_desc), shape=[2*num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(203, 145+num_desc))
+      elif attention_algorithm == stand_attention:
+        self.w = tf.get_variable("yatten_w"+str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2033, 132+num_desc))
+      else:
+        print("Strange Error! Unrecognized attention algorithm")
+      self.w_ctx_h = tf.get_variable("yatten_w_ctx_h"+str(num_desc), shape=[2*num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(203, 135+num_desc))
       
   def compute_attention_logits(self, atten_hs, h):
     if attention_algorithm == v_attention:

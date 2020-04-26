@@ -1,8 +1,8 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type
-from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
-  simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode,\
-  repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode,\
+from metas.non_hyper_constants import float_type, int_type, learning_scope
+from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
+  simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
+  repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
@@ -10,20 +10,21 @@ from utils.initializer import random_uniform_variable_initializer
 
 class PointerNetwork():
   
-  def __init__(self):
-    self.dup_w = tf.Variable(random_uniform_variable_initializer(20, 102, [num_units, num_units]))
-    if is_dup_mode == simple_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080, [num_units, num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080, [num_units, num_units]))
-    elif is_dup_mode == mlp_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080, [2*num_units, 2*num_units]))
-      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080, [2*num_units, 2*num_units]))
-      self.is_not_dup_h = tf.Variable(random_uniform_variable_initializer(205, 1060, [1, 2*num_units]))
-    elif is_dup_mode == sigmoid_is_dup:
-      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
-    else:
-      assert False, "Unrecognized is_dup_mode!"
+  def __init__(self, num_desc):
+    with tf.variable_scope(learning_scope):
+      self.dup_w = tf.get_variable("pw_dup_w" + str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(20, 102 + num_desc))
+      if is_dup_mode == simple_is_dup:
+        self.is_dup_w = tf.get_variable("pw_is_dup_w" + str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(200, 1080 + num_desc))
+        self.is_not_dup_w = tf.get_variable("pw_is_not_dup_w" + str(num_desc), shape=[num_units, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(205, 1080 + num_desc))
+      elif is_dup_mode == mlp_is_dup:
+        self.is_dup_w = tf.get_variable("pw_is_dup_w" + str(num_desc), shape=[2 * num_units, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(200, 1080 + num_desc))
+        self.is_dup_h = tf.get_variable("pw_is_dup_h" + str(num_desc), shape=[1, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(200, 1050 + num_desc))
+        self.is_not_dup_w = tf.get_variable("pw_is_not_dup_w" + str(num_desc), shape=[2 * num_units, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(205, 1080 + num_desc))
+        self.is_not_dup_h = tf.get_variable("pw_is_not_dup_h" + str(num_desc), shape=[1, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(205, 1060 + num_desc))
+      elif is_dup_mode == sigmoid_is_dup:
+        self.is_dup_h = tf.get_variable("pw_is_dup_h" + str(num_desc), shape=[1, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(200, 1050 + num_desc))
+      else:
+        assert False, "Unrecognized is_dup_mode!"
     self.dup_point_atten = YAttention(100)
     if repetition_mode == attention_repetition_mode:
       if dup_share_parameters:
@@ -112,7 +113,7 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
   else:
     assert False, "Unrecognized repetition mode!"
   accs = tf.reduce_sum(zero_one)
-  mrr = tf.cond(accs > 0, lambda: tf.math.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one) + 1, float_type)), lambda: tf.constant(0.0, float_type))
+  mrr = tf.cond(accs > 0, lambda: tf.divide(tf.constant(1.0, float_type), tf.cast(tf.argmax(zero_one) + 1, float_type)), lambda: tf.constant(0.0, float_type))
   result = tf.zeros([0], float_type)
   for i in range(len(top_ks)):
     k = top_ks[i]

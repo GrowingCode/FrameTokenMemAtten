@@ -1,7 +1,8 @@
 import tensorflow as tf
 from metas.non_hyper_constants import all_token_each_subword_sequence_start,\
   all_token_each_subword_sequence_end, all_token_subword_sequences, float_type,\
-  all_token_summary, SwordHitNum, int_type, TokenHitNum, SkeletonHitNum, UNK_en
+  all_token_summary, SwordHitNum, int_type, TokenHitNum, SkeletonHitNum, UNK_en,\
+  learning_scope
 from metas.hyper_settings import num_units, take_unseen_as_UNK
 from models.embed_merger import EmbedMerger
 from models.lstm import YLSTMCell
@@ -67,10 +68,11 @@ class BiLSTMEmbed():
     self.merger = EmbedMerger()
     self.forward_lstm = YLSTMCell(15)
     self.backward_lstm = YLSTMCell(25)
-    self.ini_forward_cell = tf.Variable(random_uniform_variable_initializer(881, 882, [1, num_units]))
-    self.ini_forward_h = tf.Variable(random_uniform_variable_initializer(883, 884, [1, num_units]))
-    self.ini_backward_cell = tf.Variable(random_uniform_variable_initializer(885, 886, [1, num_units]))
-    self.ini_backward_h = tf.Variable(random_uniform_variable_initializer(887, 888, [1, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.ini_forward_cell = tf.get_variable("bi_embed_ini_forward_cell", shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(881, 882))
+      self.ini_forward_h = tf.get_variable("bi_embed_ini_forward_h", shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(883, 884))
+      self.ini_backward_cell = tf.get_variable("bi_embed_ini_backward_cell", shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(885, 886))
+      self.ini_backward_h = tf.get_variable("bi_embed_ini_backward_h", shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(887, 888))
   
   def forward_backward_cell_h(self, look_up_indexes):
     

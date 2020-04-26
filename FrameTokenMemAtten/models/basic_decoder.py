@@ -3,6 +3,7 @@ from utils.model_tensors_metrics import default_metrics_meta,\
   special_handle_metrics_meta, create_metrics_contingent_index
 from metas.hyper_settings import contingent_parameters_num, num_units, top_ks
 from utils.initializer import random_uniform_variable_initializer
+from metas.non_hyper_constants import learning_scope, float_type
 
 
 class BasicDecodeModel():
@@ -21,8 +22,9 @@ class BasicDecodeModel():
     self.index_metrics = dict((k,v) for k, v in zip(range(len(self.metrics_name)), self.metrics_name))
     self.metrics_index = {value:key for key, value in self.index_metrics.items()}
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
-    self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
-    self.contingent_parameters_for_idle = tf.Variable(random_uniform_variable_initializer(20, 50, [2, 1, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.contingent_parameters = tf.get_variable("contingent", shape=[contingent_parameters_num, 2, 5 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2, 5))
+      self.contingent_parameters_for_idle = tf.get_variable("contingent2", shape=[2, 1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(20, 50))
     
   def create_extra_default_metrics_meta(self):
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]

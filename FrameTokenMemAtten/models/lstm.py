@@ -2,6 +2,7 @@ from metas.hyper_settings import num_units, use_layer_norm
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
+from metas.non_hyper_constants import learning_scope, float_type
 
 
 class Y2DirectLSTMCell():
@@ -9,14 +10,15 @@ class Y2DirectLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.weights = tf.Variable(random_uniform_variable_initializer(22, 888+num_desc, [2 * num_units, 5 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
-    if use_layer_norm:
-      self.norm_weights = []
-      self.norm_biases = []
-      for _ in range(5):
-        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    with tf.variable_scope(learning_scope):
+      self.weights = tf.get_variable("y2direct_w"+str(num_desc), shape=[2 * num_units, 5 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(22, 88+num_desc))
+      self.biases = tf.get_variable("y2direct_b"+str(num_desc), shape=[1, 5 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      if use_layer_norm:
+        self.norm_weights = []
+        self.norm_biases = []
+        for i in range(6):
+          self.norm_weights.append(tf.get_variable("y2direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y2direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
     
   def __call__(self, c1, h1, c2, h2):
     linear_input = tf.concat([h1, h2], 1)
@@ -32,6 +34,8 @@ class Y2DirectLSTMCell():
     new_cell = (c1 * tf.nn.sigmoid(f + self.forget_bias) + 
                 c2 * tf.nn.sigmoid(f2 + self.forget_bias) + 
              self.activation(j) * tf.nn.sigmoid(i))
+    if use_layer_norm:
+      new_cell = layer_normalization(new_cell, self.norm_weights[5], self.norm_biases[5])
     new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
     return new_cell, new_h
 
@@ -41,14 +45,15 @@ class Y3DirectLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.weights = tf.Variable(random_uniform_variable_initializer(111, 777+num_desc, [3 * num_units, 6 * num_units]))
-    self.biases = tf.Variable(zero_variable_initializer([1, 6 * num_units]))
-    if use_layer_norm:
-      self.norm_weights = []
-      self.norm_biases = []
-      for _ in range(6):
-        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    with tf.variable_scope(learning_scope):
+      self.weights = tf.get_variable("y3direct_w"+str(num_desc), shape=[3 * num_units, 6 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(111, 666+num_desc))
+      self.biases = tf.get_variable("y3direct_b"+str(num_desc), shape=[1, 6 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      if use_layer_norm:
+        self.norm_weights = []
+        self.norm_biases = []
+        for i in range(7):
+          self.norm_weights.append(tf.get_variable("y3direct_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y3direct_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
     
   def __call__(self, c1, h1, c2, h2, c3, h3):
     linear_input = tf.concat([h1, h2, h3], 1)
@@ -66,7 +71,8 @@ class Y3DirectLSTMCell():
                 c2 * tf.nn.sigmoid(f2 + self.forget_bias) + 
                 c3 * tf.nn.sigmoid(f3 + self.forget_bias) + 
              self.activation(j) * tf.nn.sigmoid(i))
-#     new_cell = layer_normalization(new_cell, self.norm_weights[6], self.norm_biases[6])
+    if use_layer_norm:
+      new_cell = layer_normalization(new_cell, self.norm_weights[6], self.norm_biases[6])
     new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
     return new_cell, new_h
 
@@ -76,14 +82,15 @@ class Y2DLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.w = tf.Variable(random_uniform_variable_initializer(111, 777+num_desc, [3 * num_units, 5 * num_units]))
-    self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
-    if use_layer_norm:
-      self.norm_weights = []
-      self.norm_biases = []
-      for _ in range(6):
-        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    with tf.variable_scope(learning_scope):
+      self.w = tf.get_variable("y2d_w"+str(num_desc), shape=[3 * num_units, 5 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(111, 777+num_desc))
+      self.b = tf.get_variable("y2d_b"+str(num_desc), shape=[1, 5 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      if use_layer_norm:
+        self.norm_weights = []
+        self.norm_biases = []
+        for i in range(6):
+          self.norm_weights.append(tf.get_variable("y2d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y2d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
   
   def __call__(self, inputs, c1, h1, c2, h2):
     linear_input = tf.concat([inputs, h1, h2], 1)
@@ -97,6 +104,8 @@ class Y2DLSTMCell():
       f2 = layer_normalization(f2, self.norm_weights[3], self.norm_biases[3])
       o = layer_normalization(o, self.norm_weights[4], self.norm_biases[4])
     new_c = c1 * tf.nn.sigmoid(f) + c2 * tf.nn.sigmoid(f2) + tf.nn.sigmoid(i) * tf.nn.tanh(j)
+    if use_layer_norm:
+      new_c = layer_normalization(new_c, self.norm_weights[5], self.norm_biases[5])
     new_h = new_c * tf.nn.sigmoid(o)
     return new_c, new_h
 
@@ -106,14 +115,15 @@ class YLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units]))
-    self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
-    if use_layer_norm:
-      self.norm_weights = []
-      self.norm_biases = []
-      for _ in range(4):
-        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
+    with tf.variable_scope(learning_scope):
+      self.w = tf.get_variable("y1d_w"+str(num_desc), shape=[2 * num_units, 4 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(20, 220+num_desc))
+      self.b = tf.get_variable("y1d_b"+str(num_desc), shape=[1, 4 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      if use_layer_norm:
+        self.norm_weights = []
+        self.norm_biases = []
+        for i in range(5):
+          self.norm_weights.append(tf.get_variable("y1d_nw"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("y1d_nb"+str(i)+str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
   
   def __call__(self, inputs, state):
     """
@@ -139,6 +149,8 @@ class YLSTMCell():
     '''
     compute h
     '''
+    if use_layer_norm:
+      new_c1 = layer_normalization(new_c1, self.norm_weights[4], self.norm_biases[4])
     new_h1 = new_c1 * tf.nn.sigmoid(o)
     return new_h1, (new_c1, new_h1)
     

@@ -4,12 +4,13 @@ from models.token_sword_decode import decode_one_token
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, decode_attention_way,\
-  decode_no_attention
+  decode_no_attention, use_tensorflow_lstm_form
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum,\
-  initialize_range, float_type
+  float_type, learning_scope
 from models.attention import YAttention
-from tensorflow_core.python.ops.rnn_cell_impl import LSTMCell
+from tensorflow.python.ops.rnn_cell_impl import LSTMCell
+from models.lstm import YLSTMCell
 
 
 class SequenceDecodeModel(BasicDecodeModel):
@@ -21,10 +22,14 @@ class SequenceDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SequenceDecodeModel, self).__init__(type_content_data)
-    self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
+    if use_tensorflow_lstm_form:
+      self.token_lstm = LSTMCell(num_units, initializer=random_uniform_variable_initializer(20, 220), forget_bias=0.0, dtype=float_type)
+    else:
+      self.token_lstm = YLSTMCell(0)
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
-    self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
-    self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.linear_token_output_w = tf.get_variable("t_out_w", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 566))
+      self.one_hot_token_embedding = tf.get_variable("t_embed", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 56))
     self.token_embedder = TokenAtomEmbed(self.type_content_data, self.one_hot_token_embedding)
     
     self.token_attention = None

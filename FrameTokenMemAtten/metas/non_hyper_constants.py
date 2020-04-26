@@ -6,6 +6,8 @@ import os
 home_dir = os.path.expanduser('~')
 data_dir = home_dir + "/" + "AST_Tensors"
 
+learning_scope = "learning_scope"
+
 bool_type = tf.bool
 float_type = tf.float32
 int_type = tf.int32

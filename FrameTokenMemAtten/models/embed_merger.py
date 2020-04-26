@@ -1,21 +1,23 @@
 import tensorflow as tf
 from models.lstm import layer_normalization
-from utils.initializer import random_uniform_variable_initializer,\
+from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
 from metas.hyper_settings import num_units, use_layer_norm
+from metas.non_hyper_constants import float_type, learning_scope
 
 
 class EmbedMerger():
   
-  def __init__(self):
-    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 4 * num_units]))
-    self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
-    if use_layer_norm:
-      self.norm_wrights = []
-      self.norm_biases = []
-      for _ in range(4):
-        self.norm_wrights.append(tf.Variable(zero_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(one_variable_initializer([num_units])))
+  def __init__(self, num_desc):
+    with tf.variable_scope(learning_scope):
+      self.w = tf.get_variable("em_w" + str(num_desc), shape=[2 * num_units, 4 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(222, 333 + num_desc))
+      self.b = tf.get_variable("em_b" + str(num_desc), shape=[1, 4 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      if use_layer_norm:
+        self.norm_wrights = []
+        self.norm_biases = []
+        for i in range(4):
+          self.norm_weights.append(tf.get_variable("em_nw" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, one_variable_initializer()))
+          self.norm_biases.append(tf.get_variable("em_nb" + str(i) + str(num_desc), shape=[num_units], dtype=float_type, zero_variable_initializer()))
   
   def __call__(self, forward_h, backward_h):
     linear_input = tf.concat([forward_h, backward_h], 1)

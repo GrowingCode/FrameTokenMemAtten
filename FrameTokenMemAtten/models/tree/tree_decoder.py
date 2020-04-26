@@ -7,7 +7,7 @@ from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
-  all_token_grammar_ids
+  all_token_grammar_ids, learning_scope
 from models.lstm import YLSTMCell, Y2DLSTMCell
 from models.tree.tree_encoder import EncodeOneAST
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -30,9 +30,10 @@ class TreeDecodeModel(BasicDecodeModel):
       self.one_dimen_lstm = YLSTMCell(2)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
-    self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
-    self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
-    self.one_hot_token_cell_embedding = tf.Variable(random_uniform_variable_initializer(25, 56, [number_of_tokens, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.linear_token_output_w = tf.get_variable("t_out_w", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 566))
+      self.one_hot_token_embedding = tf.get_variable("t_embed", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 56))
+      self.one_hot_token_cell_embedding = tf.get_variable("t_cell_embed", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(25, 56))
     self.token_embedder = TokenAtomEmbed(self.type_content_data, self.one_hot_token_embedding)
     self.token_cell_embedder = TokenAtomEmbed(self.type_content_data, self.one_hot_token_cell_embedding)
     

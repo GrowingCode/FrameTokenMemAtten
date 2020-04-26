@@ -9,7 +9,8 @@ from metas.hyper_settings import num_units, \
   three_way_compose, decode_attention_way, decode_no_attention, \
   compose_share_parameters, two_way_compose, use_tensorflow_lstm_form
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, initialize_range
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, initialize_range,\
+  learning_scope
 from metas.tensor_constants import zero_tensor
 from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
@@ -26,7 +27,7 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
   concat_in_fixed_length_one_dimension
-from tensorflow_core.python.ops.rnn_cell_impl import LSTMCell
+from tensorflow.python.ops.rnn_cell_impl import LSTMCell
 
 
 class SkeletonDecodeModel(BasicDecodeModel):
@@ -40,26 +41,28 @@ class SkeletonDecodeModel(BasicDecodeModel):
     super(SkeletonDecodeModel, self).__init__(type_content_data)
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
-    self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
-    self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.skeleton_forward_cell_h = tf.get_variable("skeleton_forward_cell_h", shape=[number_of_skeletons, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(255, 572))
+      self.skeleton_backward_cell_h = tf.get_variable("skeleton_backward_cell_h", shape=[number_of_skeletons, 2 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(255, 72))
     
     if treat_first_element_as_skeleton:
       self.skeleton_lstm_cell = YLSTMCell(1)
       self.skeleton_dup_lstm_cell = YLSTMCell(2)
-      self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
+      with tf.variable_scope(learning_scope):
+        self.one_hot_skeleton_embedding = tf.get_variable("one_hot_skeleton_embedding", shape=[number_of_skeletons, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(258, 578))
+        self.linear_skeleton_output_w = tf.get_variable("linear_skeleton_output_w", shape=[number_of_skeletons, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(257, 576))
+        self.one_dup_hot_skeleton_embedding = tf.get_variable("one_dup_hot_skeleton_embedding", shape=[number_of_skeletons, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(259, 579))
       self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding)
-      self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
-      self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
       self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
     
     if compute_token_memory:
-      self.mem_nn = NTMOneDirection()
+      self.mem_nn = NTMOneDirection(805)
       if use_tensorflow_lstm_form:
-        self.forward_token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=200, dtype=float_type), forget_bias=0.0)
+        self.forward_token_lstm = LSTMCell(num_units, initializer=tf.random_uniform_initializer(-initialize_range, initialize_range, seed=200, dtype=float_type), forget_bias=0.0)
       else:
         self.forward_token_lstm = YLSTMCell(3)
       if use_tensorflow_lstm_form:
-        self.backward_token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=300, dtype=float_type), forget_bias=0.0)
+        self.backward_token_lstm = LSTMCell(num_units, initializer=tf.random_uniform_initializer(-initialize_range, initialize_range, seed=300, dtype=float_type), forget_bias=0.0)
       else:
         self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
@@ -69,12 +72,12 @@ class SkeletonDecodeModel(BasicDecodeModel):
           self.compose_attention = YAttention(50)
         if compose_mode == stand_compose:
           if use_tensorflow_lstm_form:
-            self.compose_lstm_cell = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=500, dtype=float_type), forget_bias=0.0)
+            self.compose_lstm_cell = LSTMCell(num_units, initializer=tf.random_uniform_initializer(-initialize_range, initialize_range, seed=500, dtype=float_type), forget_bias=0.0)
           else:
             self.compose_lstm_cell = YLSTMCell(5)
           if not compose_share_parameters:
             if use_tensorflow_lstm_form:
-              self.compose_for_stmt_lstm_cell = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=600, dtype=float_type), forget_bias=0.0)
+              self.compose_for_stmt_lstm_cell = LSTMCell(num_units, initializer=tf.random_uniform_initializer(-initialize_range, initialize_range, seed=600, dtype=float_type), forget_bias=0.0)
             else:
               self.compose_for_stmt_lstm_cell = YLSTMCell(6)
         if compose_mode == two_way_compose:
@@ -92,7 +95,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
       self.token_attention = YAttention(10)
     
     if use_tensorflow_lstm_form:
-      self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
+      self.token_lstm = LSTMCell(num_units, initializer=tf.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
     else:
       self.token_lstm = YLSTMCell(0)
     r_token_embedder_mode = token_embedder_mode
@@ -101,23 +104,27 @@ class SkeletonDecodeModel(BasicDecodeModel):
     number_of_subwords = self.type_content_data[all_token_summary][SwordHitNum]
     
     if atom_decode_mode == token_decode:
-      self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
+      with tf.variable_scope(learning_scope):
+        self.linear_token_output_w = tf.get_variable("linear_token_output_w", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(25, 56))
       
       self.dup_token_embedder, self.dup_token_lstm, self.token_pointer = None, None, None
       if use_dup_model:
-        self.one_dup_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(252, 226, [number_of_tokens, num_units]))
+        with tf.variable_scope(learning_scope):
+          self.one_dup_hot_token_embedding = tf.get_variable("one_dup_hot_token_embedding", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(252, 226))
         self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.one_dup_hot_token_embedding)
         self.dup_token_lstm = YLSTMCell(9)
         self.token_pointer = PointerNetwork()
-        self.dup_skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(155, 572, [number_of_skeletons, 2, num_units]))
-        self.dup_skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(152, 572, [number_of_skeletons, 2, num_units]))
+        with tf.variable_scope(learning_scope):
+          self.dup_skeleton_forward_cell_h = tf.get_variable("dup_skeleton_forward_cell_h", shape=[number_of_skeletons, 2, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(155, 572))
+          self.dup_skeleton_backward_cell_h = tf.get_variable("dup_skeleton_backward_cell_h", shape=[number_of_skeletons, 2, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(152, 572))
         if compute_token_memory:
-          self.dup_mem_nn = NTMOneDirection()
+          self.dup_mem_nn = NTMOneDirection(806)
           self.dup_forward_token_lstm = YLSTMCell(10)
           self.dup_backward_token_lstm = YLSTMCell(11)
       
     elif atom_decode_mode == sword_decode:
-      self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
+      with tf.variable_scope(learning_scope):
+        self.linear_sword_output_w = tf.get_variable("linear_sword_output_w", shape=[number_of_subwords, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(25, 5665))
       self.sword_lstm = YLSTMCell(12)
       r_token_embedder_mode = swords_compose_mode
       
@@ -125,10 +132,12 @@ class SkeletonDecodeModel(BasicDecodeModel):
       assert False, "Wrong atom_decode_mode"
       
     if r_token_embedder_mode == token_only_mode:
-      self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
+      with tf.variable_scope(learning_scope):
+        self.one_hot_token_embedding = tf.get_variable("one_hot_token_embedding", shape=[number_of_tokens, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 56))
       self.token_embedder = TokenAtomEmbed(self.type_content_data, self.one_hot_token_embedding)
     elif r_token_embedder_mode == swords_compose_mode:
-      self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
+      with tf.variable_scope(learning_scope):
+        self.one_hot_sword_embedding = tf.get_variable("one_hot_sword_embedding", shape=[number_of_subwords, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(256, 56))
       self.sword_embedder = SwordAtomEmbed(self.type_content_data, self.one_hot_sword_embedding)
       self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
     else:

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from metas.hyper_settings import num_units
-from metas.non_hyper_constants import float_type, int_type
+from metas.non_hyper_constants import float_type, int_type, learning_scope
 from models.lstm import YLSTMCell
 from utils.initializer import random_uniform_variable_initializer
 from models.embed_merger import EmbedMerger
@@ -8,11 +8,12 @@ from models.embed_merger import EmbedMerger
 
 class NTMOneDirection():
   
-  def __init__(self):
+  def __init__(self, num_desc):
     self.merger = EmbedMerger()
-    self.memory_update_lstm = YLSTMCell(30)
-    self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
-    self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525, [1, num_units]))
+    self.memory_update_lstm = YLSTMCell(30+num_desc)
+    with tf.variable_scope(learning_scope):
+      self.initial_cell = tf.get_variable("ntm_initial_cell"+str(num_desc), shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(175, 525+num_desc))
+      self.initial_h = tf.get_variable("ntm_initial_h"+str(num_desc), shape=[1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(1755, 525+num_desc))
   
   def compute_variables_in_statement(self, var_info, token_info, forward_memory_cell, forward_memory_h, loop_forward_cell, loop_forward_h, loop_backward_cell, loop_backward_h):
     '''

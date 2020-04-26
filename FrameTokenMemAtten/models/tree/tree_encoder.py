@@ -1,6 +1,6 @@
 import tensorflow as tf
 from models.lstm import Y2DirectLSTMCell, Y2DLSTMCell, YLSTMCell
-from metas.non_hyper_constants import int_type
+from metas.non_hyper_constants import int_type, learning_scope, float_type
 from metas.hyper_settings import num_units, tree_leaf_one_more_lstm_step
 from metas.tensor_constants import zero_tensor
 from utils.initializer import random_uniform_variable_initializer
@@ -19,7 +19,8 @@ class EncodeOneAST():
       self.y_leaf_lstm = YLSTMCell(63)
     self.y_forward = YLSTMCell(64)
     self.y_backward = YLSTMCell(65)
-    self.tree_leaf_one_more_lstm_begin_cell_h = tf.Variable(random_uniform_variable_initializer(25, 5, [2, num_units]))
+    with tf.variable_scope(learning_scope):
+      self.tree_leaf_one_more_lstm_begin_cell_h = tf.get_variable("tree_leaf_one_more_lstm_begin_cell_h", shape=[2, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(25, 5))
     
   def get_encoded_embeds(self, post_order_node_type_content_en, post_order_node_child_start, post_order_node_child_end, post_order_node_children):
     
