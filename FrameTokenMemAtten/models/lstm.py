@@ -97,7 +97,7 @@ class Y2DLSTMCell():
       f2 = layer_normalization(f2, self.norm_weights[3], self.norm_biases[3])
       o = layer_normalization(o, self.norm_weights[4], self.norm_biases[4])
     new_c = c1 * tf.nn.sigmoid(f) + c2 * tf.nn.sigmoid(f2) + tf.nn.sigmoid(i) * tf.nn.tanh(j)
-    new_h = new_c * tf.nn.sigmoid(o)
+    new_h = self.activation(new_c) * tf.nn.sigmoid(o)
     return new_c, new_h
 
 
@@ -139,7 +139,7 @@ class YLSTMCell():
     '''
     compute h
     '''
-    new_h1 = new_c1 * tf.nn.sigmoid(o)
+    new_h1 = self.activation(new_c1) * tf.nn.sigmoid(o)
     return new_h1, (new_c1, new_h1)
     
   
