@@ -23,7 +23,7 @@ class BasicDecodeModel():
     self.metrics_index = {value:key for key, value in self.index_metrics.items()}
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
     with tf.variable_scope(learning_scope):
-      self.contingent_parameters = tf.get_variable("contingent", shape=[contingent_parameters_num, 2, 5 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2, 5))
+      self.contingent_parameters = tf.get_variable("contingent", shape=[contingent_parameters_num, 2, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(2, 5))
       self.contingent_parameters_for_idle = tf.get_variable("contingent2", shape=[2, 1, num_units], dtype=float_type, initializer=random_uniform_variable_initializer(20, 50))
     
   def create_extra_default_metrics_meta(self):
