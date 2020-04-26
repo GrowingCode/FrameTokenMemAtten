@@ -72,7 +72,12 @@ class ModelRunner():
     self.train_metrics = self.model(place_holders, training = True)
     self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
-    self.train_op = self.optimizer.apply_gradients(gvs)
+    final_grads = []
+    for (gv, var) in gvs:
+      if gv is not None:
+        grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
+        final_grads.append((grad, var))
+    self.train_op = self.optimizer.apply_gradients(final_grads)
   
   def build_input_place_holder(self):
     self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
