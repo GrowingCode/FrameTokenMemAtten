@@ -106,7 +106,7 @@ class Y2DLSTMCell():
     new_c = c1 * tf.nn.sigmoid(f) + c2 * tf.nn.sigmoid(f2) + tf.nn.sigmoid(i) * tf.nn.tanh(j)
     if use_layer_norm:
       new_c = layer_normalization(new_c, self.norm_weights[5], self.norm_biases[5])
-    new_h = new_c * tf.nn.sigmoid(o)
+    new_h = self.activation(new_c) * tf.nn.sigmoid(o)
     return new_c, new_h
 
 
@@ -117,7 +117,7 @@ class YLSTMCell():
     self.activation = activation
     with tf.variable_scope(learning_scope):
       self.w = tf.get_variable("y1d_w"+str(num_desc), shape=[2 * num_units, 4 * num_units], dtype=float_type, initializer=random_uniform_variable_initializer(20, 220+num_desc))
-      self.b = tf.get_variable("y1d_b"+str(num_desc), shape=[1, 4 * num_units], dtype=float_type, initializer=zero_variable_initializer())
+      self.b = tf.get_variable("y1d_b"+str(num_desc), shape=[4 * num_units], dtype=float_type, initializer=zero_variable_initializer())
       if use_layer_norm:
         self.norm_weights = []
         self.norm_biases = []
@@ -151,7 +151,7 @@ class YLSTMCell():
     '''
     if use_layer_norm:
       new_c1 = layer_normalization(new_c1, self.norm_weights[4], self.norm_biases[4])
-    new_h1 = new_c1 * tf.nn.sigmoid(o)
+    new_h1 = self.activation(new_c1) * tf.nn.sigmoid(o)
     return new_h1, (new_c1, new_h1)
     
   
