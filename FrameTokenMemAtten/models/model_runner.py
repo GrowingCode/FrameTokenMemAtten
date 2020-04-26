@@ -98,7 +98,7 @@ class ModelRunner():
     min_loss = None
     max_accuracy = None
     restrain_count = 0
-    turn_info = []
+    turn_infos = []
     if os.path.exists(self.turn_txt):
       assert os.path.exists(self.turn_info_txt)
       with open(self.turn_txt, 'r') as turn_record:
@@ -110,7 +110,7 @@ class ModelRunner():
       with open(self.turn_info_txt, 'r') as turn_info_record:
         turn_info_lines = turn_info_record.readlines()
         for line in turn_info_lines:
-          turn_info.append(line)
+          turn_infos.append(line)
     '''
     restore model when turn is not 0
     '''
@@ -184,7 +184,7 @@ class ModelRunner():
           tf.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
-        turn_info.append(dict_to_string(valid_avg))
+        turn_infos.append(dict_to_string(valid_avg))
         '''
         save turn model
         judge whether the model is best currently
@@ -206,7 +206,7 @@ class ModelRunner():
           turn_record_json2["average_train_time_cost"] = total_turn_average_train_time_cost
           turn_record.write(json.dumps(turn_record_json2))
         with open(self.turn_info_txt, 'w') as turn_info_record:
-          t_info_record = '\n'.join(turn_info)
+          t_info_record = '\n'.join(turn_infos)
           turn_info_record.write(t_info_record)
         '''
         go to next epoch
