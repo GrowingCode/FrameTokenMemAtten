@@ -50,7 +50,7 @@ dup_share_parameters = 0
 simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
-is_dup_mode=sigmoid_is_dup
+is_dup_mode = sigmoid_is_dup
 dup_use_two_poles = 0
 ''' dup accuracy mode '''
 en_match = 0
@@ -110,6 +110,12 @@ if composite_config_func == "only_token_decode_with_tokens_compose":
 
 if composite_config_func == "only_token_decode_with_dup":
   use_dup_model = 1
+  
+if composite_config_func == "only_token_decode_with_dup_with_two_poles":
+  use_dup_model = 1
+  dup_use_two_poles = 1
+  repetition_mode = max_repetition_mode
+  is_dup_mode = simple_is_dup
   
 if composite_config_func == "only_token_decode_with_dup_share_dup_parameters":
   use_dup_model = 1

@@ -38,6 +38,7 @@ class PointerNetwork():
   
   def compute_logits(self, accumulated_h, h):
     dup_logits = self.dup_point_atten.compute_attention_logits(accumulated_h, h)
+    neg_ele_logit = None
     if dup_use_two_poles:
       neg_ele_logit = self.dup_point_atten.compute_attention_logits(self.neg_element, h)
     if repetition_mode == max_repetition_mode:
