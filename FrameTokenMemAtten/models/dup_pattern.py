@@ -106,8 +106,8 @@ class PointerNetwork():
 #     with tf.control_dependencies([p_op]):
     dup_loss = tf.reduce_sum(dup_losses)
     if dup_use_two_poles:
-      neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[r_dup_logits])
-      dup_loss -= tf.reduce_sum(neg_dup_losses)
+      neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[-r_dup_logits])
+      dup_loss += tf.reduce_sum(neg_dup_losses)
     r_val = 1.0
     r_dup_mrr = tf.stack([tf.constant(r_val, float_type), dup_mrr])[pre_exist]
     r_dup_accurate = tf.stack([tf.tile([tf.constant(r_val, float_type)], [len(top_ks)]), dup_accurate])[pre_exist]
