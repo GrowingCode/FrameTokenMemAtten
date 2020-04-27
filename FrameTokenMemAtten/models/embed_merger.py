@@ -12,7 +12,7 @@ class EmbedMerger():
     self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 5 * num_units]))
     self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     if use_layer_norm:
-      self.norm_wrights = []
+      self.norm_weights = []
       self.norm_biases = []
       for _ in range(6):
         self.norm_weights.append(tf.Variable(zero_variable_initializer([num_units])))
