@@ -90,7 +90,7 @@ class PointerNetwork():
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
     r_dup_logits = dup_logits
     if dup_use_two_poles:
-      negative_specified_index = tf.stack([-1, 0])[pre_exist]
+      negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
       r_dup_logits = tf.concat([dup_logits, neg_dup_logit], axis=0)
     ''' compute dup '''
     ''' compute accurate '''
