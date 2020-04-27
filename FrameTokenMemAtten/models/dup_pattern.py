@@ -102,9 +102,9 @@ class PointerNetwork():
       dup_mrr, dup_accurate = compute_dup_accurate(accumulated_en, oracle_en, specified_index, dup_logits)
     ''' maximize the most likely '''
     dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[specified_index], logits=[r_dup_logits])
-    p_op = tf.print(["shape of dup_losses:", tf.shape(dup_losses)])
-    with tf.control_dependencies([p_op]):
-      dup_loss = tf.reduce_sum(dup_losses)
+#     p_op = tf.print(["shape of dup_losses:", tf.shape(dup_losses)])
+#     with tf.control_dependencies([p_op]):
+    dup_loss = tf.reduce_sum(dup_losses)
     if dup_use_two_poles:
       neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[r_dup_logits])
       dup_loss -= tf.reduce_sum(neg_dup_losses)
