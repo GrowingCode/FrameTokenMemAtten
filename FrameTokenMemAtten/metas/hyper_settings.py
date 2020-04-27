@@ -51,6 +51,7 @@ simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
 is_dup_mode=sigmoid_is_dup
+dup_use_two_poles = 0
 ''' dup accuracy mode '''
 en_match = 0
 exact_accurate = 1
@@ -233,7 +234,8 @@ if compose_tokens_of_a_statement == 1:
 if decode_attention_way == decode_memory_concat_attention:
   if compose_tokens_of_a_statement == 1:
     assert compose_mode == compose_for_attention_use
-  
+if dup_use_two_poles:
+  assert repetition_mode == max_repetition_mode
   
     
 
