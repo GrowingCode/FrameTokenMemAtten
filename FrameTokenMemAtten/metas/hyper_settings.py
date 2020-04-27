@@ -67,7 +67,7 @@ atom_decode_mode = token_decode
 ''' training hyper '''
 ignore_restrain_count = 0
 restrain_maximum_count = 2
-max_train_epoch = 30
+max_train_epoch = 100
 valid_epoch_period = 1
 '''
 actually each example in one batch is still trained one by one
