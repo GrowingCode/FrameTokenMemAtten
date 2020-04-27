@@ -13,7 +13,7 @@ class EmbedMerger():
     if use_layer_norm:
       self.norm_wrights = []
       self.norm_biases = []
-      for _ in range(4):
+      for _ in range(6):
         self.norm_wrights.append(tf.Variable(zero_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(one_variable_initializer([num_units])))
   
@@ -27,12 +27,16 @@ class EmbedMerger():
       i = layer_normalization(i, self.norm_wrights[0], self.norm_biases[0])
       j = layer_normalization(j, self.norm_wrights[1], self.norm_biases[1])
       f = layer_normalization(f, self.norm_wrights[2], self.norm_biases[2])
-      o = layer_normalization(o, self.norm_wrights[3], self.norm_biases[3])
+      f2 = layer_normalization(o, self.norm_wrights[3], self.norm_biases[3])
+      o = layer_normalization(o, self.norm_wrights[4], self.norm_biases[4])
     '''
     compute cell
     '''
-    new_h = (forward_h * tf.nn.sigmoid(f) + backward_h * tf.nn.sigmoid(o) + 
+    new_cell = (forward_h * tf.nn.sigmoid(f) + backward_h * tf.nn.sigmoid(f2) + 
              tf.tanh(j) * tf.nn.sigmoid(i))
+    if use_layer_norm:
+      new_cell = layer_normalization(new_cell, self.norm_weights[5], self.norm_biases[5])
+    new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
     return new_h
   
   
