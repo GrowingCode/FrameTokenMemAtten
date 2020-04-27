@@ -8,8 +8,8 @@ from metas.hyper_settings import num_units, use_layer_norm
 class EmbedMerger():
   
   def __init__(self):
-    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 4 * num_units]))
-    self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 5 * num_units]))
+    self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     if use_layer_norm:
       self.norm_wrights = []
       self.norm_biases = []
@@ -21,13 +21,13 @@ class EmbedMerger():
     linear_input = tf.concat([forward_h, backward_h], 1)
     res = tf.matmul(linear_input, self.w)
     res = tf.add(res, self.b)
-    i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
+    i, j, f, f2, o = tf.split(value=res, num_or_size_splits=5, axis=1)
     # add layer normalization to each gate
     if use_layer_norm:
       i = layer_normalization(i, self.norm_wrights[0], self.norm_biases[0])
       j = layer_normalization(j, self.norm_wrights[1], self.norm_biases[1])
       f = layer_normalization(f, self.norm_wrights[2], self.norm_biases[2])
-      f2 = layer_normalization(o, self.norm_wrights[3], self.norm_biases[3])
+      f2 = layer_normalization(f2, self.norm_wrights[3], self.norm_biases[3])
       o = layer_normalization(o, self.norm_wrights[4], self.norm_biases[4])
     '''
     compute cell
