@@ -86,9 +86,9 @@ def decode_one_token(type_content_data, training, oracle_type_content_en, oracle
 #     a_op = tf.assert_equal(tf.shape(dup_acc_ens)[0], tf.shape(dup_acc_hs)[0])
 #     p_op = tf.print(["dup_acc_ens_size:", tf.shape(dup_acc_ens)[0], "dup_acc_hs_size:", tf.shape(dup_acc_hs)[0], "dup_acc_ens:", dup_acc_ens, "oracle_type_content_en:", oracle_type_content_en, "oracle_type_content_var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize = 500)
 #     with tf.control_dependencies([p_op]):
-    dup_logits, neg_dup_logit, dup_max_arg_acc_h, dup_min_cared_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
+    dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = token_pointer.compute_logits(dup_acc_hs, dup_h)
     is_dup_logits = token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist = token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits, neg_dup_logit)
+    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist = token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
     
     token_metrics[metrics_index["token_dup_loss"]] = token_metrics[metrics_index["token_dup_loss"]] + dup_loss_of_this_node
     token_metrics[metrics_index["token_dup_accurate"]] = token_metrics[metrics_index["token_dup_accurate"]] + dup_accurate_of_this_node
