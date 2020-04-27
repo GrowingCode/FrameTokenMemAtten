@@ -26,7 +26,7 @@ basic lstm mode
 '''
 use_layer_norm = 1
 use_tensorflow_lstm_form = 0
-use_lstm_merger_style = 1
+use_lstm_merger_style = 0
 ''' memory mode '''
 compute_token_memory = 0
 only_memory_mode = 0
