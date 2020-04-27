@@ -15,7 +15,7 @@ class EmbedMerger():
       self.norm_wrights = []
       self.norm_biases = []
       for _ in range(6):
-        self.norm_wrights.append(tf.Variable(zero_variable_initializer([num_units])))
+        self.norm_weights.append(tf.Variable(zero_variable_initializer([num_units])))
         self.norm_biases.append(tf.Variable(one_variable_initializer([num_units])))
   
   def __call__(self, forward_h, backward_h):
@@ -25,11 +25,11 @@ class EmbedMerger():
     i, j, f, f2, o = tf.split(value=res, num_or_size_splits=5, axis=1)
     # add layer normalization to each gate
     if use_layer_norm:
-      i = layer_normalization(i, self.norm_wrights[0], self.norm_biases[0])
-      j = layer_normalization(j, self.norm_wrights[1], self.norm_biases[1])
-      f = layer_normalization(f, self.norm_wrights[2], self.norm_biases[2])
-      f2 = layer_normalization(f2, self.norm_wrights[3], self.norm_biases[3])
-      o = layer_normalization(o, self.norm_wrights[4], self.norm_biases[4])
+      i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
+      j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
+      f = layer_normalization(f, self.norm_weights[2], self.norm_biases[2])
+      f2 = layer_normalization(f2, self.norm_weights[3], self.norm_biases[3])
+      o = layer_normalization(o, self.norm_weights[4], self.norm_biases[4])
     '''
     compute cell
     '''
