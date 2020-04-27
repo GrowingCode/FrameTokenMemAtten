@@ -38,7 +38,7 @@ class EmbedMerger():
     if use_lstm_merger_style:
       if use_layer_norm:
         new_h = layer_normalization(new_h, self.norm_weights[5], self.norm_biases[5])
-      new_h = self.activation(new_h) * tf.nn.sigmoid(o)
+      new_h = tf.tanh(new_h) * tf.nn.sigmoid(o)
     return new_h
   
   
