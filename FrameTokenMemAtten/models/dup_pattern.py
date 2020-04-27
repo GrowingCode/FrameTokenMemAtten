@@ -42,15 +42,17 @@ class PointerNetwork():
     if dup_use_two_poles:
       neg_ele_logit = self.dup_point_atten.compute_attention_logits(self.neg_element, h)
     if repetition_mode == max_repetition_mode:
+      r_accumulated_h = accumulated_h
       r_dup_logits = dup_logits
       if dup_use_two_poles:
+        r_accumulated_h = tf.concat([r_accumulated_h, self.neg_element], axis=0)
         r_dup_logits = tf.concat([dup_logits, neg_ele_logit], axis=0)
       dup_max_arg = tf.argmax(r_dup_logits)
       dup_max_arg = tf.cast(dup_max_arg, int_type)
-      dup_max_cared_h = tf.expand_dims(accumulated_h[dup_max_arg], axis=0)
+      dup_max_cared_h = tf.expand_dims(r_accumulated_h[dup_max_arg], axis=0)
       dup_min_arg = tf.argmin(r_dup_logits)
       dup_min_arg = tf.cast(dup_min_arg, int_type)
-      dup_min_cared_h = tf.expand_dims(accumulated_h[dup_min_arg], axis=0)
+      dup_min_cared_h = tf.expand_dims(r_accumulated_h[dup_min_arg], axis=0)
     elif repetition_mode == attention_repetition_mode:
       dup_max_cared_h = self.is_dup_point_atten.compute_attention_context(accumulated_h, h)
       dup_min_cared_h = zero_tensor
