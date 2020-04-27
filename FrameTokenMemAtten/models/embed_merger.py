@@ -2,7 +2,8 @@ import tensorflow as tf
 from models.lstm import layer_normalization
 from utils.initializer import random_uniform_variable_initializer,\
   zero_variable_initializer, one_variable_initializer
-from metas.hyper_settings import num_units, use_layer_norm
+from metas.hyper_settings import num_units, use_layer_norm,\
+  use_lstm_merger_style
 
 
 class EmbedMerger():
@@ -32,11 +33,12 @@ class EmbedMerger():
     '''
     compute cell
     '''
-    new_cell = (forward_h * tf.nn.sigmoid(f) + backward_h * tf.nn.sigmoid(f2) + 
+    new_h = (forward_h * tf.nn.sigmoid(f) + backward_h * tf.nn.sigmoid(f2) + 
              tf.tanh(j) * tf.nn.sigmoid(i))
     if use_layer_norm:
-      new_cell = layer_normalization(new_cell, self.norm_weights[5], self.norm_biases[5])
-    new_h = self.activation(new_cell) * tf.nn.sigmoid(o)
+      new_h = layer_normalization(new_h, self.norm_weights[5], self.norm_biases[5])
+    if use_lstm_merger_style:
+      new_h = self.activation(new_h) * tf.nn.sigmoid(o)
     return new_h
   
   
