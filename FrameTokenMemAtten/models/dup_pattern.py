@@ -6,7 +6,6 @@ from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
   exact_accurate, dup_share_parameters, dup_use_two_poles
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
-from metas.tensor_constants import zero_tensor
 
 
 class PointerNetwork():
@@ -44,20 +43,21 @@ class PointerNetwork():
 #     if dup_use_two_poles:
 #       neg_dup_logits = self.neg_dup_point_atten.compute_attention_logits(accumulated_h, h)
 #       neg_ele_logit = self.neg_dup_point_atten.compute_attention_logits(self.neg_element, h)
-    dup_min_cared_h = zero_tensor
     if repetition_mode == max_repetition_mode:
       dup_max_arg = tf.argmax(dup_logits)
       dup_max_arg = tf.cast(dup_max_arg, int_type)
       dup_max_cared_h = tf.expand_dims(accumulated_h[dup_max_arg], axis=0)
-      if dup_use_two_poles:
+      dup_min_cared_h = dup_max_cared_h
+#       if dup_use_two_poles:
 #         neg_accumulated_h = tf.concat([accumulated_h, self.neg_element], axis=0)
 #         r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
-        r_neg_dup_logits = dup_logits
-        dup_min_arg = tf.argmin(r_neg_dup_logits)
-        dup_min_arg = tf.cast(dup_min_arg, int_type)
-        dup_min_cared_h = tf.expand_dims(accumulated_h[dup_min_arg], axis=0)
+#         r_neg_dup_logits = dup_logits
+#         dup_min_arg = tf.argmin(r_neg_dup_logits)
+#         dup_min_arg = tf.cast(dup_min_arg, int_type)
+#         dup_min_cared_h = tf.expand_dims(accumulated_h[dup_min_arg], axis=0)
     elif repetition_mode == attention_repetition_mode:
       dup_max_cared_h = self.is_dup_point_atten.compute_attention_context(accumulated_h, h)
+      dup_min_cared_h = dup_max_cared_h
     else:
       assert False, "Unrecognized repetition_mode!"
     return dup_logits, neg_dup_logits, neg_ele_logit, dup_max_cared_h, dup_min_cared_h
@@ -65,17 +65,11 @@ class PointerNetwork():
   def compute_is_dup_logits(self, dup_max_arg_acc_h, dup_min_arg_acc_h, h):
     if is_dup_mode == simple_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_dup_w), dup_max_arg_acc_h, transpose_b=True))
-      if dup_use_two_poles:
-        is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_not_dup_w), dup_min_arg_acc_h, transpose_b=True))
-      else:
-        is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_not_dup_w), dup_max_arg_acc_h, transpose_b=True))
+      is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(h, self.is_not_dup_w), dup_min_arg_acc_h, transpose_b=True))
       result = tf.stack([is_not_dup_logit, is_dup_logit])
     elif is_dup_mode == mlp_is_dup:
       is_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_dup_w), self.is_dup_h, transpose_b=True))
-      if dup_use_two_poles:
-        is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_min_arg_acc_h], axis=1), self.is_not_dup_w), self.is_not_dup_h, transpose_b=True))
-      else:
-        is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_max_arg_acc_h], axis=1), self.is_not_dup_w), self.is_not_dup_h, transpose_b=True))
+      is_not_dup_logit = tf.squeeze(tf.matmul(tf.matmul(tf.concat([h, dup_min_arg_acc_h], axis=1), self.is_not_dup_w), self.is_not_dup_h, transpose_b=True))
       result = tf.stack([is_not_dup_logit, is_dup_logit])
     elif is_dup_mode == sigmoid_is_dup:
       cared_h = dup_max_arg_acc_h
