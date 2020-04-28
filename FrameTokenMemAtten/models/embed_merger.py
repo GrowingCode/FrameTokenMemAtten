@@ -4,19 +4,20 @@ from utils.initializer import random_uniform_variable_initializer,\
   zero_variable_initializer, one_variable_initializer
 from metas.hyper_settings import num_units, use_layer_norm,\
   use_lstm_merger_style
+from metas.non_hyper_constants import lstm_initialize_range
 
 
 class EmbedMerger():
   
   def __init__(self):
-    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 5 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 5 * num_units], ini_range=lstm_initialize_range))
     self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     if use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []
       for _ in range(6):
-        self.norm_weights.append(tf.Variable(zero_variable_initializer([num_units])))
-        self.norm_biases.append(tf.Variable(one_variable_initializer([num_units])))
+        self.norm_weights.append(tf.Variable(one_variable_initializer([num_units])))
+        self.norm_biases.append(tf.Variable(zero_variable_initializer([num_units])))
   
   def __call__(self, forward_h, backward_h):
     linear_input = tf.concat([forward_h, backward_h], 1)
