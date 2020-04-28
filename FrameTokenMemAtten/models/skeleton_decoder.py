@@ -9,7 +9,8 @@ from metas.hyper_settings import num_units, \
   three_way_compose, decode_attention_way, decode_no_attention, \
   compose_share_parameters, two_way_compose, use_tensorflow_lstm_form
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, initialize_range
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, initialize_range,\
+  lstm_initialize_range
 from metas.tensor_constants import zero_tensor
 from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
@@ -92,7 +93,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
       self.token_attention = YAttention(10)
     
     if use_tensorflow_lstm_form:
-      self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-initialize_range, initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
+      self.token_lstm = LSTMCell(num_units, initializer=tf.compat.v1.random_uniform_initializer(-lstm_initialize_range, lstm_initialize_range, seed=100, dtype=float_type), forget_bias=0.0, dtype=float_type)
     else:
       self.token_lstm = YLSTMCell(0)
     r_token_embedder_mode = token_embedder_mode

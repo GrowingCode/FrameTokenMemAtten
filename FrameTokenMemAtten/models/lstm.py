@@ -2,6 +2,7 @@ from metas.hyper_settings import num_units, use_layer_norm
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
+from metas.non_hyper_constants import lstm_initialize_range
 
 
 class Y2DirectLSTMCell():
@@ -111,7 +112,7 @@ class YLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
-    self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units]))
+    self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units]), ini_range=lstm_initialize_range)
     self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     if use_layer_norm:
       self.norm_weights = []
