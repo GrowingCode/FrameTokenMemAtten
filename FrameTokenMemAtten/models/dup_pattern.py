@@ -33,28 +33,29 @@ class PointerNetwork():
         self.is_dup_point_atten = self.dup_point_atten
       else:
         self.is_dup_point_atten = YAttention(200)
-    if dup_use_two_poles:
-      self.neg_dup_point_atten = YAttention(105)
-      self.neg_element = tf.Variable(random_uniform_variable_initializer(200, 2080, [1, 1*num_units]))
+#     if dup_use_two_poles:
+#       self.neg_dup_point_atten = YAttention(105)
+#       self.neg_element = tf.Variable(random_uniform_variable_initializer(200, 2080, [1, 1*num_units]))
   
   def compute_logits(self, accumulated_h, h):
     dup_logits = self.dup_point_atten.compute_attention_logits(accumulated_h, h)
     neg_dup_logits = None
     neg_ele_logit = None
-    if dup_use_two_poles:
-      neg_dup_logits = self.neg_dup_point_atten.compute_attention_logits(accumulated_h, h)
-      neg_ele_logit = self.neg_dup_point_atten.compute_attention_logits(self.neg_element, h)
+#     if dup_use_two_poles:
+#       neg_dup_logits = self.neg_dup_point_atten.compute_attention_logits(accumulated_h, h)
+#       neg_ele_logit = self.neg_dup_point_atten.compute_attention_logits(self.neg_element, h)
     dup_min_cared_h = zero_tensor
     if repetition_mode == max_repetition_mode:
       dup_max_arg = tf.argmax(dup_logits)
       dup_max_arg = tf.cast(dup_max_arg, int_type)
       dup_max_cared_h = tf.expand_dims(accumulated_h[dup_max_arg], axis=0)
       if dup_use_two_poles:
-        neg_accumulated_h = tf.concat([accumulated_h, self.neg_element], axis=0)
-        r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
-        dup_min_arg = tf.argmax(r_neg_dup_logits)
+#         neg_accumulated_h = tf.concat([accumulated_h, self.neg_element], axis=0)
+#         r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
+        r_neg_dup_logits = dup_logits
+        dup_min_arg = tf.argmin(r_neg_dup_logits)
         dup_min_arg = tf.cast(dup_min_arg, int_type)
-        dup_min_cared_h = tf.expand_dims(neg_accumulated_h[dup_min_arg], axis=0)
+        dup_min_cared_h = tf.expand_dims(accumulated_h[dup_min_arg], axis=0)
     elif repetition_mode == attention_repetition_mode:
       dup_max_cared_h = self.is_dup_point_atten.compute_attention_context(accumulated_h, h)
     else:
@@ -86,14 +87,14 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     return result
 
-  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit):
+  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits, neg_dup_logits=None, neg_ele_logit=None):
     total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
-    if dup_use_two_poles:
-      negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
-      r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
+#     if dup_use_two_poles:
+#       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
+#       r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
     ''' compute dup '''
     ''' compute accurate '''
     if training:
@@ -105,9 +106,9 @@ class PointerNetwork():
 #     p_op = tf.print(["shape of dup_losses:", tf.shape(dup_losses)])
 #     with tf.control_dependencies([p_op]):
     dup_loss = tf.reduce_sum(dup_losses)
-    if dup_use_two_poles:
-      neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[r_neg_dup_logits])
-      dup_loss += tf.reduce_sum(neg_dup_losses)
+#     if dup_use_two_poles:
+#       neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[r_neg_dup_logits])
+#       dup_loss += tf.reduce_sum(neg_dup_losses)
     r_val = 1.0
     r_dup_mrr = tf.stack([tf.constant(r_val, float_type), dup_mrr])[pre_exist]
     r_dup_accurate = tf.stack([tf.tile([tf.constant(r_val, float_type)], [len(top_ks)]), dup_accurate])[pre_exist]
