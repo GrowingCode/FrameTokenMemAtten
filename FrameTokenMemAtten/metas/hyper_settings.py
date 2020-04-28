@@ -199,6 +199,13 @@ if composite_config_func == "not_skeleton_only_token_decode_with_dup":
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
   
+if composite_config_func == "not_skeleton_only_token_decode_with_rep_dup":
+  build_feed_dict = build_statement_feed_dict
+  treat_first_element_as_skeleton = 0
+  use_dup_model = 1
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
+  
 if composite_config_func == "not_skeleton_only_token_decode_with_dup_share_dup_parameters":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
