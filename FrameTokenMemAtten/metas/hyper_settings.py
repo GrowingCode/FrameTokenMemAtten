@@ -183,6 +183,11 @@ if composite_config_func == "not_skeleton_only_token_decode":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   
+if composite_config_func == "not_skeleton_only_token_decode_no_layer_norm":
+  build_feed_dict = build_statement_feed_dict
+  treat_first_element_as_skeleton = 0
+  use_layer_norm = 0
+  
 if composite_config_func == "not_skeleton_only_token_decode_with_tensorflow_lstm":
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
