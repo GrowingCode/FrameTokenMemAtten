@@ -124,7 +124,7 @@ class PointerNetwork():
     total_mrr = tf.multiply(r_dup_mrr, is_dup_accurate_one)
     total_accurate = tf.multiply(r_dup_accurate, is_dup_accurate)
     total_loss = r_dup_loss + is_dup_loss
-    return total_mrr, total_accurate, total_loss, r_dup_mrr, r_dup_accurate, predict_to_use_pre_exist
+    return total_mrr, total_accurate, total_loss, r_dup_mrr * tf.cast(pre_exist, float_type), r_dup_accurate * tf.cast(pre_exist, float_type), predict_to_use_pre_exist
 
 
 def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
