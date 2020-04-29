@@ -2,6 +2,14 @@ from inputs.example_data_loader import build_skeleton_feed_dict,\
   build_statement_feed_dict, build_sequence_feed_dict, build_tree_feed_dict
 
 
+'''
+basic learning mode
+'''
+tokens_all_valid = 0
+
+'''
+details
+'''
 build_feed_dict = build_skeleton_feed_dict
 sequence_decode_mode = 0
 skeleton_decode_mode = 1
