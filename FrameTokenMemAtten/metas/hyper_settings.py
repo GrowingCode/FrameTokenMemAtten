@@ -5,7 +5,9 @@ from inputs.example_data_loader import build_skeleton_feed_dict,\
 '''
 basic learning mode
 '''
-tokens_all_valid = 0
+token_in_scope_valid = 0
+token_meaningful_valid = 1
+token_valid_mode = token_meaningful_valid
 
 '''
 details

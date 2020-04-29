@@ -2,7 +2,8 @@ from metas.hyper_settings import use_dup_model, compute_token_memory, \
   accumulated_token_max_length, num_units, top_ks, only_memory_mode,\
   token_memory_mode, memory_concat_mode, decode_attention_way,\
   decode_no_attention, decode_stand_attention, decode_memory_attention,\
-  decode_memory_concat_attention, tokens_all_valid
+  decode_memory_concat_attention, token_valid_mode,\
+  token_in_scope_valid, token_meaningful_valid
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
@@ -13,14 +14,14 @@ from utils.tensor_concat import concat_in_fixed_length_two_dimension, \
 
 
 def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
-  if tokens_all_valid:
-    en_valid = 1
-    out_use_en = oracle_type_content_en
-  else:
-#     en_valid_bool = tf.logical_and(tf.greater(oracle_type_content_en, 2), )
+  if token_valid_mode == token_in_scope_valid:
     en_valid_bool = tf.less(oracle_type_content_en, type_content_data[all_token_summary][TokenHitNum])
-    en_valid = tf.cast(en_valid_bool, float_type)
-    out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
+  elif token_valid_mode == token_meaningful_valid:
+    en_valid_bool = tf.logical_and(tf.greater(oracle_type_content_en, 2), tf.less(oracle_type_content_en, type_content_data[all_token_summary][TokenHitNum]))
+  else:
+    assert False
+  en_valid = tf.cast(en_valid_bool, float_type)
+  out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
   ''' typical token swords prediction '''
   cell = tf.expand_dims(token_metrics[metrics_index["token_accumulated_cell"]][-1], 0)
   h = tf.expand_dims(token_metrics[metrics_index["token_accumulated_h"]][-1], 0)
