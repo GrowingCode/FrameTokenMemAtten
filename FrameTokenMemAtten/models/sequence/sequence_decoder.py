@@ -64,11 +64,6 @@ class SequenceDecodeModel(BasicDecodeModel):
     token_metrics = list(r_stmt_metrics_tuple)
     
     token_metrics = one_lstm_step_and_update_memory("", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.token_lstm, self.token_embedder)
-#     cell = token_metrics[self.metrics_index["token_cell"]]
-#     h = token_metrics[self.metrics_index["token_h"]]
-#     _, (new_cell, new_h) = self.token_lstm(self.token_embedder.compute_h(token_en), (cell, h))
-#     token_metrics[self.metrics_index["token_cell"]] = new_cell
-#     token_metrics[self.metrics_index["token_h"]] = new_h
     if use_dup_model:
       token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
     
