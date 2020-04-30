@@ -4,12 +4,11 @@ import time
 from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
-  gradient_clip_abs_range, build_feed_dict, model_run_mode, skeleton_decode_mode
+  gradient_clip_abs_range, build_feed_dict
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode, int_type,\
   model_storage_parent_dir
-from models.skeleton_decoder import SkeletonDecodeModel
 import numpy as np
 import tensorflow as tf
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array,\
@@ -80,18 +79,13 @@ class ModelRunner():
     self.train_op = self.optimizer.apply_gradients(final_grads)
   
   def build_input_place_holder(self):
-    self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
-    self.skeleton_token_info_start_tensor = tf.compat.v1.placeholder(int_type, [None])
-    self.skeleton_token_info_end_tensor = tf.compat.v1.placeholder(int_type, [None])
-    return (self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor)
+    pass
   
   def build_model_logic(self):
-    assert model_run_mode == skeleton_decode_mode, "serious error! not skeleton decode mode? but the model logic is skeleton decode logic."
-    self.model = SkeletonDecodeModel(self.type_content_data)
-    
+    pass
+  
   def build_feed_dict(self, one_example):
-    feed_dict = {self.skeleton_token_info_tensor:one_example[0], self.skeleton_token_info_start_tensor:one_example[1], self.skeleton_token_info_end_tensor:one_example[2]}
-    return feed_dict
+    pass
   
   def train(self):
     turn = 0

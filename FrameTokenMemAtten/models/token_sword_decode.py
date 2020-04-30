@@ -2,7 +2,7 @@ from metas.hyper_settings import use_dup_model, \
   token_memory_mode, decode_attention_way,\
   decode_no_attention, token_valid_mode,\
   token_in_scope_valid, token_meaningful_valid, decode_with_attention,\
-  no_memory_mode, top_ks, lstm_memory_concat_mode, bilstm_memory_concat_mode
+  no_memory_mode, top_ks, concat_memory_mode
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -277,10 +277,9 @@ import tensorflow as tf
 
 class TokenDecoder():
   
-  def __init__(self, type_content_data, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, dup_token_pointer=None):
+  def __init__(self, type_content_data, metrics_index, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, dup_token_pointer=None):
     self.type_content_data = type_content_data
     self.metrics_index = metrics_index
-    self.token_metrics = token_metrics
     self.linear_token_output_w = linear_token_output_w
     self.token_lstm = token_lstm
     self.token_embedder = token_embedder
@@ -289,7 +288,7 @@ class TokenDecoder():
     self.dup_token_embedder = dup_token_embedder
     self.dup_token_pointer = dup_token_pointer
     
-  def decode_one_token(self, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative):
+  def decode_one_token(self, token_metrics, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative):
     if token_valid_mode == token_in_scope_valid:
       en_valid_bool = tf.less(oracle_type_content_en, self.type_content_data[all_token_summary][TokenHitNum])
     elif token_valid_mode == token_meaningful_valid:
@@ -299,12 +298,12 @@ class TokenDecoder():
     en_valid = tf.cast(en_valid_bool, float_type)
     out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
     ''' typical token swords prediction '''
-    h = tf.expand_dims(self.token_metrics[self.metrics_index["token_h"]][-1], 0)
+    h = token_metrics[self.metrics_index["token_h"]][-1]
     if decode_attention_way == decode_no_attention:
       out_use_h = h
     elif decode_attention_way == decode_with_attention:
       assert token_memory_mode > no_memory_mode
-      out_use_h = self.token_attention.compute_attention_h(self.token_metrics[self.metrics_index["memory_acc_h"]], h)
+      out_use_h = self.token_attention.compute_attention_h(token_metrics[self.metrics_index["memory_acc_h"]], h)
     else:
       assert False
     mrr_of_this_node, accurate_of_this_node, loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, self.linear_token_output_w, out_use_en, out_use_h)
@@ -312,10 +311,10 @@ class TokenDecoder():
     accurate_of_this_node = accurate_of_this_node * en_valid
     mrr_of_this_node = mrr_of_this_node * en_valid
     
-    self.token_metrics[self.metrics_index["token_lm_loss"]] += loss_of_this_node
-    self.token_metrics[self.metrics_index["token_lm_accurate"]] += accurate_of_this_node
-    self.token_metrics[self.metrics_index["token_lm_mrr"]] += mrr_of_this_node
-    self.token_metrics[self.metrics_index["all_loss"]] += loss_of_this_node
+    token_metrics[self.metrics_index["token_lm_loss"]] += loss_of_this_node
+    token_metrics[self.metrics_index["token_lm_accurate"]] += accurate_of_this_node
+    token_metrics[self.metrics_index["token_lm_mrr"]] += mrr_of_this_node
+    token_metrics[self.metrics_index["all_loss"]] += loss_of_this_node
     
     dup_repeat_mrr_of_this_node = tf.constant(0.0, float_type)
     dup_repeat_accurate_of_this_node = tf.zeros([len(top_ks)], float_type)
@@ -323,10 +322,10 @@ class TokenDecoder():
     
     if use_dup_model:
       assert token_memory_mode > no_memory_mode
-      dup_h = self.token_metrics[self.metrics_index["dup_token_h"]]
-      dup_acc_hs = self.token_metrics[self.metrics_index["dup_memory_acc_h"]]
-      dup_acc_ens = self.token_metrics[self.metrics_index["token_memory_en"]]
-      if token_memory_mode == lstm_memory_concat_mode or token_memory_mode == bilstm_memory_concat_mode:
+      dup_h = token_metrics[self.metrics_index["dup_token_h"]]
+      dup_acc_hs = token_metrics[self.metrics_index["dup_memory_acc_h"]]
+      dup_acc_ens = token_metrics[self.metrics_index["dup_memory_en"]]
+      if token_memory_mode == concat_memory_mode:
         r_var_relative = oracle_type_content_var_relative
       else:
         r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
@@ -334,17 +333,18 @@ class TokenDecoder():
       dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
       is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
       dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+      predict_to_use_pre_exist = predict_to_use_pre_exist * tf.cast(oracle_type_content_var > 0, int_type)
       
-      self.token_metrics[self.metrics_index["token_dup_loss"]] += dup_loss_of_this_node
-      self.token_metrics[self.metrics_index["token_dup_accurate"]] += dup_accurate_of_this_node
-      self.token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
-      self.token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
+      token_metrics[self.metrics_index["token_dup_loss"]] += dup_loss_of_this_node
+      token_metrics[self.metrics_index["token_dup_accurate"]] += dup_accurate_of_this_node
+      token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
+      token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
       
     to_add_accurate_candidates = tf.stack([accurate_of_this_node, dup_repeat_accurate_of_this_node])
-    self.token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
+    token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
     to_add_mrr_candidates = tf.stack([mrr_of_this_node, dup_repeat_mrr_of_this_node])
-    self.token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
-    
+    token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
+    return token_metrics
   
 
 

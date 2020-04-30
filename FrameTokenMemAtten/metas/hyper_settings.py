@@ -8,7 +8,8 @@ basic learning mode
 token_in_scope_valid = 0
 token_meaningful_valid = 1
 token_valid_mode = token_meaningful_valid
-
+''' context length '''
+length_of_context = 25
 '''
 details
 '''
@@ -38,10 +39,10 @@ use_tensorflow_lstm_form = 0
 use_lstm_merger_style = 0
 ''' memory mode '''
 no_memory_mode = 0
-lstm_memory_mode = 1
-lstm_memory_concat_mode = 2
-bilstm_memory_mode = 3
-bilstm_memory_concat_mode = 4
+only_memory_mode = 1
+concat_memory_mode = 2
+# bilstm_memory_mode = 3
+# bilstm_memory_concat_mode = 4
 token_memory_mode = no_memory_mode
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1

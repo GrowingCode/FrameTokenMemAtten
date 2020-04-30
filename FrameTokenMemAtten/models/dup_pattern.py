@@ -1,8 +1,8 @@
 import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type
-from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode,\
-  simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode,\
-  repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode,\
+from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
+  simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
+  repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
@@ -10,28 +10,28 @@ from utils.initializer import random_uniform_variable_initializer
 
 class PointerNetwork():
   
-  def __init__(self):
+  def __init__(self, num_desc):
     if is_dup_mode == simple_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080, [num_units, num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080, [num_units, num_units]))
+      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [num_units, num_units]))
+      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [num_units, num_units]))
     elif is_dup_mode == mlp_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080, [2*num_units, 2*num_units]))
-      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080, [2*num_units, 2*num_units]))
-      self.is_not_dup_h = tf.Variable(random_uniform_variable_initializer(205, 1060, [1, 2*num_units]))
+      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [2 * num_units, 2 * num_units]))
+      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050 + num_desc, [1, 2 * num_units]))
+      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [2 * num_units, 2 * num_units]))
+      self.is_not_dup_h = tf.Variable(random_uniform_variable_initializer(205, 1060 + num_desc, [1, 2 * num_units]))
     elif is_dup_mode == sigmoid_is_dup:
-      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050, [1, 2*num_units]))
+      self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050 + num_desc, [1, 2 * num_units]))
       if dup_use_two_poles:
-        self.two_poles_merge_w = tf.Variable(random_uniform_variable_initializer(200, 1060, [2*num_units, 1*num_units]))
-        self.two_poles_merge_b = tf.Variable(random_uniform_variable_initializer(200, 1070, [1, 1*num_units]))
+        self.two_poles_merge_w = tf.Variable(random_uniform_variable_initializer(200, 1060 + num_desc, [2 * num_units, 1 * num_units]))
+        self.two_poles_merge_b = tf.Variable(random_uniform_variable_initializer(200, 1070 + num_desc, [1, 1 * num_units]))
     else:
       assert False, "Unrecognized is_dup_mode!"
-    self.dup_point_atten = YAttention(100)
+    self.dup_point_atten = YAttention(100 + num_desc)
     if repetition_mode == attention_repetition_mode:
       if dup_share_parameters:
         self.is_dup_point_atten = self.dup_point_atten
       else:
-        self.is_dup_point_atten = YAttention(200)
+        self.is_dup_point_atten = YAttention(200 + num_desc)
 #     if dup_use_two_poles:
 #       self.neg_dup_point_atten = YAttention(105)
 #       self.neg_element = tf.Variable(random_uniform_variable_initializer(200, 2080, [1, 1*num_units]))
