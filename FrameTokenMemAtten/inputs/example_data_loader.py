@@ -48,30 +48,30 @@ def build_statement_feed_dict(mode):
     i = 0
     i_len = len(strs)
     sequence_decodes_np_array = np.zeros([0, len(strs[0].split())], np_int_type)
-    while (i < 7):
+    while (i < 3):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
   #     print("np.shape(sequence_decodes_np_array):" + str(np.shape(sequence_decodes_np_array)) + "#np.shape(one_dim):" + str(np.shape(one_dim)))
       sequence_decodes_np_array = np.concatenate((sequence_decodes_np_array, one_dim), axis=0)
       i = i + 1
-    assert i == 7
+    assert i == 3
     
     sequence_decodes_start = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
     sequence_decodes_end = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
-    assert i == 9
+    assert i == 5
     
-    '''
-    following statements
-    '''
-    stmt_following_legal_info = [int(id_str) for id_str in strs[i].split()]
-    i = i + 1
-    stmt_following_legal_info_start = [int(id_str) for id_str in strs[i].split()]
-    i = i + 1
-    stmt_following_legal_info_end = [int(id_str) for id_str in strs[i].split()]
-    i = i + 1
+#     '''
+#     following statements
+#     '''
+#     stmt_following_legal_info = [int(id_str) for id_str in strs[i].split()]
+#     i = i + 1
+#     stmt_following_legal_info_start = [int(id_str) for id_str in strs[i].split()]
+#     i = i + 1
+#     stmt_following_legal_info_end = [int(id_str) for id_str in strs[i].split()]
+#     i = i + 1
     
-    assert i == i_len
+    assert i == i_len, "i:" + str(i) + "i_len:" + str(i_len)
     
     '''
     sequence_decodes: contain 2 rows:
@@ -82,7 +82,8 @@ def build_statement_feed_dict(mode):
     build feed_dict with tensors
     '''
     validate_relatives(sequence_decodes_np_array, "token")
-    examples.append((sequence_decodes_np_array[0:3,:], sequence_decodes_start, sequence_decodes_end, stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end))
+#     , stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end
+    examples.append((sequence_decodes_np_array[0:3,:], sequence_decodes_start, sequence_decodes_end))
   return examples
   
   
