@@ -30,7 +30,6 @@ num_units = 128
 contingent_parameters_num = 20
 use_dup_model = 0
 accumulated_token_max_length = 600
-take_lstm_states_as_memory_states = 0
 '''
 basic lstm mode
 '''
@@ -38,10 +37,12 @@ use_layer_norm = 1
 use_tensorflow_lstm_form = 0
 use_lstm_merger_style = 0
 ''' memory mode '''
-compute_token_memory = 0
-only_memory_mode = 0
-memory_concat_mode = 1
-token_memory_mode = only_memory_mode
+no_memory_mode = 0
+lstm_memory_mode = 1
+lstm_memory_concat_mode = 2
+bilstm_memory_mode = 3
+bilstm_memory_concat_mode = 4
+token_memory_mode = no_memory_mode
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1
 ''' whether skeleton '''
@@ -96,13 +97,11 @@ two_way_compose = 2
 three_way_compose = 3
 compose_mode = stand_compose
 compose_share_parameters = 1
-'''
-decode attention, high level attention way
-'''
+# '''
+# decode attention, high level attention way
+# '''
 decode_no_attention = 0
-decode_stand_attention = 1
-decode_memory_attention = 2
-decode_memory_concat_attention = 3
+decode_with_attention = 1
 decode_attention_way = decode_no_attention
 
 
@@ -143,16 +142,6 @@ if composite_config_func == "only_token_decode_with_memory_dup_v_atten":
   use_dup_model = 1
   compute_token_memory = 1
   attention_algorithm = v_attention
-  
-if composite_config_func == "only_token_decode_with_memory_dup_with_memory_concat":
-  use_dup_model = 1
-  compute_token_memory = 1
-  token_memory_mode = memory_concat_mode
-  
-if composite_config_func == "only_token_decode_with_memory_dup_with_lstm_states":
-  use_dup_model = 1
-  compute_token_memory = 1
-  take_lstm_states_as_memory_states = 1
   
 if composite_config_func == "only_token_decode_with_memory_dup_v_atten_with_lstm_states":
   use_dup_model = 1
@@ -202,12 +191,6 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tensorflow_lstm
   build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_tensorflow_lstm_form = 1
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_memory_attention":
-  build_feed_dict = build_statement_feed_dict
-  treat_first_element_as_skeleton = 0
-  compose_mode = compose_for_attention_use
-  decode_attention_way = decode_memory_concat_attention
   
 if composite_config_func == "not_skeleton_only_token_decode_with_dup":
   build_feed_dict = build_statement_feed_dict
@@ -266,9 +249,6 @@ if treat_first_element_as_skeleton == 0:
   assert build_feed_dict == build_statement_feed_dict
 if compose_tokens_of_a_statement == 1:
   assert compute_token_memory == 1
-if decode_attention_way == decode_memory_concat_attention:
-  if compose_tokens_of_a_statement == 1:
-    assert compose_mode == compose_for_attention_use
 if dup_use_two_poles:
   assert repetition_mode == max_repetition_mode
   
