@@ -8,8 +8,6 @@ basic learning mode
 token_in_scope_valid = 0
 token_meaningful_valid = 1
 token_valid_mode = token_meaningful_valid
-''' context length '''
-length_of_context = 25
 '''
 details
 '''
