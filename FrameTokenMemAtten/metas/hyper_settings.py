@@ -8,6 +8,7 @@ basic learning mode
 token_in_scope_valid = 0
 token_meaningful_valid = 1
 token_valid_mode = token_meaningful_valid
+only_consider_var_accuracy = 0
 '''
 details
 '''
@@ -107,7 +108,7 @@ decode_attention_way = decode_no_attention
 '''
 additional composite configuration
 '''
-composite_config_func = "only_token_decode"
+composite_config_func = "sequence_only_token_decode"
 
 if composite_config_func == "only_token_decode":
   pass
@@ -232,7 +233,7 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_
 if composite_config_func == "sequence_only_token_decode":
   build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
-  use_tensorflow_lstm_form = 1
+#   use_tensorflow_lstm_form = 1
   
 if composite_config_func == "tree_token_decode":
   build_feed_dict = build_tree_feed_dict

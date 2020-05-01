@@ -31,13 +31,14 @@ class SequenceDecodeModel(BasicDecodeModel):
     if decode_attention_way > decode_no_attention:
       self.token_attention = YAttention(10)
     
+    self.dup_token_lstm, self.dup_one_hot_token_embedding, self.dup_token_embedder, self.dup_token_pointer = None, None, None, None
     if use_dup_model:
       self.dup_token_lstm = YLSTMCell(125)
       self.dup_one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(25, 56, [number_of_tokens, num_units]))
       self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.dup_one_hot_token_embedding)
       self.dup_token_pointer = PointerNetwork(222)
     
-    self.token_decoder = TokenDecoder(self.type_content_data, self.metrics_index, self.token_metrics, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.token_attention, self.dup_token_lstm, self.dup_token_embedder, self.dup_token_pointer)
+    self.token_decoder = TokenDecoder(self.type_content_data, self.metrics_index, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.token_attention, self.dup_token_lstm, self.dup_token_embedder, self.dup_token_pointer)
   
   def __call__(self, one_example, training = True):
     self.token_info_tensor = one_example[0]

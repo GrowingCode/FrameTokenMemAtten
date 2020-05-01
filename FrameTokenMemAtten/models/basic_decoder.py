@@ -21,7 +21,7 @@ class BasicDecodeModel():
     self.index_metrics = dict((k,v) for k, v in zip(range(len(self.metrics_name)), self.metrics_name))
     self.metrics_index = {value:key for key, value in self.index_metrics.items()}
     self.metrics_contingent_index = create_metrics_contingent_index(self.metrics_meta)
-    self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 2, num_units]))
+    self.contingent_parameters = tf.Variable(random_uniform_variable_initializer(2, 5, [contingent_parameters_num, 1, num_units]))
     self.contingent_parameters_for_idle = tf.Variable(random_uniform_variable_initializer(20, 50, [2, 1, num_units]))
     
   def create_extra_default_metrics_meta(self):
@@ -29,7 +29,7 @@ class BasicDecodeModel():
   
   def create_in_use_tensors_meta(self):
 #     , ("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units]))
-    result = [("token_cell", tf.TensorShape([None])), ("token_h", tf.TensorShape([None, num_units])), ("memory_en", tf.TensorShape([None])), ("memory_acc_cell", tf.TensorShape([None, num_units])), ("memory_acc_h", tf.TensorShape([None, num_units])), ("dup_token_cell", tf.TensorShape([1, num_units])), ("dup_token_h", tf.TensorShape([1, num_units])), ("dup_memory_en", tf.TensorShape([None])), ("dup_memory_acc_cell", tf.TensorShape([None, num_units])), ("dup_memory_acc_h", tf.TensorShape([None, num_units]))]
+    result = [("token_cell", tf.TensorShape([1, num_units])), ("token_h", tf.TensorShape([1, num_units])), ("memory_en", tf.TensorShape([None])), ("memory_acc_cell", tf.TensorShape([None, num_units])), ("memory_acc_h", tf.TensorShape([None, num_units])), ("dup_token_cell", tf.TensorShape([1, num_units])), ("dup_token_h", tf.TensorShape([1, num_units])), ("dup_memory_en", tf.TensorShape([None])), ("dup_memory_acc_cell", tf.TensorShape([None, num_units])), ("dup_memory_acc_h", tf.TensorShape([None, num_units]))]
     return result
   
   

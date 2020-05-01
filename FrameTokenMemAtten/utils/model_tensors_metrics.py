@@ -23,10 +23,10 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
     elif m_name.endswith("_beam"):
       ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
     else:
-      if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):
-        ct = contingent_parameters[metrics_contingent_index[m_name]][:,:]
-      else:
-        ct = contingent_parameters[metrics_contingent_index[m_name]][-2:-1,:]
+#       if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):
+#         ct = contingent_parameters[metrics_contingent_index[m_name]][:,:]
+#       else:
+      ct = contingent_parameters[metrics_contingent_index[m_name]]#[-2:-1,:]
     result.append(ct)
   return tuple(result)
 

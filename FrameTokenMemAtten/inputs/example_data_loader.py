@@ -17,7 +17,7 @@ def build_skeleton_feed_dict(mode):
     i = 0
     i_len = len(strs)
     stmt_skeleton_token_info = np.zeros([0, len(strs[0].split())], np_int_type)
-    while (i < 3):
+    while (i < 4):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
       stmt_skeleton_token_info = np.concatenate((stmt_skeleton_token_info, one_dim), axis=0)
       i = i + 1
@@ -48,18 +48,18 @@ def build_statement_feed_dict(mode):
     i = 0
     i_len = len(strs)
     sequence_decodes_np_array = np.zeros([0, len(strs[0].split())], np_int_type)
-    while (i < 3):
+    while (i < 4):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
   #     print("np.shape(sequence_decodes_np_array):" + str(np.shape(sequence_decodes_np_array)) + "#np.shape(one_dim):" + str(np.shape(one_dim)))
       sequence_decodes_np_array = np.concatenate((sequence_decodes_np_array, one_dim), axis=0)
       i = i + 1
-    assert i == 3
+    assert i == 4
     
     sequence_decodes_start = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
     sequence_decodes_end = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
-    assert i == 5
+    assert i == 6
     
 #     '''
 #     following statements
@@ -102,12 +102,12 @@ def build_sequence_feed_dict(mode):
     i = 0
     seq_length = len(strs[0].split())
     sequence_token_info = np.zeros([0, seq_length], np_int_type)
-    while (i < 1):
+    while (i < 4):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
       sequence_token_info = np.concatenate((sequence_token_info, one_dim), axis=0)
       i = i + 1
     
-    assert i == 1
+    assert i == 4
     
     examples.append((sequence_token_info, np.array([0]), np.array([seq_length-1])))
   
