@@ -28,8 +28,6 @@ top_ks = [1, 3, 6, 10]
 mrr_max = top_ks[-1]
 num_units = 128
 contingent_parameters_num = 20
-use_dup_model = 0
-use_syntax_to_decide_rep = 0
 accumulated_token_max_length = 600
 '''
 basic lstm mode
@@ -53,12 +51,15 @@ token_only_mode = 0
 swords_compose_mode = 1
 token_embedder_mode = token_only_mode
 ''' dup_mode '''
-max_repetition_mode = 0
-attention_repetition_mode = 1
-repetition_mode = attention_repetition_mode
+use_dup_model = 0
+use_syntax_to_decide_rep = 0
 ''' dup share parameters '''
 dup_share_parameters = 0
 ''' is_dup_mode '''
+max_repetition_mode = 0
+attention_repetition_mode = 1
+repetition_mode = attention_repetition_mode
+''' is_dup_algorithm '''
 simple_is_dup = 0
 mlp_is_dup = 1
 sigmoid_is_dup = 2
@@ -109,7 +110,7 @@ decode_attention_way = decode_no_attention
 '''
 additional composite configuration
 '''
-composite_config_func = "sequence_only_token_decode"
+composite_config_func = "only_token_decode"
 
 if composite_config_func == "only_token_decode":
   pass
