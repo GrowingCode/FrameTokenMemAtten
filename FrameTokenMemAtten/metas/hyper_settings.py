@@ -98,9 +98,9 @@ two_way_compose = 2
 three_way_compose = 3
 compose_mode = stand_compose
 compose_share_parameters = 1
-# '''
-# decode attention, high level attention way
-# '''
+'''
+decode attention, high level attention way
+'''
 decode_no_attention = 0
 decode_with_attention = 1
 decode_attention_way = decode_no_attention
@@ -234,7 +234,12 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_
 if composite_config_func == "sequence_only_token_decode":
   build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
-#   use_tensorflow_lstm_form = 1
+  
+if composite_config_func == "sequence_only_token_decode_with_dup":
+  build_feed_dict = build_sequence_feed_dict
+  model_run_mode = sequence_decode_mode
+  use_dup_model = 1
+  token_memory_mode = concat_memory_mode
   
 if composite_config_func == "tree_token_decode":
   build_feed_dict = build_tree_feed_dict
