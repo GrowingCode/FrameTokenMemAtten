@@ -103,9 +103,8 @@ class PointerNetwork():
 #     if dup_use_two_poles:
 #       neg_dup_losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=[negative_specified_index], logits=[r_neg_dup_logits])
 #       dup_loss += tf.reduce_sum(neg_dup_losses)
-    r_val = 1.0
-    r_dup_mrr = tf.stack([tf.constant(r_val, float_type), dup_mrr])[pre_exist]
-    r_dup_accurate = tf.stack([tf.tile([tf.constant(r_val, float_type)], [len(top_ks)]), dup_accurate])[pre_exist]
+    r_dup_mrr = tf.stack([tf.constant(1.0, float_type), dup_mrr])[pre_exist]
+    r_dup_accurate = tf.stack([tf.tile([tf.constant(1.0, float_type)], [len(top_ks)]), dup_accurate])[pre_exist]
     if dup_use_two_poles:
       r_dup_loss = dup_loss
     else:
@@ -116,8 +115,13 @@ class PointerNetwork():
       predict_to_use_pre_exist = tf.cast(tf.argmax(is_dup_logits), int_type)
     else:
       is_dup_losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=[tf.cast(pre_exist, float_type)], logits=[is_dup_logits])
-      predict_to_use_pre_exist = tf.cast(is_dup_logits > 0.5, int_type)
+      predict_to_use_pre_exist = tf.cast(tf.sigmoid(is_dup_logits) > 0.5, int_type)
+#     if training:
     is_dup_accurate_one = tf.cast(tf.equal(predict_to_use_pre_exist, pre_exist), float_type)
+#     else:
+#       p_op = tf.print(["predict_to_use_pre_exist:", predict_to_use_pre_exist, "pre_exist:", pre_exist, "is_dup_logits:", is_dup_logits])
+#       with tf.control_dependencies([p_op]):
+#         is_dup_accurate_one = tf.cast(tf.equal(predict_to_use_pre_exist, pre_exist), float_type)
     is_dup_loss = tf.reduce_sum(is_dup_losses)
     is_dup_accurate = tf.tile([is_dup_accurate_one], [len(top_ks)])
     ''' maximize the most likely '''
@@ -128,8 +132,12 @@ class PointerNetwork():
 
 
 def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
-  dup_size = tf.shape(dup_logits)[0]
-  return tf.cond(dup_size > 1, lambda: compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
+#   dup_size = tf.shape(dup_logits)[0]
+#   p_op = tf.print(["dup_size:", dup_size, "oracle_token_sequence:", oracle_token_sequence, "oracle_type_content_en:", oracle_type_content_en])
+#   with tf.control_dependencies([p_op]):
+#     dup_res = tf.cond(dup_size > 1, lambda: compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits), lambda: (tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)))
+  acc_res = compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits)
+  return acc_res
 
 
 def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):

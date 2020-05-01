@@ -2,7 +2,7 @@ from metas.hyper_settings import only_memory_mode, token_memory_mode,\
   concat_memory_mode, num_units
 from models.mem import update_one_variable
 import tensorflow as tf
-from metas.non_hyper_constants import int_type, float_type
+from metas.non_hyper_constants import int_type
 
 
 def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_en, token_var, conserved_memory_length, token_lstm, token_embedder):
@@ -16,9 +16,12 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
     token_metrics[metrics_index[prefix + "memory_en"]], token_metrics[metrics_index[prefix + "memory_acc_cell"]], token_metrics[metrics_index[prefix + "memory_acc_h"]] = update_one_variable(token_var, token_en, dup_cell, dup_h, dup_acc_ens, dup_acc_cells, dup_acc_hs)
   elif token_memory_mode == concat_memory_mode:
     to_concat = tf.cast(token_var > 0, int_type)
-    concat_en = tf.stack([tf.zeros([0], int_type), [token_en]])[to_concat]
-    concat_cell = tf.stack([tf.zeros([0, num_units], float_type), dup_cell])[to_concat]
-    concat_h = tf.stack([tf.zeros([0, num_units], float_type), dup_h])[to_concat]
+    concat_en = [token_en]
+    concat_cell = dup_cell
+    concat_h = dup_h
+    concat_en = tf.slice(concat_en, [1-to_concat], [to_concat])
+    concat_cell = tf.slice(concat_cell, [1-to_concat, 0], [to_concat, num_units])
+    concat_h = tf.slice(concat_h, [1-to_concat, 0], [to_concat, num_units])
     
     token_metrics[metrics_index[prefix + "memory_en"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_en"]], concat_en], axis=0)
     token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_cell"]], concat_cell], axis=0)
@@ -27,10 +30,11 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
     curr_mem_len = tf.shape(token_metrics[metrics_index[prefix + "memory_en"]])[0]
     slice_start = curr_mem_len - conserved_memory_length
     r_slice_start = tf.cast(tf.logical_and(slice_start > 0, slice_start < curr_mem_len), int_type) * slice_start
+    r_slice_length = curr_mem_len - r_slice_start
     
-    token_metrics[metrics_index[prefix + "memory_en"]] = token_metrics[metrics_index[prefix + "memory_en"]][r_slice_start:]
-    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = token_metrics[metrics_index[prefix + "memory_acc_cell"]][r_slice_start:, :]
-    token_metrics[metrics_index[prefix + "memory_acc_h"]] = token_metrics[metrics_index[prefix + "memory_acc_h"]][r_slice_start:, :]
+    token_metrics[metrics_index[prefix + "memory_en"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_en"]], [r_slice_start], [r_slice_length])
+    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_cell"]], [r_slice_start, 0], [r_slice_length, num_units])
+    token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_h"]], [r_slice_start, 0], [r_slice_length, num_units])
     
   _, (new_dup_cell, new_dup_h) = token_lstm(token_embedder.compute_h(token_en), (dup_cell, dup_h))
   token_metrics[metrics_index[prefix + "token_cell"]] = new_dup_cell
