@@ -29,6 +29,7 @@ mrr_max = top_ks[-1]
 num_units = 128
 contingent_parameters_num = 20
 use_dup_model = 0
+use_syntax_to_decide_rep = 0
 accumulated_token_max_length = 600
 '''
 basic lstm mode

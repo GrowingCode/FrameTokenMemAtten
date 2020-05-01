@@ -3,7 +3,8 @@ from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
-  exact_accurate, dup_share_parameters, dup_use_two_poles
+  exact_accurate, dup_share_parameters, dup_use_two_poles,\
+  use_syntax_to_decide_rep
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -128,6 +129,8 @@ class PointerNetwork():
     total_mrr = tf.multiply(r_dup_mrr, is_dup_accurate_one)
     total_accurate = tf.multiply(r_dup_accurate, is_dup_accurate)
     total_loss = r_dup_loss + is_dup_loss
+    if use_syntax_to_decide_rep:
+      predict_to_use_pre_exist = pre_exist
     return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist
 
 
