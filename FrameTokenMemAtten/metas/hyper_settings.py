@@ -252,7 +252,8 @@ if compose_tokens_of_a_statement == 1:
   assert compute_token_memory == 1
 if dup_use_two_poles:
   assert repetition_mode == max_repetition_mode
-  
+if use_dup_model:
+  assert token_memory_mode > no_memory_mode
     
 
 
