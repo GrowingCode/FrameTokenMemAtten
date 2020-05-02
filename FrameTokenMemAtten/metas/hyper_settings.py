@@ -245,6 +245,13 @@ if composite_config_func == "sequence_only_token_decode_with_dup":
   use_dup_model = 1
   token_memory_mode = concat_memory_mode
   
+if composite_config_func == "sequence_only_token_decode_with_syntax_dup":
+  build_feed_dict = build_sequence_feed_dict
+  model_run_mode = sequence_decode_mode
+  use_dup_model = 1
+  token_memory_mode = concat_memory_mode
+  use_syntax_to_decide_rep = 1
+  
 if composite_config_func == "tree_token_decode":
   build_feed_dict = build_tree_feed_dict
   model_run_mode = tree_decode_mode
