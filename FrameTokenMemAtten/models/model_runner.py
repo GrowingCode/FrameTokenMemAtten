@@ -320,6 +320,8 @@ def compute_average(dict_t):
       if divd == 0.0:
         divd = 0.0000000001
       r[k_tm] = de_numpy(dict_t[k]/divd)
+    elif k.endswith('_count'):
+      r[k] = dict_t[k]
   return r
 
 
