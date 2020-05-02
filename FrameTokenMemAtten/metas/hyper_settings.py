@@ -8,7 +8,10 @@ basic learning mode
 token_in_scope_valid = 0
 token_meaningful_valid = 1
 token_valid_mode = token_meaningful_valid
-only_consider_var_accuracy = 0
+consider_all_token_accuracy = 0
+only_consider_var_accuracy = 1
+only_consider_unseen_var_accuracy = 2
+token_accuracy_mode = consider_all_token_accuracy
 '''
 details
 '''
