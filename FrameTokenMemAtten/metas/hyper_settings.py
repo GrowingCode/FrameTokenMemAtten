@@ -105,122 +105,50 @@ decode_attention_way = decode_no_attention
 '''
 additional composite configuration
 '''
-composite_config_func = "only_token_decode"
+composite_config_func = "skeleton_token_decode"
 
-if composite_config_func == "only_token_decode":
-  pass
+if composite_config_func == "skeleton_token_decode":
+  model_run_mode = skeleton_decode_mode
 
-if composite_config_func == "only_token_decode_with_tokens_compose":
+if composite_config_func == "skeleton_token_decode_with_tokens_compose":
+  model_run_mode = skeleton_decode_mode
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
 
-if composite_config_func == "only_token_decode_with_dup":
-  use_dup_model = 1
-  
-if composite_config_func == "only_token_decode_with_dup_with_two_poles":
-  use_dup_model = 1
-  dup_use_two_poles = 1
-  repetition_mode = max_repetition_mode
-  is_dup_mode = simple_is_dup
-  
-if composite_config_func == "only_token_decode_with_dup_share_dup_parameters":
-  use_dup_model = 1
-  dup_share_parameters = 1
-  
-if composite_config_func == "only_token_decode_with_dup_v_atten":
-  use_dup_model = 1
-  attention_algorithm = v_attention
-  
-if composite_config_func == "only_token_decode_with_memory_dup":
+if composite_config_func == "skeleton_token_decode_with_dup":
+  model_run_mode = skeleton_decode_mode
   use_dup_model = 1
   compute_token_memory = 1
+  token_memory_mode = only_memory_mode
   
-if composite_config_func == "only_token_decode_with_memory_dup_v_atten":
-  use_dup_model = 1
-  compute_token_memory = 1
-  attention_algorithm = v_attention
+if composite_config_func == "statement_token_decode":
+  model_run_mode = statement_decode_mode
   
-if composite_config_func == "only_token_decode_with_memory_dup_v_atten_with_lstm_states":
-  use_dup_model = 1
-  compute_token_memory = 1
-  attention_algorithm = v_attention
-  take_lstm_states_as_memory_states = 1
-  
-if composite_config_func == "token_decode_with_swords_comp_embed":
-  token_embedder_mode = swords_compose_mode
-
-if composite_config_func == "token_decode_with_swords_comp_embed_with_dup":
-  use_dup_model = 1
-  token_embedder_mode = swords_compose_mode
-  
-if composite_config_func == "token_decode_with_swords_comp_embed_with_tokens_compose":
-  token_embedder_mode = swords_compose_mode
+if composite_config_func == "statement_token_decode_with_tokens_compose":
+  model_run_mode = statement_decode_mode
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   
-if composite_config_func == "token_decode_with_swords_comp_embed_with_memory_dup":
+if composite_config_func == "statement_token_decode_with_dup":
+  model_run_mode = statement_decode_mode
   use_dup_model = 1
   compute_token_memory = 1
-  token_embedder_mode = swords_compose_mode
-
-if composite_config_func == "only_sword_decode":
-  use_dup_model = 0
-  atom_decode_mode = sword_decode
-  token_embedder_mode = swords_compose_mode
-
-if composite_config_func == "only_sword_decode_with_tokens_compose":
-  use_dup_model = 0
-  atom_decode_mode = sword_decode
-  token_embedder_mode = swords_compose_mode
-  compute_token_memory = 1
-  compose_tokens_of_a_statement = 1
-
-if composite_config_func == "not_skeleton_only_token_decode":
-  treat_first_element_as_skeleton = 0
+  token_memory_mode = only_memory_mode
   
-if composite_config_func == "not_skeleton_only_token_decode_no_layer_norm":
-  treat_first_element_as_skeleton = 0
-  use_layer_norm = 0
-    
-if composite_config_func == "not_skeleton_only_token_decode_with_dup":
-  treat_first_element_as_skeleton = 0
-  use_dup_model = 1
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_rep_dup":
-  treat_first_element_as_skeleton = 0
-  use_dup_model = 1
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_dup_share_dup_parameters":
-  treat_first_element_as_skeleton = 0
-  use_dup_model = 1
-  dup_share_parameters = 1
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
-  treat_first_element_as_skeleton = 0
-  compute_token_memory = 1
-  compose_tokens_of_a_statement = 1
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_no_layer_norm":
-  treat_first_element_as_skeleton = 0
-  compute_token_memory = 1
-  compose_tokens_of_a_statement = 1
-  use_layer_norm = 0
-  
-if composite_config_func == "sequence_only_token_decode":
+if composite_config_func == "sequence_token_decode":
   model_run_mode = sequence_decode_mode
   
-if composite_config_func == "sequence_only_token_decode_with_dup":
+if composite_config_func == "sequence_token_decode_with_dup":
   model_run_mode = sequence_decode_mode
   use_dup_model = 1
   token_memory_mode = concat_memory_mode
   
-if composite_config_func == "sequence_only_token_decode_with_syntax_dup":
+if composite_config_func == "sequence_token_decode_with_rep_dup":
   model_run_mode = sequence_decode_mode
   use_dup_model = 1
   token_memory_mode = concat_memory_mode
-  use_syntax_to_decide_rep = 1
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
   
 if composite_config_func == "tree_token_decode":
   model_run_mode = tree_decode_mode

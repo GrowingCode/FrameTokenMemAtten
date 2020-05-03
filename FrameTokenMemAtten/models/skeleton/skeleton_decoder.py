@@ -3,7 +3,7 @@ from inputs.atom_embeddings import BiLSTMEmbed, \
 from metas.hyper_settings import num_units, \
   use_dup_model, accumulated_token_max_length, compute_token_memory, \
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement, \
-  token_embedder_mode, swords_compose_mode, token_only_mode, treat_first_element_as_skeleton, \
+  token_embedder_mode, swords_compose_mode, token_only_mode, \
   only_memory_mode, token_memory_mode, \
   decode_attention_way, decode_no_attention, \
   compose_share_parameters
@@ -29,12 +29,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SkeletonDecodeModel, self).__init__(type_content_data)
-     
+    
+    self.treat_first_element_as_skeleton = 1
+    
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
     self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
     self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
      
-    if treat_first_element_as_skeleton:
+    if self.treat_first_element_as_skeleton:
       self.skeleton_lstm_cell = YLSTMCell(1)
       self.skeleton_dup_lstm_cell = YLSTMCell(2)
       self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
@@ -122,7 +124,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     stmt_end = self.token_info_end_tensor[i]
      
     stmt_start_offset = 0
-    if treat_first_element_as_skeleton:
+    if self.treat_first_element_as_skeleton:
       stmt_start_offset = 1
       ''' handle skeleton '''
       skt_id = self.token_info_tensor[0][stmt_start] - skeleton_base
@@ -179,7 +181,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     stmt_end = self.token_info_end_tensor[i]
     
     stmt_start_offset = 0
-    if treat_first_element_as_skeleton:
+    if self.treat_first_element_as_skeleton:
       stmt_start_offset = 1
       skt_id = self.token_info_tensor[0][b_stmt_start]
       skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
