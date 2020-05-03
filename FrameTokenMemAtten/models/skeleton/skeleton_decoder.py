@@ -8,7 +8,7 @@ from metas.hyper_settings import num_units, \
   decode_attention_way, decode_no_attention, \
   compose_share_parameters
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
@@ -125,7 +125,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     if treat_first_element_as_skeleton:
       stmt_start_offset = 1
       ''' handle skeleton '''
-      skt_id = self.token_info_tensor[0][stmt_start]
+      skt_id = self.token_info_tensor[0][stmt_start] - skeleton_base
       skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
       skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
       skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]

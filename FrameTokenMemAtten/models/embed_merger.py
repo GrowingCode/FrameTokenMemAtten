@@ -3,8 +3,7 @@ from models.lstm import layer_normalization
 from utils.initializer import random_uniform_variable_initializer,\
   zero_variable_initializer, one_variable_initializer
 from metas.hyper_settings import num_units, use_layer_norm,\
-  use_lstm_merger_style
-from metas.non_hyper_constants import lstm_initialize_range
+  use_lstm_merger_style, lstm_initialize_range
 
 
 class EmbedMerger():

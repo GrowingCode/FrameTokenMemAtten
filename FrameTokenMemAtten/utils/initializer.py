@@ -1,6 +1,6 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, initialize_range,\
-  initialize_seed_base
+from metas.non_hyper_constants import float_type
+from metas.hyper_settings import initialize_range, initialize_seed_base
 
 
 variable_initializer_seed = 13
