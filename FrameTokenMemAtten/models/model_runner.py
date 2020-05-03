@@ -4,7 +4,7 @@ import time
 from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
-  gradient_clip_abs_range, build_feed_dict
+  gradient_clip_abs_range
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode, int_type,\
@@ -21,19 +21,20 @@ class ModelRunner():
     '''
     load training data
     '''
+    self.set_up_example_loader()
 #     data_dir + "/" + "tree_train_data.txt", 
-    self.train_np_arrays = load_examples("train")
+    self.train_np_arrays = load_examples("train", self.example_loader)
     '''
     load valid data
     currently valid data is not considered
     '''
 #     data_dir + "/" + "tree_valid_data.txt", 
-    self.valid_np_arrays = load_examples("valid")
+    self.valid_np_arrays = load_examples("valid", self.example_loader)
     '''
     load test data
     '''
 #     data_dir + "/" + "tree_test_data.txt", 
-    self.test_np_arrays = load_examples("test")
+    self.test_np_arrays = load_examples("test", self.example_loader)
     '''
     load type content data
     '''
@@ -77,6 +78,9 @@ class ModelRunner():
         grad = tf.clip_by_value(gv, -gradient_clip_abs_range, gradient_clip_abs_range)
         final_grads.append((grad, var))
     self.train_op = self.optimizer.apply_gradients(final_grads)
+  
+  def set_up_example_loader(self):
+    pass
   
   def build_input_place_holder(self):
     pass
@@ -276,12 +280,12 @@ class ModelRunner():
     return metrics
 
 
-def load_examples(mode_info):
+def load_examples(mode_info, example_loader):
   start_time = time.time()
   end_time = time.time()
   print("reading " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   start_time = time.time()
-  examples = build_feed_dict(mode_info)
+  examples = example_loader(mode_info)
   end_time = time.time()
   print("pre_processing " + mode_info + " raw data using " + str(end_time-start_time) +"s")
   return examples

@@ -3,12 +3,16 @@ import tensorflow as tf
 from metas.non_hyper_constants import int_type
 from metas.hyper_settings import model_run_mode, sequence_decode_mode
 from models.sequence.sequence_decoder import SequenceDecodeModel
+from inputs.example_data_loader import build_sequence_feed_dict
 
 
 class SequenceModelRunner(ModelRunner):
   
   def __init__(self, sess):
     super(SequenceModelRunner, self).__init__(sess)
+  
+  def set_up_example_loader(self):
+    self.example_loader = build_sequence_feed_dict
   
   def build_input_place_holder(self):
     self.token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])

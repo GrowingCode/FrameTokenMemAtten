@@ -1,5 +1,3 @@
-from inputs.example_data_loader import build_skeleton_feed_dict,\
-  build_statement_feed_dict, build_sequence_feed_dict, build_tree_feed_dict
 
 
 '''
@@ -15,7 +13,6 @@ token_accuracy_mode = consider_all_token_accuracy
 '''
 details
 '''
-build_feed_dict = build_skeleton_feed_dict
 sequence_decode_mode = 0
 skeleton_decode_mode = 1
 tree_decode_mode = 2
@@ -42,13 +39,9 @@ use_lstm_merger_style = 0
 no_memory_mode = 0
 only_memory_mode = 1
 concat_memory_mode = 2
-# bilstm_memory_mode = 3
-# bilstm_memory_concat_mode = 4
 token_memory_mode = no_memory_mode
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1
-''' whether skeleton '''
-treat_first_element_as_skeleton = 1
 ''' token_embedder_mode '''
 token_only_mode = 0
 swords_compose_mode = 1
@@ -184,76 +177,63 @@ if composite_config_func == "only_sword_decode_with_tokens_compose":
   compose_tokens_of_a_statement = 1
 
 if composite_config_func == "not_skeleton_only_token_decode":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   
 if composite_config_func == "not_skeleton_only_token_decode_no_layer_norm":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_layer_norm = 0
   
 if composite_config_func == "not_skeleton_only_token_decode_with_tensorflow_lstm":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_tensorflow_lstm_form = 1
   
 if composite_config_func == "not_skeleton_only_token_decode_with_dup":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
   
 if composite_config_func == "not_skeleton_only_token_decode_with_rep_dup":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
   
 if composite_config_func == "not_skeleton_only_token_decode_with_dup_share_dup_parameters":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
   dup_share_parameters = 1
   
 if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   
 if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_no_layer_norm":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   use_layer_norm = 0
   
 if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_with_tensorflow_lstm":
-  build_feed_dict = build_statement_feed_dict
   treat_first_element_as_skeleton = 0
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   use_tensorflow_lstm_form = 1
   
 if composite_config_func == "sequence_only_token_decode":
-  build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
   
 if composite_config_func == "sequence_only_token_decode_with_dup":
-  build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
   use_dup_model = 1
   token_memory_mode = concat_memory_mode
   
 if composite_config_func == "sequence_only_token_decode_with_syntax_dup":
-  build_feed_dict = build_sequence_feed_dict
   model_run_mode = sequence_decode_mode
   use_dup_model = 1
   token_memory_mode = concat_memory_mode
   use_syntax_to_decide_rep = 1
   
 if composite_config_func == "tree_token_decode":
-  build_feed_dict = build_tree_feed_dict
   model_run_mode = tree_decode_mode
   
 
@@ -262,8 +242,6 @@ configuration hard checking
 '''
 if atom_decode_mode == sword_decode:
   assert token_embedder_mode == swords_compose_mode
-if treat_first_element_as_skeleton == 0:
-  assert build_feed_dict == build_statement_feed_dict
 if compose_tokens_of_a_statement == 1:
   assert compute_token_memory == 1
 if dup_use_two_poles:
