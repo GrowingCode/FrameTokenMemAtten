@@ -3,12 +3,16 @@ import tensorflow as tf
 from metas.non_hyper_constants import int_type
 from models.tree.tree_decoder import TreeDecodeModel
 from metas.hyper_settings import model_run_mode, tree_decode_mode
+from inputs.example_data_loader import build_tree_feed_dict
 
 
 class TreeModelRunner(ModelRunner):
   
   def __init__(self, sess):
     super(TreeModelRunner, self).__init__(sess)
+  
+  def set_up_example_loader(self):
+    self.example_loader = build_tree_feed_dict
   
   def build_input_place_holder(self):
     self.post_order_node_type_content_en_tensor = tf.compat.v1.placeholder(int_type, [None])
