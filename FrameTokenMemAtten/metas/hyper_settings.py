@@ -14,8 +14,9 @@ token_accuracy_mode = consider_all_token_accuracy
 details
 '''
 sequence_decode_mode = 0
-skeleton_decode_mode = 1
-tree_decode_mode = 2
+statement_decode_mode = 1
+skeleton_decode_mode = 2
+tree_decode_mode = 3
 model_run_mode = skeleton_decode_mode
 ''' tree decode details '''
 tree_decode_with_grammar = 0
@@ -33,7 +34,6 @@ accumulated_token_max_length = 600
 basic lstm mode
 '''
 use_layer_norm = 1
-use_tensorflow_lstm_form = 0
 use_lstm_merger_style = 0
 ''' memory mode '''
 no_memory_mode = 0
@@ -89,11 +89,6 @@ gradient_clip_abs_range = 500.0
 whether compose tokens
 '''
 compose_tokens_of_a_statement = 0
-stand_compose = 0
-compose_for_attention_use = 1
-two_way_compose = 2
-three_way_compose = 3
-compose_mode = stand_compose
 compose_share_parameters = 1
 '''
 decode attention, high level attention way
@@ -182,11 +177,7 @@ if composite_config_func == "not_skeleton_only_token_decode":
 if composite_config_func == "not_skeleton_only_token_decode_no_layer_norm":
   treat_first_element_as_skeleton = 0
   use_layer_norm = 0
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_tensorflow_lstm":
-  treat_first_element_as_skeleton = 0
-  use_tensorflow_lstm_form = 1
-  
+    
 if composite_config_func == "not_skeleton_only_token_decode_with_dup":
   treat_first_element_as_skeleton = 0
   use_dup_model = 1
@@ -212,12 +203,6 @@ if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   use_layer_norm = 0
-  
-if composite_config_func == "not_skeleton_only_token_decode_with_tokens_compose_with_tensorflow_lstm":
-  treat_first_element_as_skeleton = 0
-  compute_token_memory = 1
-  compose_tokens_of_a_statement = 1
-  use_tensorflow_lstm_form = 1
   
 if composite_config_func == "sequence_only_token_decode":
   model_run_mode = sequence_decode_mode

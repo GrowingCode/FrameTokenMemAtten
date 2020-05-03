@@ -8,11 +8,11 @@ from models.embed_merger import EmbedMerger
 
 class NTMOneDirection():
   
-  def __init__(self):
-    self.merger = EmbedMerger()
-    self.memory_update_lstm = YLSTMCell(30)
-    self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525, [1, num_units]))
-    self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525, [1, num_units]))
+  def __init__(self, num_desc):
+    self.merger = EmbedMerger(num_desc)
+    self.memory_update_lstm = YLSTMCell(30+num_desc)
+    self.initial_cell = tf.Variable(random_uniform_variable_initializer(175, 525+num_desc, [1, num_units]))
+    self.initial_h = tf.Variable(random_uniform_variable_initializer(1755, 525+num_desc, [1, num_units]))
   
   def compute_variables_in_statement(self, var_info, token_info, forward_memory_cell, forward_memory_h, loop_forward_cell, loop_forward_h, loop_backward_cell, loop_backward_h):
     '''

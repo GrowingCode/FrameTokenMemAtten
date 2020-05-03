@@ -9,8 +9,8 @@ from metas.non_hyper_constants import lstm_initialize_range
 
 class EmbedMerger():
   
-  def __init__(self):
-    self.w = tf.Variable(random_uniform_variable_initializer(222, 333, [2 * num_units, 5 * num_units], ini_range=lstm_initialize_range))
+  def __init__(self, num_desc):
+    self.w = tf.Variable(random_uniform_variable_initializer(222, 333+num_desc, [2 * num_units, 5 * num_units], ini_range=lstm_initialize_range))
     self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
     if use_layer_norm:
       self.norm_weights = []

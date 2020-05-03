@@ -279,15 +279,11 @@ import tensorflow as tf
 
 class TokenDecoder():
   
-  def __init__(self, type_content_data, metrics_index, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, dup_token_pointer=None):
+  def __init__(self, type_content_data, metrics_index, linear_token_output_w, token_attention, dup_token_pointer=None):
     self.type_content_data = type_content_data
     self.metrics_index = metrics_index
     self.linear_token_output_w = linear_token_output_w
-    self.token_lstm = token_lstm
-    self.token_embedder = token_embedder
     self.token_attention = token_attention
-    self.dup_token_lstm = dup_token_lstm
-    self.dup_token_embedder = dup_token_embedder
     self.dup_token_pointer = dup_token_pointer
     
   def decode_one_token(self, token_metrics, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative):

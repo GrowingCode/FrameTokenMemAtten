@@ -28,9 +28,7 @@ class BasicDecodeModel():
     return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
   
   def create_in_use_tensors_meta(self):
-#     , ("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units]))
     result = [("token_cell", tf.TensorShape([1, num_units])), ("token_h", tf.TensorShape([1, num_units])), ("memory_en", tf.TensorShape([None])), ("memory_acc_cell", tf.TensorShape([None, num_units])), ("memory_acc_h", tf.TensorShape([None, num_units])), ("dup_token_cell", tf.TensorShape([1, num_units])), ("dup_token_h", tf.TensorShape([1, num_units])), ("dup_memory_en", tf.TensorShape([None])), ("dup_memory_acc_cell", tf.TensorShape([None, num_units])), ("dup_memory_acc_h", tf.TensorShape([None, num_units]))]
     return result
-  
   
   

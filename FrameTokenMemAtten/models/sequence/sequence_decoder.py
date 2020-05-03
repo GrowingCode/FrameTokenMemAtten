@@ -38,7 +38,7 @@ class SequenceDecodeModel(BasicDecodeModel):
       self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.dup_one_hot_token_embedding)
       self.dup_token_pointer = PointerNetwork(222)
     
-    self.token_decoder = TokenDecoder(self.type_content_data, self.metrics_index, self.linear_token_output_w, self.token_lstm, self.token_embedder, self.token_attention, self.dup_token_lstm, self.dup_token_embedder, self.dup_token_pointer)
+    self.token_decoder = TokenDecoder(self.type_content_data, self.metrics_index, self.linear_token_output_w, self.token_attention, self.dup_token_pointer)
   
   def __call__(self, one_example, training = True):
     self.token_info_tensor = one_example[0]

@@ -42,6 +42,19 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
   return token_metrics
 
 
+def one_lstm_step(prefix, token_metrics, metrics_index, token_en, token_lstm, token_embedder):
+  dup_cell = token_metrics[metrics_index[prefix + "token_cell"]]
+  dup_h = token_metrics[metrics_index[prefix + "token_h"]]
+  _, (new_dup_cell, new_dup_h) = token_lstm(token_embedder.compute_h(token_en), (dup_cell, dup_h))
+  token_metrics[metrics_index[prefix + "token_cell"]] = new_dup_cell
+  token_metrics[metrics_index[prefix + "token_h"]] = new_dup_h
+  return token_metrics
+
+
+
+
+
+
 
 
 

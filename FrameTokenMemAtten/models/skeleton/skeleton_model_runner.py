@@ -4,12 +4,16 @@ from metas.non_hyper_constants import int_type
 from metas.hyper_settings import model_run_mode,\
   skeleton_decode_mode
 from models.skeleton.skeleton_decoder import SkeletonDecodeModel
+from inputs.example_data_loader import build_skeleton_feed_dict
 
 
 class SkeletonModelRunner(ModelRunner):
   
   def __init__(self, sess):
     super(SkeletonModelRunner, self).__init__(sess)
+  
+  def set_up_example_loader(self):
+    self.example_loader = build_skeleton_feed_dict
   
   def build_input_place_holder(self):
     self.skeleton_token_info_tensor = tf.compat.v1.placeholder(int_type, [None, None])
@@ -18,7 +22,7 @@ class SkeletonModelRunner(ModelRunner):
     return (self.skeleton_token_info_tensor, self.skeleton_token_info_start_tensor, self.skeleton_token_info_end_tensor)
   
   def build_model_logic(self):
-    assert model_run_mode == skeleton_decode_mode, "serious error! not skeleton decode mode? but the model logic is sequence decode logic."
+    assert model_run_mode == skeleton_decode_mode, "serious error! not skeleton decode mode? but the model logic is skeleton decode logic."
     self.model = SkeletonDecodeModel(self.type_content_data)
     
   def build_feed_dict(self, one_example):
