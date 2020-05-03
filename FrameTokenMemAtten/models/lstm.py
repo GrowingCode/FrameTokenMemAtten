@@ -1,8 +1,8 @@
-from metas.hyper_settings import num_units, use_layer_norm
+from metas.hyper_settings import num_units, use_layer_norm,\
+  lstm_initialize_range
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer, \
   zero_variable_initializer, one_variable_initializer
-from metas.non_hyper_constants import lstm_initialize_range
 
 
 class Y2DirectLSTMCell():

@@ -88,10 +88,11 @@ just truncate the whole large data
 '''
 max_examples_in_one_batch = 128
 ''' gradient '''
-gradient_clip_abs_range = 500.0
+gradient_clip_abs_range = 1.0
 '''
 whether compose tokens
 '''
+compute_token_memory = 0
 compose_tokens_of_a_statement = 0
 compose_share_parameters = 1
 '''

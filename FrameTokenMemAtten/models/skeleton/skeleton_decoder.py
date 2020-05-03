@@ -67,7 +67,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
      
     if atom_decode_mode == token_decode:
       self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
-      self.dup_token_embedder, self.dup_token_lstm, self.token_pointer = None, None, None
+      self.dup_token_embedder, self.dup_token_lstm, self.dup_token_pointer = None, None, None
       if use_dup_model:
         self.one_dup_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(252, 226, [number_of_tokens, num_units]))
         self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.one_dup_hot_token_embedding)
