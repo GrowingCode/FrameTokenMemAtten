@@ -127,6 +127,12 @@ if composite_config_func == "statement_token_decode_with_tokens_compose":
   compute_token_memory = 1
   compose_tokens_of_a_statement = 1
   
+if composite_config_func == "statement_token_decode_with_bi_way_tokens_compose":
+  model_run_mode = statement_decode_mode
+  compute_token_memory = 1
+  compose_tokens_of_a_statement = 1
+  compose_mode = compose_bi_way_lstm
+  
 if composite_config_func == "statement_token_decode_with_dup":
   model_run_mode = statement_decode_mode
   use_dup_model = 1

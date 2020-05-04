@@ -57,7 +57,7 @@ def backward_varied_lstm_steps(inputs, ini_cell, ini_h, t_lstm):
     return tf.greater_equal(i_start, i_end)
   
   def loop_body(i_start, i_end, b_cell, b_h):
-    b_cell, b_h = t_lstm(tf.expand_dims(inputs[i_start], axis=0), b_cell, b_h)
+    _, (b_cell, b_h) = t_lstm(tf.expand_dims(inputs[i_start], axis=0), (b_cell, b_h))
     return i_start - 1, i_end, b_cell, b_h
   
   s_start = tf.shape(inputs)[0] - 1
