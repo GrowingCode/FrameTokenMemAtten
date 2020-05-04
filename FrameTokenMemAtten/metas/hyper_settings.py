@@ -113,11 +113,6 @@ composite_config_func = "skeleton_token_decode"
 if composite_config_func == "skeleton_token_decode":
   model_run_mode = skeleton_decode_mode
 
-if composite_config_func == "skeleton_token_decode_with_tokens_compose":
-  model_run_mode = skeleton_decode_mode
-  compute_token_memory = 1
-  compose_tokens_of_a_statement = 1
-
 if composite_config_func == "skeleton_token_decode_with_dup":
   model_run_mode = skeleton_decode_mode
   use_dup_model = 1
@@ -168,7 +163,13 @@ if dup_use_two_poles:
   assert repetition_mode == max_repetition_mode
 if use_dup_model:
   assert token_memory_mode > no_memory_mode
-    
+if compose_tokens_of_a_statement:
+  assert model_run_mode == statement_decode_mode
+  
+  
+  
+  
+  
 
 
 

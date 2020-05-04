@@ -149,14 +149,16 @@ class SkeletonDecodeModel(BasicDecodeModel):
       stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
       stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
       
-      _, (next_cell, next_h) = self.skeleton_lstm_cell(self.skeleton_embedder.compute_h(skt_id), (cell, h))
+      skt_embed = self.skeleton_embedder.compute_h(skt_id)
+      _, (next_cell, next_h) = self.skeleton_lstm_cell(skt_embed, (cell, h))
       stmt_metrics[self.metrics_index["token_cell"]] = next_cell
       stmt_metrics[self.metrics_index["token_h"]] = next_h
       
       if use_dup_model:
         dup_cell = stmt_metrics[self.metrics_index["dup_token_cell"]]
         dup_h = stmt_metrics[self.metrics_index["dup_token_h"]]
-        _, (next_dup_cell, next_dup_h) = self.skeleton_dup_lstm_cell(self.dup_skeleton_embedder.compute_h(skt_id), (dup_cell, dup_h))
+        dup_skt_embed = self.dup_skeleton_embedder.compute_h(skt_id)
+        _, (next_dup_cell, next_dup_h) = self.skeleton_dup_lstm_cell(dup_skt_embed, (dup_cell, dup_h))
         stmt_metrics[self.metrics_index["dup_token_cell"]] = next_dup_cell
         stmt_metrics[self.metrics_index["dup_token_h"]] = next_dup_h
     else:
