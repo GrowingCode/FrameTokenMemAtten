@@ -51,6 +51,22 @@ def one_lstm_step(prefix, token_metrics, metrics_index, token_en, token_lstm, to
   return token_metrics
 
 
+def backward_varied_lstm_steps(inputs, ini_cell, ini_h, t_lstm):
+  
+  def loop_cond(i_start, i_end, *_):
+    return tf.greater_equal(i_start, i_end)
+  
+  def loop_body(i_start, i_end, b_cell, b_h):
+    b_cell, b_h = t_lstm(tf.expand_dims(inputs[i_start], axis=0), b_cell, b_h)
+    return i_start - 1, i_end, b_cell, b_h
+  
+  s_start = tf.shape(inputs)[0] - 1
+  s_end = tf.constant(0, int_type)
+  _, _, b_cell, b_h = tf.while_loop(loop_cond, loop_body, [s_start, s_end, ini_cell, ini_h])
+  return b_h, (b_cell, b_h)
+
+
+
 
 
 

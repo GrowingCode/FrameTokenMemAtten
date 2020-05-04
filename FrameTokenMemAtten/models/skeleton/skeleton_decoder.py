@@ -5,8 +5,8 @@ from metas.hyper_settings import num_units, \
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement, \
   token_embedder_mode, swords_compose_mode, token_only_mode, \
   only_memory_mode, token_memory_mode, \
-  decode_attention_way, decode_no_attention, \
-  compose_share_parameters
+  decode_attention_way, decode_no_attention, compose_one_way_lstm, compose_mode,\
+  compose_bi_way_lstm
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.attention import YAttention
@@ -14,14 +14,14 @@ from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
 from models.embed_merger import EmbedMerger
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, Y2DirectLSTMCell
 from models.mem import NTMOneDirection
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
-from models.lstm_procedure import one_lstm_step
+from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps
 from models.token_sword_decode import TokenDecoder
 
 
@@ -50,10 +50,13 @@ class SkeletonDecodeModel(BasicDecodeModel):
       self.forward_token_lstm = YLSTMCell(3)
       self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
-        self.tokens_merger = EmbedMerger(123)
+        self.tokens_merger = EmbedMerger(150)
         self.compose_lstm_cell = YLSTMCell(5)
-        if not compose_share_parameters:
-          self.compose_for_stmt_lstm_cell = YLSTMCell(6)
+        if compose_mode == compose_bi_way_lstm:
+          self.bi_way_merger = Y2DirectLSTMCell(155)
+          self.bi_way_ini_cell = tf.Variable(random_uniform_variable_initializer(855, 55, [1, num_units]))
+          self.bi_way_ini_h = tf.Variable(random_uniform_variable_initializer(850, 50, [1, num_units]))
+          self.bi_way_lstm = YLSTMCell(52)
      
     self.token_attention = None
     if decode_attention_way > decode_no_attention:
@@ -100,7 +103,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
       assert False, "Wrong token_embedder_mode"
   
   def create_in_use_tensors_meta(self):
-    result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units]))]
+    result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("f_stmt_cell", tf.TensorShape([1, num_units])), ("f_stmt_h", tf.TensorShape([1, num_units]))]
     return result
   
   def __call__(self, one_example, training = True):
@@ -231,8 +234,6 @@ class SkeletonDecodeModel(BasicDecodeModel):
     leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [info_length])
     
-    se_cell, se_h = stmt_metrics[self.metrics_index["token_cell"]], stmt_metrics[self.metrics_index["token_h"]]
-    
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
      
@@ -258,11 +259,11 @@ class SkeletonDecodeModel(BasicDecodeModel):
       f_res = tf.while_loop(self.backward_loop_cond, self.backward_loop_body, [0, stmt_end-(stmt_start), embeds, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
       stmt_metrics = list(f_res[4:])
       
-      discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = self.mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]], stmt_metrics[self.metrics_index["loop_forward_cells"]], stmt_metrics[self.metrics_index["loop_forward_hs"]], stmt_metrics[self.metrics_index["loop_backward_cells"]], stmt_metrics[self.metrics_index["loop_backward_hs"]])
+#       discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h = self.mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]], stmt_metrics[self.metrics_index["loop_forward_cells"]], stmt_metrics[self.metrics_index["loop_forward_hs"]], stmt_metrics[self.metrics_index["loop_backward_cells"]], stmt_metrics[self.metrics_index["loop_backward_hs"]])
       if use_dup_model:
         dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h = self.dup_mem_nn.compute_variables_in_statement(leaf_info, token_info, stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]], stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], stmt_metrics[self.metrics_index["dup_loop_backward_hs"]])
       
-      stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]] = self.mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]], discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h)
+#       stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]] = self.mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]], discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h)
       if use_dup_model:
         stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
         
@@ -273,13 +274,19 @@ class SkeletonDecodeModel(BasicDecodeModel):
         '''
         compute BiLSTM composition of tokens of a statement
         '''
+        f_stmt_cell, f_stmt_h = stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]]
         merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
-        _, (mc_cell, mc_h) = self.compose_lstm_cell(merged_tokens_embed, (se_cell, se_h))
-        if compose_share_parameters:
-          for_stmt_cell, for_stmt_h = mc_cell, mc_h
+        stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = tf.concat([stmt_metrics[self.metrics_index["dup_memory_acc_h"]], merged_tokens_embed], axis=0)
+        _, (mc_cell, mc_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
+        if compose_mode == compose_one_way_lstm:
+          for_token_cell, for_token_h = mc_cell, mc_h
+        elif compose_mode == compose_bi_way_lstm:
+          _, (v_cell, v_h) = backward_varied_lstm_steps(stmt_metrics[self.metrics_index["dup_memory_acc_h"]], self.bi_way_ini_cell, self.bi_way_ini_h, self.bi_way_lstm)
+          for_token_cell, for_token_h = self.bi_way_merger(v_cell, v_h, mc_cell, mc_h)
         else:
-          for_stmt_cell, for_stmt_h = self.compose_for_stmt_lstm_cell(merged_tokens_embed, se_cell, se_h)
-        stmt_metrics[self.metrics_index["token_cell"]], stmt_metrics[self.metrics_index["token_h"]] = for_stmt_cell, for_stmt_h
+          assert False
+        stmt_metrics[self.metrics_index["token_cell"]], stmt_metrics[self.metrics_index["token_h"]] = for_token_cell, for_token_h
+        stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]] = f_stmt_cell, f_stmt_h
        
     return stmt_metrics
    

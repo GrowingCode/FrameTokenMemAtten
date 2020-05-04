@@ -7,4 +7,11 @@ class StatementDecodeModel(SkeletonDecodeModel):
     super(StatementDecodeModel, self).__init__(type_content_data)
     self.treat_first_element_as_skeleton = 0
   
+  
+  
+  
+  
+
+
+
 
