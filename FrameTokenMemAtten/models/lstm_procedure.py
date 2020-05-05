@@ -23,25 +23,25 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
       to_concat = tf.constant(1, int_type)
       r_memory_length = abs_direct_concat_memory_size
       
-      concat_en = [token_en]
-      concat_cell = dup_cell
-      concat_h = dup_h
-      concat_en = tf.slice(concat_en, [1-to_concat], [to_concat])
-      concat_cell = tf.slice(concat_cell, [1-to_concat, 0], [to_concat, num_units])
-      concat_h = tf.slice(concat_h, [1-to_concat, 0], [to_concat, num_units])
-      
-      token_metrics[metrics_index[prefix + "memory_en"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_en"]], concat_en], axis=0)
-      token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_cell"]], concat_cell], axis=0)
-      token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_h"]], concat_h], axis=0)
-      
-      curr_mem_len = tf.shape(token_metrics[metrics_index[prefix + "memory_en"]])[0]
-      slice_start = curr_mem_len - r_memory_length
-      r_slice_start = tf.cast(tf.logical_and(slice_start > 0, slice_start < curr_mem_len), int_type) * slice_start
-      r_slice_length = curr_mem_len - r_slice_start
-      
-      token_metrics[metrics_index[prefix + "memory_en"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_en"]], [r_slice_start], [r_slice_length])
-      token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_cell"]], [r_slice_start, 0], [r_slice_length, num_units])
-      token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_h"]], [r_slice_start, 0], [r_slice_length, num_units])
+    concat_en = [token_en]
+    concat_cell = dup_cell
+    concat_h = dup_h
+    concat_en = tf.slice(concat_en, [1-to_concat], [to_concat])
+    concat_cell = tf.slice(concat_cell, [1-to_concat, 0], [to_concat, num_units])
+    concat_h = tf.slice(concat_h, [1-to_concat, 0], [to_concat, num_units])
+    
+    token_metrics[metrics_index[prefix + "memory_en"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_en"]], concat_en], axis=0)
+    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_cell"]], concat_cell], axis=0)
+    token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_h"]], concat_h], axis=0)
+    
+    curr_mem_len = tf.shape(token_metrics[metrics_index[prefix + "memory_en"]])[0]
+    slice_start = curr_mem_len - r_memory_length
+    r_slice_start = tf.cast(tf.logical_and(slice_start > 0, slice_start < curr_mem_len), int_type) * slice_start
+    r_slice_length = curr_mem_len - r_slice_start
+    
+    token_metrics[metrics_index[prefix + "memory_en"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_en"]], [r_slice_start], [r_slice_length])
+    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_cell"]], [r_slice_start, 0], [r_slice_length, num_units])
+    token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.slice(token_metrics[metrics_index[prefix + "memory_acc_h"]], [r_slice_start, 0], [r_slice_length, num_units])
     
   _, (new_dup_cell, new_dup_h) = token_lstm(token_embedder.compute_h(token_en), (dup_cell, dup_h))
   token_metrics[metrics_index[prefix + "token_cell"]] = new_dup_cell
