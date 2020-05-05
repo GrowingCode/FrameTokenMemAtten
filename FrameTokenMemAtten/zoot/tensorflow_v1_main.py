@@ -14,7 +14,7 @@ if __name__ == '__main__':
   with tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(allow_soft_placement=True)) as sess:
     if model_run_mode == sequence_decode_mode:
       runner = SequenceModelRunner(sess)
-    if model_run_mode == statement_decode_mode:
+    elif model_run_mode == statement_decode_mode:
       runner = StatementModelRunner(sess)
     elif model_run_mode == skeleton_decode_mode:
       runner = SkeletonModelRunner(sess)
