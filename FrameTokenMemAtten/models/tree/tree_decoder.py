@@ -38,6 +38,10 @@ class TreeDecodeModel(BasicDecodeModel):
     
     self.encode_tree = EncodeOneAST(self.type_content_data, self.token_embedder, self.token_cell_embedder)
   
+  def create_in_use_tensors_meta(self):
+    result = [("token_accumulated_cell", tf.TensorShape([None, num_units])), ("token_accumulated_h", tf.TensorShape([None, num_units]))]
+    return result
+  
   def __call__(self, one_example, training = True):
     post_order_node_type_content_en_tensor, post_order_node_child_start_tensor, post_order_node_child_end_tensor, post_order_node_children_tensor = one_example[0], one_example[1], one_example[2], one_example[3]
     self.pre_post_order_node_type_content_en_tensor, self.pre_post_order_node_state_tensor, self.pre_post_order_node_post_order_index_tensor, self.pre_post_order_node_parent_grammar_index = one_example[4], one_example[5], one_example[6], one_example[7]
