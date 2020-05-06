@@ -1,6 +1,6 @@
 from metas.hyper_settings import only_memory_mode, token_memory_mode,\
   concat_memory_mode, num_units, abs_direct_concat_memory_mode,\
-  abs_direct_concat_memory_size
+  abs_direct_concat_memory_size, no_memory_mode
 from models.mem import update_one_variable
 import tensorflow as tf
 from metas.non_hyper_constants import int_type
@@ -10,7 +10,9 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
   dup_cell = token_metrics[metrics_index[prefix + "token_cell"]]
   dup_h = token_metrics[metrics_index[prefix + "token_h"]]
   
-  if token_memory_mode == only_memory_mode:
+  if token_memory_mode == no_memory_mode:
+    pass
+  elif token_memory_mode == only_memory_mode:
     dup_acc_cells = token_metrics[metrics_index[prefix + "memory_acc_cell"]]
     dup_acc_hs = token_metrics[metrics_index[prefix + "memory_acc_h"]]
     dup_acc_ens = token_metrics[metrics_index[prefix + "memory_en"]]
@@ -22,7 +24,7 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
     elif token_memory_mode == abs_direct_concat_memory_mode:
       to_concat = tf.constant(1, int_type)
       r_memory_length = abs_direct_concat_memory_size
-      
+    
     concat_en = [token_en]
     concat_cell = dup_cell
     concat_h = dup_h
