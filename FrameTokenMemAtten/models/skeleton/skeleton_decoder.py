@@ -279,12 +279,12 @@ class SkeletonDecodeModel(BasicDecodeModel):
         f_stmt_cell, f_stmt_h = stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]]
         merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
         stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = tf.concat([stmt_metrics[self.metrics_index["dup_memory_acc_h"]], merged_tokens_embed], axis=0)
-        _, (mc_cell, mc_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
+        _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
         if compose_mode == compose_one_way_lstm:
-          for_token_cell, for_token_h = mc_cell, mc_h
+          for_token_cell, for_token_h = f_stmt_cell, f_stmt_h
         elif compose_mode == compose_bi_way_lstm:
-          _, (v_cell, v_h) = backward_varied_lstm_steps(stmt_metrics[self.metrics_index["dup_memory_acc_h"]], self.bi_way_ini_cell, self.bi_way_ini_h, self.bi_way_lstm)
-          for_token_cell, for_token_h = self.bi_way_merger(v_cell, v_h, mc_cell, mc_h)
+          _, (b_stmt_cell, b_stmt_h) = backward_varied_lstm_steps(stmt_metrics[self.metrics_index["dup_memory_acc_h"]], self.bi_way_ini_cell, self.bi_way_ini_h, self.bi_way_lstm)
+          for_token_cell, for_token_h = self.bi_way_merger(b_stmt_cell, b_stmt_h, f_stmt_cell, f_stmt_h)
         else:
           assert False
         stmt_metrics[self.metrics_index["token_cell"]], stmt_metrics[self.metrics_index["token_h"]] = for_token_cell, for_token_h
