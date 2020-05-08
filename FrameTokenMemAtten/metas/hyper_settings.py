@@ -43,9 +43,10 @@ use_lstm_merger_style = 0
 no_memory_mode = 0
 only_memory_mode = 1
 concat_memory_mode = 2
-abs_direct_concat_memory_mode = 3
+abs_size_concat_memory_mode = 3
+abs_size_var_novar_all_concat_memory_mode = 4
 token_memory_mode = no_memory_mode
-abs_direct_concat_memory_size = 25
+abs_memory_size = 25
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1
 ''' token_embedder_mode '''
