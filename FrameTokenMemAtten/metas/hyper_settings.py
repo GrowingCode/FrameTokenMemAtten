@@ -157,6 +157,13 @@ if composite_config_func == "sequence_token_decode_with_rep_dup":
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
   
+if composite_config_func == "sequence_token_decode_with_only_memory_rep_dup":
+  model_run_mode = sequence_decode_mode
+  use_dup_model = 1
+  token_memory_mode = only_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
+  
 if composite_config_func == "sequence_token_decode_with_abs_concat_rep_dup":
   model_run_mode = sequence_decode_mode
   use_dup_model = 1
