@@ -75,7 +75,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         self.one_dup_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(252, 226, [number_of_tokens, num_units]))
         self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.one_dup_hot_token_embedding)
         self.dup_token_lstm = YLSTMCell(9)
-        self.dup_token_pointer = PointerNetwork()
+        self.dup_token_pointer = PointerNetwork(655)
         self.dup_skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(155, 572, [number_of_skeletons, 2, num_units]))
         self.dup_skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(152, 572, [number_of_skeletons, 2, num_units]))
         if compute_token_memory:
