@@ -270,7 +270,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
         
       if use_dup_model:
-        assert token_memory_mode == only_memory_mode
+        assert token_memory_mode == only_memory_mode and not compose_tokens_of_a_statement
         
       if compose_tokens_of_a_statement:
         '''
