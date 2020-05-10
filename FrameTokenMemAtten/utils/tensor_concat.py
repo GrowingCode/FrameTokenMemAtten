@@ -4,6 +4,8 @@ from metas.hyper_settings import num_units
 
 
 def concat_in_fixed_length_one_dimension(concat_er, c_one, c_size):
+  if c_size < 0:
+    c_size = 500000
   concat_er = tf.concat([concat_er, c_one], axis=0)
   length_0 = tf.shape(concat_er)[0]
   over_size = length_0 - c_size
@@ -13,6 +15,8 @@ def concat_in_fixed_length_one_dimension(concat_er, c_one, c_size):
 
 
 def concat_in_fixed_length_two_dimension(concat_er, c_one, c_size):
+  if c_size < 0:
+    c_size = 500000
   concat_er = tf.concat([concat_er, c_one], axis=0)
   length_0 = tf.shape(concat_er)[0]
   over_size = length_0 - c_size

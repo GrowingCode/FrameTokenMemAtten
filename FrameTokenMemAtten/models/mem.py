@@ -23,8 +23,8 @@ class NTMOneDirection():
       return tf.less_equal(u_start, u_end)
     
     def updated_embed_loop_body(u_start, u_end, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h):
-      local_token_id = var_info[u_start]
       token_type_content_en = token_info[u_start]
+      local_token_id = var_info[u_start]
       discrete_memory_vars = tf.concat([discrete_memory_vars, [local_token_id]], axis=0)
       discrete_memory_tokens = tf.concat([discrete_memory_tokens, [token_type_content_en]], axis=0)
       f_index = u_start
@@ -37,13 +37,21 @@ class NTMOneDirection():
       b_h = [loop_backward_h[b_index]]
       one_mg = self.merger(f_h, b_h)
       ''' compute merged features '''
-      local_token_valid = tf.cast(local_token_id < tf.shape(forward_memory_h)[0], int_type)
+      local_token_valid = tf.cast(tf.logical_and(local_token_id > 0, local_token_id < tf.shape(forward_memory_h)[0]), int_type)
       real_id = local_token_valid * local_token_id
       m_cell = tf.stack([self.initial_cell, [forward_memory_cell[real_id]]])[local_token_valid]
       m_h = tf.stack([self.initial_h, [forward_memory_h[real_id]]])[local_token_valid]
       _, (m_forward_cell, m_forward_h) = self.memory_update_lstm(one_mg, (m_cell, m_h))
       discrete_forward_memory_cell = tf.concat([discrete_forward_memory_cell, m_forward_cell], axis=0)
       discrete_forward_memory_h = tf.concat([discrete_forward_memory_h, m_forward_h], axis=0)
+      ''' slice if local_token_id is invalid '''
+      slice_size = 1 - local_token_valid
+      curr_size = tf.shape(discrete_memory_vars)[0]
+      retain_size = curr_size - slice_size
+      discrete_memory_vars = tf.slice(discrete_memory_vars, [0], [retain_size])
+      discrete_memory_tokens = tf.slice(discrete_memory_tokens, [0], [retain_size])
+      discrete_forward_memory_cell = tf.slice(discrete_forward_memory_cell, [0, 0], [retain_size, num_units])
+      discrete_forward_memory_h = tf.slice(discrete_forward_memory_h, [0, 0], [retain_size, num_units])
       return u_start + 1, u_end, discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h
     
     discrete_memory_vars = tf.zeros([0], int_type)

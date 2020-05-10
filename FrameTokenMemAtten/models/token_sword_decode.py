@@ -4,7 +4,8 @@ from metas.hyper_settings import use_dup_model, \
   token_in_scope_valid, token_meaningful_valid, decode_with_attention,\
   no_memory_mode, top_ks, concat_memory_mode, only_consider_var_accuracy,\
   consider_all_token_accuracy, only_consider_unseen_var_accuracy,\
-  token_accuracy_mode
+  token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
+  abs_size_var_novar_all_concat_memory_mode
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -336,11 +337,14 @@ class TokenDecoder():
       dup_h = token_metrics[self.metrics_index["dup_token_h"]]
       dup_acc_hs = token_metrics[self.metrics_index["dup_memory_acc_h"]]
       dup_acc_ens = token_metrics[self.metrics_index["dup_memory_en"]]
-      if token_memory_mode == concat_memory_mode:
-        r_var_relative = oracle_type_content_var_relative
-      else:
+      if token_memory_mode == only_memory_mode:
         r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
+      else:
+        r_var_relative = oracle_type_content_var_relative
+        assert token_memory_mode == concat_memory_mode or token_memory_mode == abs_size_concat_memory_mode or token_memory_mode == abs_size_var_novar_all_concat_memory_mode
       
+#       p_op = tf.print(["dup_acc_ens:", dup_acc_ens, "var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize=100)
+#       with tf.control_dependencies([p_op]):
       dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
       is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
       dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)

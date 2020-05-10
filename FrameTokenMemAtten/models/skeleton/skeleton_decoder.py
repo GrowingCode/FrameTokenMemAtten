@@ -1,7 +1,7 @@
 from inputs.atom_embeddings import BiLSTMEmbed, \
   TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
 from metas.hyper_settings import num_units, \
-  use_dup_model, accumulated_token_max_length, compute_token_memory, \
+  use_dup_model, compute_token_memory, \
   atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement, \
   token_embedder_mode, swords_compose_mode, token_only_mode, \
   only_memory_mode, token_memory_mode, \
@@ -333,14 +333,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
     f_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
     f_h = [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]]
     _, (new_f_cell, new_f_h) = self.forward_token_lstm(tf.expand_dims(embeds[i], axis=0), (f_cell, f_h))
-    stmt_metrics[self.metrics_index["loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_cells"]], new_f_cell, accumulated_token_max_length*2)
-    stmt_metrics[self.metrics_index["loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_hs"]], new_f_h, accumulated_token_max_length*2)
+    stmt_metrics[self.metrics_index["loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_cells"]], new_f_cell, -1)
+    stmt_metrics[self.metrics_index["loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_forward_hs"]], new_f_h, -1)
     if use_dup_model:
-      dup_f_cell = [stmt_metrics[self.metrics_index["dup_loop_forward_cells"]][0]]
-      dup_f_h = [stmt_metrics[self.metrics_index["dup_loop_forward_hs"]][0]]
+      dup_f_cell = [stmt_metrics[self.metrics_index["dup_loop_forward_cells"]][-1]]
+      dup_f_h = [stmt_metrics[self.metrics_index["dup_loop_forward_hs"]][-1]]
       _, (new_dup_f_cell, new_dup_f_h) = self.dup_forward_token_lstm(tf.expand_dims(dup_embeds[i], axis=0), (dup_f_cell, dup_f_h))
-      stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], new_dup_f_cell, accumulated_token_max_length*2)
-      stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], new_dup_f_h, accumulated_token_max_length*2)
+      stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], new_dup_f_cell, -1)
+      stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], new_dup_f_h, -1)
     return (i+1, i_len, embeds, dup_embeds, *stmt_metrics)
    
   def backward_loop_cond(self, i, i_len, *_):
@@ -351,14 +351,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
     b_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
     b_h = [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]]
     _, (new_b_cell, new_b_h) = self.backward_token_lstm(tf.expand_dims(embeds[i_len], axis=0), (b_cell, b_h))
-    stmt_metrics[self.metrics_index["loop_backward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_backward_cells"]], new_b_cell, accumulated_token_max_length*2)
-    stmt_metrics[self.metrics_index["loop_backward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["loop_backward_hs"]], new_b_h, accumulated_token_max_length*2)
+    stmt_metrics[self.metrics_index["loop_backward_cells"]] = concat_in_fixed_length_two_dimension(new_b_cell, stmt_metrics[self.metrics_index["loop_backward_cells"]], -1)
+    stmt_metrics[self.metrics_index["loop_backward_hs"]] = concat_in_fixed_length_two_dimension(new_b_h, stmt_metrics[self.metrics_index["loop_backward_hs"]], -1)
     if use_dup_model:
       dup_b_cell = [stmt_metrics[self.metrics_index["dup_loop_backward_cells"]][0]]
       dup_b_h = [stmt_metrics[self.metrics_index["dup_loop_backward_hs"]][0]]
       _, (new_dup_b_cell, new_dup_b_h) = self.dup_backward_token_lstm(tf.expand_dims(dup_embeds[i_len], axis=0), (dup_b_cell, dup_b_h))
-      stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], new_dup_b_cell, accumulated_token_max_length*2)
-      stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], new_dup_b_h, accumulated_token_max_length*2)
+      stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(new_dup_b_cell, stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], -1)
+      stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(new_dup_b_h, stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], -1)
     return (i, i_len-1, embeds, dup_embeds, *stmt_metrics)
  
  
