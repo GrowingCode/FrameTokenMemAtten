@@ -233,8 +233,8 @@ class SkeletonDecodeModel(BasicDecodeModel):
     leaf info also means variable info
     '''
     info_length = stmt_end-stmt_start+1
-    leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
     token_info = tf.slice(self.token_info_tensor[0], [stmt_start], [info_length])
+    leaf_info = tf.slice(self.token_info_tensor[1], [stmt_start], [info_length])
     
     f_res = tf.while_loop(self.token_iterate_cond, self.token_iterate_body, [stmt_start, stmt_end, stmt_start, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(f_res[3:])
