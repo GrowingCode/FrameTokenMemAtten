@@ -303,6 +303,8 @@ class SkeletonDecodeModel(BasicDecodeModel):
     if atom_decode_mode == token_decode:
       stmt_metrics = self.token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative)
       stmt_metrics = one_lstm_step("", stmt_metrics, self.metrics_index, oracle_type_content_en, self.token_lstm, self.token_embedder)
+      if use_dup_model:
+        stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
 #     elif atom_decode_mode == sword_decode:
 #       oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
 #       r_stmt_metrics_tuple = decode_swords_of_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
