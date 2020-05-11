@@ -267,6 +267,8 @@ class SkeletonDecodeModel(BasicDecodeModel):
       
 #       stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]] = self.mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["memory_en"]], stmt_metrics[self.metrics_index["memory_acc_cell"]], stmt_metrics[self.metrics_index["memory_acc_h"]], discrete_memory_vars, discrete_memory_tokens, discrete_forward_memory_cell, discrete_forward_memory_h)
       if use_dup_model:
+#         p_op = tf.print(["dup_discrete_memory_vars:", dup_discrete_memory_vars, "dup_discrete_memory_tokens:", dup_discrete_memory_tokens], summarize=100)
+#         with tf.control_dependencies([p_op]):
         stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = self.dup_mem_nn.update_memory_with_variables_in_statement(stmt_metrics[self.metrics_index["dup_memory_en"]], stmt_metrics[self.metrics_index["dup_memory_acc_cell"]], stmt_metrics[self.metrics_index["dup_memory_acc_h"]], dup_discrete_memory_vars, dup_discrete_memory_tokens, dup_discrete_forward_memory_cell, dup_discrete_forward_memory_h)
         
       if use_dup_model:

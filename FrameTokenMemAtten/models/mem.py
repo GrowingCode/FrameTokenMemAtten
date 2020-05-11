@@ -37,10 +37,13 @@ class NTMOneDirection():
       b_h = [loop_backward_h[b_index]]
       one_mg = self.merger(f_h, b_h)
       ''' compute merged features '''
-      local_token_valid = tf.cast(tf.logical_and(local_token_id > 0, local_token_id < tf.shape(forward_memory_h)[0]), int_type)
-      real_id = local_token_valid * local_token_id
-      m_cell = tf.stack([self.initial_cell, [forward_memory_cell[real_id]]])[local_token_valid]
-      m_h = tf.stack([self.initial_h, [forward_memory_h[real_id]]])[local_token_valid]
+      local_token_valid_bool = tf.logical_and(local_token_id > 0)
+      local_token_valid = tf.cast(local_token_valid_bool, int_type)
+      local_token_pre_exist_bool = tf.logical_and(local_token_valid_bool, local_token_id < tf.shape(forward_memory_h)[0])
+      local_token_pre_exist = tf.cast(local_token_pre_exist_bool, int_type)
+      real_id = local_token_pre_exist * local_token_id
+      m_cell = tf.stack([self.initial_cell, [forward_memory_cell[real_id]]])[local_token_pre_exist]
+      m_h = tf.stack([self.initial_h, [forward_memory_h[real_id]]])[local_token_pre_exist]
       _, (m_forward_cell, m_forward_h) = self.memory_update_lstm(one_mg, (m_cell, m_h))
       discrete_forward_memory_cell = tf.concat([discrete_forward_memory_cell, m_forward_cell], axis=0)
       discrete_forward_memory_h = tf.concat([discrete_forward_memory_h, m_forward_h], axis=0)
