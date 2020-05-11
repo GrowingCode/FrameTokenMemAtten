@@ -37,7 +37,7 @@ class NTMOneDirection():
       b_h = [loop_backward_h[b_index]]
       one_mg = self.merger(f_h, b_h)
       ''' compute merged features '''
-      local_token_valid_bool = tf.logical_and(local_token_id > 0)
+      local_token_valid_bool = tf.greater(local_token_id, 0)
       local_token_valid = tf.cast(local_token_valid_bool, int_type)
       local_token_pre_exist_bool = tf.logical_and(local_token_valid_bool, local_token_id < tf.shape(forward_memory_h)[0])
       local_token_pre_exist = tf.cast(local_token_pre_exist_bool, int_type)
