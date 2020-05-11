@@ -95,7 +95,7 @@ class PointerNetwork():
     if training:
       dup_mrr, dup_accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
     else:
-#       p_op = tf.print(["oracle_en:", oracle_en, "specified_index:", specified_index, "specified_en:", accumulated_en[specified_index], "oracle_relative:", oracle_relative, "total_length:", total_length])
+#       p_op = tf.print(["pre_exist:", pre_exist, "oracle_en:", oracle_en, "specified_index:", specified_index, "specified_en:", accumulated_en[specified_index], "oracle_relative:", oracle_relative, "total_length:", total_length])
 #       with tf.control_dependencies([p_op]):
       dup_mrr, dup_accurate = compute_dup_accurate(accumulated_en, oracle_en, specified_index, dup_logits)
     ''' maximize the most likely '''
