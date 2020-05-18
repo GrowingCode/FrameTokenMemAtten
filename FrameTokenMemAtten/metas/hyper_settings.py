@@ -1,8 +1,8 @@
 '''
 initialize settings
 '''
-initialize_range = 1.0
-lstm_initialize_range = 1.0
+initialize_range = 0.01
+lstm_initialize_range = 0.01
 initialize_seed_base = 0
 '''
 basic learning mode
