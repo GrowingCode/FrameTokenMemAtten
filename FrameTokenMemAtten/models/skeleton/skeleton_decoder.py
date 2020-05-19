@@ -6,7 +6,8 @@ from metas.hyper_settings import num_units, \
   token_embedder_mode, swords_compose_mode, token_only_mode, \
   only_memory_mode, token_memory_mode, \
   decode_attention_way, decode_no_attention, compose_one_way_lstm, compose_mode,\
-  compose_bi_way_lstm, compose_half_one_way_lstm
+  compose_bi_way_lstm, compose_half_one_way_lstm, compose_one_way_lstm_mode,\
+  one_way_stand_compose, one_way_two_way_compose, one_way_three_way_compose
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.attention import YAttention
@@ -14,7 +15,7 @@ from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
 from models.embed_merger import EmbedMerger
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
-from models.lstm import YLSTMCell, Y2DirectLSTMCell
+from models.lstm import YLSTMCell, Y2DirectLSTMCell, Y3DirectLSTMCell
 from models.mem import NTMOneDirection
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
@@ -50,8 +51,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
       self.forward_token_lstm = YLSTMCell(3)
       self.backward_token_lstm = YLSTMCell(4)
       if compose_tokens_of_a_statement:
-        self.tokens_merger = EmbedMerger(150)
-        self.compose_lstm_cell = YLSTMCell(5)
+        if compose_mode == compose_one_way_lstm and (compose_one_way_lstm_mode == one_way_two_way_compose or compose_one_way_lstm_mode == one_way_three_way_compose):
+          self.tokens_merger = Y2DirectLSTMCell(150)
+        else:
+          self.tokens_merger = EmbedMerger(150)
+        if compose_mode == compose_one_way_lstm and compose_one_way_lstm_mode == one_way_three_way_compose:
+          self.compose_lstm_cell = Y3DirectLSTMCell(5)
+        else:
+          self.compose_lstm_cell = YLSTMCell(5)
         if compose_mode == compose_bi_way_lstm:
           self.bi_way_merger = Y2DirectLSTMCell(155)
           self.bi_way_ini_cell = tf.Variable(random_uniform_variable_initializer(855, 55, [1, num_units]))
@@ -261,13 +268,36 @@ class SkeletonDecodeModel(BasicDecodeModel):
         compute BiLSTM composition of tokens of a statement
         '''
         f_stmt_cell, f_stmt_h = stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]]
-        if compose_mode > compose_half_one_way_lstm:
+        if compose_mode == compose_half_one_way_lstm:
+          merged_tokens_embed = tf.expand_dims(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], axis=0)
+        elif compose_mode == compose_one_way_lstm:
+          if compose_one_way_lstm_mode == one_way_stand_compose:
+            merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+          elif compose_one_way_lstm_mode == one_way_two_way_compose or compose_one_way_lstm_mode == one_way_three_way_compose:
+            _, merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]], [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+          else:
+            assert False
+        elif compose_mode == compose_bi_way_lstm:
           merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
         else:
-          merged_tokens_embed = tf.expand_dims(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], axis=0)
+          assert False
         stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = tf.concat([stmt_metrics[self.metrics_index["dup_memory_acc_h"]], merged_tokens_embed], axis=0)
-        _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
-        if compose_mode <= compose_one_way_lstm:
+        
+        if compose_mode == compose_half_one_way_lstm:
+          _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
+        elif compose_mode == compose_one_way_lstm:
+          if compose_one_way_lstm_mode == one_way_stand_compose or compose_one_way_lstm_mode == one_way_two_way_compose:
+            _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
+          elif compose_one_way_lstm_mode == one_way_three_way_compose:
+            f_stmt_cell, f_stmt_h = self.compose_lstm_cell(f_stmt_cell, f_stmt_h, [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]], [stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+          else:
+            assert False
+        elif compose_mode == compose_bi_way_lstm:
+          _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
+        else:
+          assert False
+        
+        if compose_mode == compose_one_way_lstm or compose_mode == compose_half_one_way_lstm:
           for_token_cell, for_token_h = f_stmt_cell, f_stmt_h
         elif compose_mode == compose_bi_way_lstm:
           _, (b_stmt_cell, b_stmt_h) = backward_varied_lstm_steps(stmt_metrics[self.metrics_index["dup_memory_acc_h"]], self.bi_way_ini_cell, self.bi_way_ini_h, self.bi_way_lstm)

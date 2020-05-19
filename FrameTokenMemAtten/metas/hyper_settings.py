@@ -102,6 +102,10 @@ compose_half_one_way_lstm = 0
 compose_one_way_lstm = 1
 compose_bi_way_lstm = 2
 compose_mode = compose_one_way_lstm
+one_way_stand_compose = 0
+one_way_two_way_compose = 1
+one_way_three_way_compose = 2
+compose_one_way_lstm_mode = one_way_stand_compose
 '''
 decode attention, high level attention way
 '''
