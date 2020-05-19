@@ -82,7 +82,7 @@ sword_decode = 1
 atom_decode_mode = token_decode
 ''' training hyper '''
 ignore_restrain_count = 0
-restrain_maximum_count = 3
+restrain_maximum_count = 5
 max_train_epoch = 100
 valid_epoch_period = 1
 '''
