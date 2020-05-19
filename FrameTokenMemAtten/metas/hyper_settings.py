@@ -38,6 +38,7 @@ accumulated_token_max_length = 600
 basic lstm mode
 '''
 use_layer_norm = 0
+embed_merger_use_layer_norm = 0
 use_lstm_merger_style = 0
 ''' memory mode '''
 no_memory_mode = 0

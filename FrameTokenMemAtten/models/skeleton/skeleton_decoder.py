@@ -197,7 +197,6 @@ class SkeletonDecodeModel(BasicDecodeModel):
     
     stmt_start = b_stmt_start + stmt_start_offset
      
-    ini_cells_hs = []
     '''
     iterate tokens
     '''
@@ -205,30 +204,13 @@ class SkeletonDecodeModel(BasicDecodeModel):
     ini_f_h = tf.expand_dims(self.skeleton_forward_cell_h[skt_use_id][1], 0)
     ini_b_cell = tf.expand_dims(self.skeleton_backward_cell_h[skt_use_id][0], 0)
     ini_b_h = tf.expand_dims(self.skeleton_backward_cell_h[skt_use_id][1], 0)
-    ini_cells_hs.append(ini_f_cell)
-    ini_cells_hs.append(ini_f_h)
-    ini_cells_hs.append(ini_b_cell)
-    ini_cells_hs.append(ini_b_h)
-     
+    
     if use_dup_model:
       dup_ini_f_cell = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_use_id][0], 0)
       dup_ini_f_h = tf.expand_dims(self.dup_skeleton_forward_cell_h[skt_use_id][1], 0)
       dup_ini_b_cell =  tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_use_id][0], 0)
       dup_ini_b_h = tf.expand_dims(self.dup_skeleton_backward_cell_h[skt_use_id][1], 0)
-      ini_cells_hs.append(dup_ini_f_cell)
-      ini_cells_hs.append(dup_ini_f_h)
-      ini_cells_hs.append(dup_ini_b_cell)
-      ini_cells_hs.append(dup_ini_b_h)
-       
-    ini_f_cell = ini_cells_hs[0]
-    ini_f_h = ini_cells_hs[1]
-    ini_b_cell = ini_cells_hs[2]
-    ini_b_h = ini_cells_hs[3]
-    if use_dup_model:
-      dup_ini_f_cell = ini_cells_hs[4]
-      dup_ini_f_h = ini_cells_hs[5]
-      dup_ini_b_cell = ini_cells_hs[6]
-      dup_ini_b_h = ini_cells_hs[7]
+      
     '''
     leaf info also means variable info
     '''

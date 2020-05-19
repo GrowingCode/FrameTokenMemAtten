@@ -2,8 +2,8 @@ import tensorflow as tf
 from models.lstm import layer_normalization
 from utils.initializer import random_uniform_variable_initializer,\
   zero_variable_initializer, one_variable_initializer
-from metas.hyper_settings import num_units, use_layer_norm,\
-  use_lstm_merger_style, lstm_initialize_range
+from metas.hyper_settings import num_units,\
+  use_lstm_merger_style, lstm_initialize_range, embed_merger_use_layer_norm
 
 
 class EmbedMerger():
@@ -11,7 +11,7 @@ class EmbedMerger():
   def __init__(self, num_desc):
     self.w = tf.Variable(random_uniform_variable_initializer(222, 333+num_desc, [2 * num_units, 5 * num_units], ini_range=lstm_initialize_range))
     self.b = tf.Variable(zero_variable_initializer([1, 5 * num_units]))
-    if use_layer_norm:
+    if embed_merger_use_layer_norm:
       self.norm_weights = []
       self.norm_biases = []
       for _ in range(6):
@@ -24,7 +24,7 @@ class EmbedMerger():
     res = tf.add(res, self.b)
     i, j, f, f2, o = tf.split(value=res, num_or_size_splits=5, axis=1)
     # add layer normalization to each gate
-    if use_layer_norm:
+    if embed_merger_use_layer_norm:
       i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
       j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])
       f = layer_normalization(f, self.norm_weights[2], self.norm_biases[2])
@@ -36,7 +36,7 @@ class EmbedMerger():
     new_h = (forward_h * tf.nn.sigmoid(f) + backward_h * tf.nn.sigmoid(f2) + 
              tf.tanh(j) * tf.nn.sigmoid(i))
     if use_lstm_merger_style:
-      if use_layer_norm:
+      if embed_merger_use_layer_norm:
         new_h = layer_normalization(new_h, self.norm_weights[5], self.norm_biases[5])
       new_h = tf.tanh(new_h) * tf.nn.sigmoid(o)
     return new_h
