@@ -91,7 +91,7 @@ just truncate the whole large data
 '''
 max_examples_in_one_batch = 128
 ''' gradient '''
-gradient_clip_abs_range = 1.0
+gradient_clip_abs_range = 1000.0
 '''
 whether compose tokens
 '''
