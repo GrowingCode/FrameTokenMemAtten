@@ -6,7 +6,7 @@ from metas.hyper_settings import num_units, \
   token_embedder_mode, swords_compose_mode, token_only_mode, \
   only_memory_mode, token_memory_mode, \
   decode_attention_way, decode_no_attention, compose_one_way_lstm, compose_mode,\
-  compose_bi_way_lstm
+  compose_bi_way_lstm, compose_half_one_way_lstm
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.attention import YAttention
@@ -261,10 +261,13 @@ class SkeletonDecodeModel(BasicDecodeModel):
         compute BiLSTM composition of tokens of a statement
         '''
         f_stmt_cell, f_stmt_h = stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]]
-        merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+        if compose_mode > compose_half_one_way_lstm:
+          merged_tokens_embed = self.tokens_merger([stmt_metrics[self.metrics_index["loop_forward_hs"]][-1]], [stmt_metrics[self.metrics_index["loop_backward_hs"]][0]])
+        else:
+          merged_tokens_embed = tf.expand_dims(stmt_metrics[self.metrics_index["loop_forward_hs"]][-1], axis=0)
         stmt_metrics[self.metrics_index["dup_memory_acc_h"]] = tf.concat([stmt_metrics[self.metrics_index["dup_memory_acc_h"]], merged_tokens_embed], axis=0)
         _, (f_stmt_cell, f_stmt_h) = self.compose_lstm_cell(merged_tokens_embed, (f_stmt_cell, f_stmt_h))
-        if compose_mode == compose_one_way_lstm:
+        if compose_mode <= compose_one_way_lstm:
           for_token_cell, for_token_h = f_stmt_cell, f_stmt_h
         elif compose_mode == compose_bi_way_lstm:
           _, (b_stmt_cell, b_stmt_h) = backward_varied_lstm_steps(stmt_metrics[self.metrics_index["dup_memory_acc_h"]], self.bi_way_ini_cell, self.bi_way_ini_h, self.bi_way_lstm)

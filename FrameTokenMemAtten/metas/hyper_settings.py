@@ -98,8 +98,9 @@ whether compose tokens
 '''
 compute_token_memory = 0
 compose_tokens_of_a_statement = 0
-compose_one_way_lstm = 0
-compose_bi_way_lstm = 1
+compose_half_one_way_lstm = 0
+compose_one_way_lstm = 1
+compose_bi_way_lstm = 2
 compose_mode = compose_one_way_lstm
 '''
 decode attention, high level attention way
