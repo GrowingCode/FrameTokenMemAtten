@@ -83,7 +83,7 @@ def build_statement_feed_dict(mode):
     '''
     validate_relatives(sequence_decodes_np_array, "token")
 #     , stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end
-    examples.append((sequence_decodes_np_array[0:3,:], sequence_decodes_start, sequence_decodes_end))
+    examples.append((sequence_decodes_np_array, sequence_decodes_start, sequence_decodes_end))
   return examples
   
   
