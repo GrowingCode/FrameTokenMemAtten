@@ -22,7 +22,8 @@ from utils.initializer import random_uniform_variable_initializer
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
-from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps
+from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps,\
+  one_lstm_step_and_update_memory
 from models.token_sword_decode import TokenDecoder
 
 
@@ -123,10 +124,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
     f_res = list(post_process_decoder_output(f_res, self.metrics_index))
     return f_res
-   
+  
   def stmt_iterate_cond(self, i, i_len, *_):
     return tf.less(i, i_len)
-   
+  
   def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
      
@@ -170,7 +171,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
         stmt_metrics[self.metrics_index["dup_token_h"]] = next_dup_h
     else:
       stmt_start_offset = 0
-     
+    
     '''
     this step ignores the statement with no type content tokens (only with skeleton token). 
     '''
@@ -179,14 +180,14 @@ class SkeletonDecodeModel(BasicDecodeModel):
     f_res = tf.while_loop(self.itearate_tokens_cond, self.itearate_tokens_body, [tf.constant(0, int_type), itearate_tokens_continue, i, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = f_res[3:]
     return (i + 1, i_len, *stmt_metrics)
-   
+  
   def itearate_tokens_cond(self, ctn_start, ctn_end, *_):
     return tf.less(ctn_start, ctn_end)
-   
+  
   def itearate_tokens_body(self, ctn_start, ctn_end, i, *stmt_metrics):
     res_stmt_metrics = self.itearate_tokens(i, stmt_metrics)
     return (ctn_start+1, ctn_end, i, *res_stmt_metrics)
-   
+  
   def itearate_tokens(self, i, stmt_metrics):
     
     b_stmt_start = self.token_info_start_tensor[i]
@@ -308,33 +309,37 @@ class SkeletonDecodeModel(BasicDecodeModel):
         stmt_metrics[self.metrics_index["f_stmt_cell"]], stmt_metrics[self.metrics_index["f_stmt_h"]] = f_stmt_cell, f_stmt_h
        
     return stmt_metrics
-   
+  
   def token_iterate_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
-   
+  
   def token_iterate_body(self, i, i_len, ini_i, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
     oracle_type_content_en = self.token_info_tensor[0][i]
     oracle_type_content_var = self.token_info_tensor[1][i]
     oracle_type_content_var_relative = self.token_info_tensor[2][i]
+    conserved_memory_length = self.token_info_tensor[3][i]
     if atom_decode_mode == token_decode:
       stmt_metrics = self.token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative)
       stmt_metrics = one_lstm_step("", stmt_metrics, self.metrics_index, oracle_type_content_en, self.token_lstm, self.token_embedder)
       if use_dup_model:
-        stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
+        if compute_token_memory:
+          stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
+        else:
+          stmt_metrics = one_lstm_step_and_update_memory("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, oracle_type_content_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
 #     elif atom_decode_mode == sword_decode:
 #       oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
 #       r_stmt_metrics_tuple = decode_swords_of_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
     else:
       assert False
     return (i + 1, i_len, ini_i, *stmt_metrics)
-   
+  
   '''
   build memory
   '''
   def token_embed_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
-   
+  
   def token_embed_body(self, i, i_len, embeds, dup_embeds):
     oracle_type_content_en = self.token_info_tensor[0][i]
     e_emebd = self.token_embedder.compute_h(oracle_type_content_en)
@@ -346,7 +351,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
   
   def forward_loop_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
-   
+  
   def forward_loop_body(self, i, i_len, embeds, dup_embeds, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
     f_cell = [stmt_metrics[self.metrics_index["loop_forward_cells"]][-1]]
@@ -361,10 +366,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
       stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], new_dup_f_cell, -1)
       stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], new_dup_f_h, -1)
     return (i+1, i_len, embeds, dup_embeds, *stmt_metrics)
-   
+  
   def backward_loop_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
-   
+  
   def backward_loop_body(self, i, i_len, embeds, dup_embeds, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
     b_cell = [stmt_metrics[self.metrics_index["loop_backward_cells"]][0]]
@@ -379,8 +384,8 @@ class SkeletonDecodeModel(BasicDecodeModel):
       stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(new_dup_b_cell, stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], -1)
       stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(new_dup_b_h, stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], -1)
     return (i, i_len-1, embeds, dup_embeds, *stmt_metrics)
- 
- 
+  
+  
 def post_process_decoder_output(model_metrics, metrics_index):
   t_array = model_metrics[metrics_index["atom_beam"]]
   model_metrics[metrics_index["atom_beam"]] = make_sure_shape_of_tensor_array(t_array)
