@@ -7,7 +7,8 @@ from metas.hyper_settings import num_units, \
   only_memory_mode, token_memory_mode, \
   decode_attention_way, decode_no_attention, compose_one_way_lstm, compose_mode,\
   compose_bi_way_lstm, compose_half_one_way_lstm, compose_one_way_lstm_mode,\
-  one_way_stand_compose, one_way_two_way_compose, one_way_three_way_compose
+  one_way_stand_compose, one_way_two_way_compose, one_way_three_way_compose,\
+  print_accurate_of_each_example
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.attention import YAttention
@@ -123,6 +124,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
     f_res = list(post_process_decoder_output(f_res, self.metrics_index))
+    if print_accurate_of_each_example:
+      p_op = tf.print(["accurate:", f_res[self.metrics_index["all_accurate"]], "count:", f_res[self.metrics_index["all_count"]]])
+      with tf.control_dependencies([p_op]):
+        f_res[self.metrics_index["all_count"]] += 0
     return f_res
   
   def stmt_iterate_cond(self, i, i_len, *_):

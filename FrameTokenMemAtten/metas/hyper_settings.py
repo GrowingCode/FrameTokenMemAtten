@@ -112,6 +112,10 @@ decode attention, high level attention way
 decode_no_attention = 0
 decode_with_attention = 1
 decode_attention_way = decode_no_attention
+'''
+info print
+'''
+print_accurate_of_each_example = 0
 
 
 '''
