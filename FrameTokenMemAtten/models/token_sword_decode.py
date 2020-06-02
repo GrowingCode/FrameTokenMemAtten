@@ -5,7 +5,7 @@ from metas.hyper_settings import use_dup_model, \
   no_memory_mode, top_ks, concat_memory_mode, only_consider_var_accuracy,\
   consider_all_token_accuracy, only_consider_unseen_var_accuracy,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
-  abs_size_var_novar_all_concat_memory_mode
+  abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -297,6 +297,9 @@ class TokenDecoder():
     elif token_accuracy_mode == only_consider_unseen_var_accuracy:
       t_valid = tf.cast(tf.logical_and(oracle_type_content_var > 0, tf.greater_equal(oracle_type_content_en, self.type_content_data[all_token_summary][TokenHitNum])), float_type)
       t_valid_int = tf.cast(tf.logical_and(oracle_type_content_var > 0, tf.greater_equal(oracle_type_content_en, self.type_content_data[all_token_summary][TokenHitNum])), int_type)
+    elif token_accuracy_mode == only_consider_non_var_accuracy:
+      t_valid = tf.cast(oracle_type_content_var <= 0, float_type)
+      t_valid_int = tf.cast(oracle_type_content_var <= 0, int_type)
     else:
       assert False
     

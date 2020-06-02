@@ -13,6 +13,7 @@ token_valid_mode = token_meaningful_valid
 consider_all_token_accuracy = 0
 only_consider_var_accuracy = 1
 only_consider_unseen_var_accuracy = 2
+only_consider_non_var_accuracy = 3
 token_accuracy_mode = consider_all_token_accuracy
 '''
 details
