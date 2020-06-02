@@ -23,6 +23,8 @@ Actually, users does not need to know where the data is stored.
   * if we want to run Attention-Pointer model
     * Please set "composite_config_func = ..." to "composite_config_func = sequence_token_decode_with_dup"
 
+　　After `composite_config_func` being set, find the zoot.tensorflow_v1_main.py file. Just run this file using python, the training/validating/testing procedure will automatically starts and the real-time results will be printed on the console. 
+
 　　As REP model only considers variables, when run REP model, plsease
 set "token_accuracy_mode = ..." to "token_accuracy_mode = only_consider_var_accuracy". 
 
