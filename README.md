@@ -25,8 +25,9 @@ Actually, users does not need to know where the data is stored.
 
 　　As REP model only considers variables, when run REP model, plsease
 set "token_accuracy_mode = ..." to "token_accuracy_mode = only_consider_var_accuracy". 
-　　We can run HLM model first and then run REP model, the final accuracy is computed by average the two kinds of accuracy. 
-Note that, we offer token count in the printing. So achieving this is simple. 
+
+　　For non-variable tokens such as grammar tokens, we can run HLM model first. For variable tokens, we can run REP model next. The final accuracy is computed by average the two kinds of accuracy. 
+Note that, we offer token count in the final printing. So computing this kind of accuracy is simple. 
 
 
 
