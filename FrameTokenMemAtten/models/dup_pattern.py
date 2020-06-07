@@ -1,10 +1,13 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type
+from metas.non_hyper_constants import float_type, int_type,\
+  simplename_approximate_variable, simplename_approximate_not_variable,\
+  bool_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep
+  use_syntax_to_decide_rep, dup_consider_range_mode,\
+  dup_simplename_approximate_variable_range, dup_all_range, dup_simplename_range
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -82,11 +85,13 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     return result
 
-  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, is_dup_logits, dup_logits, neg_dup_logits=None, neg_ele_logit=None):
+  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, oracle_en_kind, is_dup_logits, dup_logits, neg_dup_logits=None, neg_ele_logit=None):
     total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
+    ntc_bool = is_in_dup_range(oracle_en_kind)
+    need_to_classify = tf.cast(ntc_bool, int_type)
 #     if dup_use_two_poles:
 #       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
 #       r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
@@ -118,17 +123,20 @@ class PointerNetwork():
       is_dup_losses = tf.nn.sigmoid_cross_entropy_with_logits(labels=[tf.cast(pre_exist, float_type)], logits=[is_dup_logits])
       predict_to_use_pre_exist = tf.cast(tf.sigmoid(is_dup_logits) > 0.5, int_type)
 #     if training:
+    predict_to_use_pre_exist = tf.stack([tf.constant(0, int_type), predict_to_use_pre_exist])[need_to_classify]
     is_dup_accurate_one = tf.cast(tf.equal(predict_to_use_pre_exist, pre_exist), float_type)
+    r_is_dup_accurate_one = tf.stack([tf.constant(0.0, float_type), is_dup_accurate_one])[need_to_classify]
 #     else:
 #       p_op = tf.print(["predict_to_use_pre_exist:", predict_to_use_pre_exist, "pre_exist:", pre_exist, "is_dup_logits:", is_dup_logits])
 #       with tf.control_dependencies([p_op]):
 #         is_dup_accurate_one = tf.cast(tf.equal(predict_to_use_pre_exist, pre_exist), float_type)
     is_dup_loss = tf.reduce_sum(is_dup_losses)
-    is_dup_accurate = tf.tile([is_dup_accurate_one], [len(top_ks)])
+    r_is_dup_loss = tf.stack([tf.constant(0.0, float_type), is_dup_loss])[need_to_classify]
+    r_is_dup_accurate = tf.tile([r_is_dup_accurate_one], [len(top_ks)])
     ''' maximize the most likely '''
-    total_mrr = tf.multiply(r_dup_mrr, is_dup_accurate_one)
-    total_accurate = tf.multiply(r_dup_accurate, is_dup_accurate)
-    total_loss = r_dup_loss + is_dup_loss
+    total_mrr = tf.multiply(r_dup_mrr, r_is_dup_accurate_one)
+    total_accurate = tf.multiply(r_dup_accurate, r_is_dup_accurate)
+    total_loss = r_dup_loss + r_is_dup_loss
     if use_syntax_to_decide_rep:
       predict_to_use_pre_exist = pre_exist
     return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist
@@ -171,4 +179,26 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
     accs = tf.reduce_sum(zero_one)
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
+
+
+def is_in_dup_range(oracle_en_kind):
+  if dup_consider_range_mode == dup_all_range:
+    ntc_bool = tf.constant(True, bool_type)
+  elif dup_consider_range_mode == dup_simplename_range:
+    ntc_bool = tf.logical_or(tf.equal(oracle_en_kind, simplename_approximate_variable), tf.equal(oracle_en_kind, simplename_approximate_not_variable))
+  elif dup_consider_range_mode == dup_simplename_approximate_variable_range:
+    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
+  else:
+    assert False
+  return ntc_bool
+
+
+
+
+
+
+
+
+
+
 

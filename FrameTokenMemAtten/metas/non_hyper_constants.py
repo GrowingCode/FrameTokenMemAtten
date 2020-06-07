@@ -69,6 +69,12 @@ UNK_en = 1
 ''' '''
 skeleton_base = 5000000
 
+'''
+token kind
+'''
+default_token_kind = -1
+simplename_approximate_not_variable = 0
+simplename_approximate_variable = 1
 
 
 
