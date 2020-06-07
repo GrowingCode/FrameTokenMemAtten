@@ -324,8 +324,9 @@ class SkeletonDecodeModel(BasicDecodeModel):
     oracle_type_content_var = self.token_info_tensor[1][i]
     oracle_type_content_var_relative = self.token_info_tensor[2][i]
     conserved_memory_length = self.token_info_tensor[3][i]
+    token_kind = self.token_info_tensor[4][i]
     if atom_decode_mode == token_decode:
-      stmt_metrics = self.token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative)
+      stmt_metrics = self.token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, token_kind)
       stmt_metrics = one_lstm_step("", stmt_metrics, self.metrics_index, oracle_type_content_en, self.token_lstm, self.token_embedder)
       if use_dup_model:
         if compute_token_memory:

@@ -61,7 +61,8 @@ class SequenceDecodeModel(BasicDecodeModel):
     token_var = self.token_info_tensor[1][i]
     token_var_relative = self.token_info_tensor[2][i]
     conserved_memory_length = self.token_info_tensor[3][i]
-    r_stmt_metrics_tuple = self.token_decoder.decode_one_token(stmt_metrics, self.training, token_en, token_var, token_var_relative)
+    token_kind = self.token_info_tensor[4][i]
+    r_stmt_metrics_tuple = self.token_decoder.decode_one_token(stmt_metrics, self.training, token_en, token_var, token_var_relative, token_kind)
     token_metrics = list(r_stmt_metrics_tuple)
     
     token_metrics = one_lstm_step_and_update_memory("", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.token_lstm, self.token_embedder)
