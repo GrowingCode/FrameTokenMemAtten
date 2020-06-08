@@ -23,7 +23,8 @@ class TreeModelRunner(ModelRunner):
     self.pre_post_order_node_state_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.pre_post_order_node_post_order_index_tensor = tf.compat.v1.placeholder(int_type, [None])
     self.pre_post_order_node_parent_grammar_index_tensor = tf.compat.v1.placeholder(int_type, [None])
-    return (self.post_order_node_type_content_en_tensor, self.post_order_node_child_start_tensor, self.post_order_node_child_end_tensor, self.post_order_node_children_tensor, self.pre_post_order_node_type_content_en_tensor, self.pre_post_order_node_state_tensor, self.pre_post_order_node_post_order_index_tensor, self.pre_post_order_node_parent_grammar_index_tensor)
+    self.pre_post_order_node_kind_tensor = tf.compat.v1.placeholder(int_type, [None])
+    return (self.post_order_node_type_content_en_tensor, self.post_order_node_child_start_tensor, self.post_order_node_child_end_tensor, self.post_order_node_children_tensor, self.pre_post_order_node_type_content_en_tensor, self.pre_post_order_node_state_tensor, self.pre_post_order_node_post_order_index_tensor, self.pre_post_order_node_parent_grammar_index_tensor, self.pre_post_order_node_kind_tensor)
   
   def build_model_logic(self):
     assert model_run_mode == tree_decode_mode, "serious error! not tree decode mode? but the model logic is tree decode logic."
@@ -38,6 +39,7 @@ class TreeModelRunner(ModelRunner):
     pre_post_order_node_state = one_example[5]
     pre_post_order_node_post_order_index = one_example[6]
     pre_post_order_node_parent_grammar_index = one_example[7]
+    pre_post_order_node_kind = one_example[8]
     feed_dict = {self.post_order_node_type_content_en_tensor : post_order_node_type_content_en, 
             self.post_order_node_child_start_tensor : post_order_node_child_start, 
             self.post_order_node_child_end_tensor : post_order_node_child_end, 
@@ -45,7 +47,8 @@ class TreeModelRunner(ModelRunner):
             self.pre_post_order_node_type_content_en_tensor : pre_post_order_node_type_content_en, 
             self.pre_post_order_node_state_tensor : pre_post_order_node_state, 
             self.pre_post_order_node_post_order_index_tensor : pre_post_order_node_post_order_index,
-            self.pre_post_order_node_parent_grammar_index_tensor : pre_post_order_node_parent_grammar_index}
+            self.pre_post_order_node_parent_grammar_index_tensor : pre_post_order_node_parent_grammar_index,
+            self.pre_post_order_node_kind_tensor : pre_post_order_node_kind}
     return feed_dict
   
   
