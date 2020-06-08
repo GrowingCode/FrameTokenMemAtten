@@ -4,7 +4,7 @@ from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep
+  use_syntax_to_decide_rep, lstm_initialize_range
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 from models.token_sword_decode import is_in_token_kind_range
@@ -14,17 +14,17 @@ class PointerNetwork():
   
   def __init__(self, num_desc):
     if is_dup_mode == simple_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [num_units, num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [num_units, num_units]))
+      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [num_units, num_units], ini_range=lstm_initialize_range))
+      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [num_units, num_units], ini_range=lstm_initialize_range))
     elif is_dup_mode == mlp_is_dup:
-      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [2 * num_units, 2 * num_units]))
+      self.is_dup_w = tf.Variable(random_uniform_variable_initializer(200, 1080 + num_desc, [2 * num_units, 2 * num_units], ini_range=lstm_initialize_range))
       self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050 + num_desc, [1, 2 * num_units]))
-      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [2 * num_units, 2 * num_units]))
+      self.is_not_dup_w = tf.Variable(random_uniform_variable_initializer(205, 1080 + num_desc, [2 * num_units, 2 * num_units], ini_range=lstm_initialize_range))
       self.is_not_dup_h = tf.Variable(random_uniform_variable_initializer(205, 1060 + num_desc, [1, 2 * num_units]))
     elif is_dup_mode == sigmoid_is_dup:
       self.is_dup_h = tf.Variable(random_uniform_variable_initializer(200, 1050 + num_desc, [1, 2 * num_units]))
       if dup_use_two_poles:
-        self.two_poles_merge_w = tf.Variable(random_uniform_variable_initializer(200, 1060 + num_desc, [2 * num_units, 1 * num_units]))
+        self.two_poles_merge_w = tf.Variable(random_uniform_variable_initializer(200, 1060 + num_desc, [2 * num_units, 1 * num_units], ini_range=lstm_initialize_range))
         self.two_poles_merge_b = tf.Variable(random_uniform_variable_initializer(200, 1070 + num_desc, [1, 1 * num_units]))
     else:
       assert False, "Unrecognized is_dup_mode!"

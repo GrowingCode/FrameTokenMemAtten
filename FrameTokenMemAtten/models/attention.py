@@ -1,6 +1,6 @@
 import tensorflow as tf
 from metas.hyper_settings import attention_algorithm, v_attention,\
-  stand_attention, num_units
+  stand_attention, num_units, lstm_initialize_range
 from metas.non_hyper_constants import float_type
 from utils.initializer import random_uniform_variable_initializer
 
@@ -10,14 +10,14 @@ class YAttention():
   def __init__(self, num_desc):
     if attention_algorithm == v_attention:
       self.v = tf.Variable(random_uniform_variable_initializer(203, 21 + num_desc, [1, num_units]))
-      self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231 + num_desc, [num_units, num_units]))
-      self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131 + num_desc, [num_units, num_units]))
-      self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145 + num_desc, [2*num_units, num_units]))
+      self.w_v = tf.Variable(random_uniform_variable_initializer(2033, 231 + num_desc, [num_units, num_units], ini_range=lstm_initialize_range))
+      self.w_h = tf.Variable(random_uniform_variable_initializer(2033, 131 + num_desc, [num_units, num_units], ini_range=lstm_initialize_range))
+      self.w_ctx_c = tf.Variable(random_uniform_variable_initializer(203, 145 + num_desc, [2*num_units, num_units], ini_range=lstm_initialize_range))
     elif attention_algorithm == stand_attention:
-      self.w = tf.Variable(random_uniform_variable_initializer(2033, 132 + num_desc, [num_units, num_units]))
+      self.w = tf.Variable(random_uniform_variable_initializer(2033, 132 + num_desc, [num_units, num_units], ini_range=lstm_initialize_range))
     else:
       print("Strange Error! Unrecognized attention algorithm")
-    self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units]))
+    self.w_ctx_h = tf.Variable(random_uniform_variable_initializer(203, 135 + num_desc, [2*num_units, num_units], ini_range=lstm_initialize_range))
       
   def compute_attention_logits(self, atten_hs, h):
     if attention_algorithm == v_attention:
