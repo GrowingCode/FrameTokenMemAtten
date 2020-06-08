@@ -1,8 +1,8 @@
 '''
 initialize settings
 '''
-initialize_range = 0.01
-lstm_initialize_range = 0.01
+initialize_range = 1.0
+lstm_initialize_range = 0.0
 initialize_seed_base = 0
 '''
 basic learning mode
@@ -11,7 +11,7 @@ token_in_scope_valid = 0
 token_meaningful_valid = 1
 token_valid_mode = token_meaningful_valid
 consider_all_token_accuracy = 0
-only_consider_dup_range_accuracy = 1
+only_consider_token_kind_accuracy = 1
 only_consider_var_accuracy = 2
 only_consider_unseen_var_accuracy = 3
 only_consider_non_var_accuracy = 4
@@ -19,10 +19,11 @@ token_accuracy_mode = consider_all_token_accuracy
 '''
 dup range
 '''
-dup_all_range = 0
-dup_simplename_range = 1
-dup_simplename_approximate_variable_range = 2
-dup_consider_range_mode = dup_simplename_approximate_variable_range
+token_kind_all_range = 0
+token_kind_simplename_range = 1
+token_kind_simplename_approximate_variable_range = 2
+token_kind_non_leaf_at_least_two_children_without_qualified_node = 3
+token_kind_consider_range_mode = token_kind_simplename_approximate_variable_range
 '''
 details
 '''

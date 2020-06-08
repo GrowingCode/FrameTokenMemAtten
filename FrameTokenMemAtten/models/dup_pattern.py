@@ -1,13 +1,14 @@
 import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type,\
   simplename_approximate_variable, simplename_approximate_not_variable,\
-  bool_type
+  bool_type, non_leaf_at_least_two_children_without_qualified_node
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep, dup_consider_range_mode,\
-  dup_simplename_approximate_variable_range, dup_all_range, dup_simplename_range
+  use_syntax_to_decide_rep, token_kind_consider_range_mode,\
+  token_kind_simplename_approximate_variable_range, token_kind_all_range, token_kind_simplename_range,\
+  token_kind_non_leaf_at_least_two_children_without_qualified_node
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 
@@ -90,7 +91,7 @@ class PointerNetwork():
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
-    ntc_bool = is_in_dup_range(oracle_en_kind)
+    ntc_bool = is_in_token_kind_range(oracle_en_kind)
     need_to_classify = tf.cast(ntc_bool, int_type)
 #     if dup_use_two_poles:
 #       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
@@ -181,13 +182,15 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
   return mrr, result
 
 
-def is_in_dup_range(oracle_en_kind):
-  if dup_consider_range_mode == dup_all_range:
+def is_in_token_kind_range(oracle_en_kind):
+  if token_kind_consider_range_mode == token_kind_all_range:
     ntc_bool = tf.constant(True, bool_type)
-  elif dup_consider_range_mode == dup_simplename_range:
+  elif token_kind_consider_range_mode == token_kind_simplename_range:
     ntc_bool = tf.logical_or(tf.equal(oracle_en_kind, simplename_approximate_variable), tf.equal(oracle_en_kind, simplename_approximate_not_variable))
-  elif dup_consider_range_mode == dup_simplename_approximate_variable_range:
+  elif token_kind_consider_range_mode == token_kind_simplename_approximate_variable_range:
     ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
+  elif token_kind_consider_range_mode == token_kind_non_leaf_at_least_two_children_without_qualified_node:
+    ntc_bool = tf.equal(oracle_en_kind, non_leaf_at_least_two_children_without_qualified_node)
   else:
     assert False
   return ntc_bool

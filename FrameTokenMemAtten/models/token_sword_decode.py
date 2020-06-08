@@ -6,12 +6,12 @@ from metas.hyper_settings import use_dup_model, \
   consider_all_token_accuracy, only_consider_unseen_var_accuracy,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
-  only_consider_dup_range_accuracy
+  only_consider_token_kind_accuracy
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 import tensorflow as tf
-from models.dup_pattern import is_in_dup_range
+from models.dup_pattern import is_in_token_kind_range
 
 
 # def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
@@ -292,8 +292,8 @@ class TokenDecoder():
   def decode_one_token(self, token_metrics, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, oracle_type_content_kind):
     if token_accuracy_mode == consider_all_token_accuracy:
       t_valid_bool = tf.constant(True, bool_type)
-    elif token_accuracy_mode == only_consider_dup_range_accuracy:
-      t_valid_bool = is_in_dup_range(oracle_type_content_kind)
+    elif token_accuracy_mode == only_consider_token_kind_accuracy:
+      t_valid_bool = is_in_token_kind_range(oracle_type_content_kind)
     elif token_accuracy_mode == only_consider_var_accuracy:
       t_valid_bool = tf.greater(oracle_type_content_var, 0)
     elif token_accuracy_mode == only_consider_unseen_var_accuracy:

@@ -75,6 +75,7 @@ token kind
 default_token_kind = -1
 simplename_approximate_not_variable = 0
 simplename_approximate_variable = 1
+non_leaf_at_least_two_children_without_qualified_node = 2
 
 
 
