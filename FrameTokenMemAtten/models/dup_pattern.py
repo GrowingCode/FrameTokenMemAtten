@@ -1,16 +1,13 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type,\
-  simplename_approximate_variable, simplename_approximate_not_variable,\
-  bool_type, non_leaf_at_least_two_children_without_qualified_node
+from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep, token_kind_consider_range_mode,\
-  token_kind_simplename_approximate_variable_range, token_kind_all_range, token_kind_simplename_range,\
-  token_kind_non_leaf_at_least_two_children_without_qualified_node
+  use_syntax_to_decide_rep
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
+from models.token_sword_decode import is_in_token_kind_range
 
 
 class PointerNetwork():
@@ -181,19 +178,6 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
 
-
-def is_in_token_kind_range(oracle_en_kind):
-  if token_kind_consider_range_mode == token_kind_all_range:
-    ntc_bool = tf.constant(True, bool_type)
-  elif token_kind_consider_range_mode == token_kind_simplename_range:
-    ntc_bool = tf.logical_or(tf.equal(oracle_en_kind, simplename_approximate_variable), tf.equal(oracle_en_kind, simplename_approximate_not_variable))
-  elif token_kind_consider_range_mode == token_kind_simplename_approximate_variable_range:
-    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
-  elif token_kind_consider_range_mode == token_kind_non_leaf_at_least_two_children_without_qualified_node:
-    ntc_bool = tf.equal(oracle_en_kind, non_leaf_at_least_two_children_without_qualified_node)
-  else:
-    assert False
-  return ntc_bool
 
 
 

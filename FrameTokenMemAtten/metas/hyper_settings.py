@@ -19,7 +19,7 @@ token_accuracy_mode = consider_all_token_accuracy
 '''
 dup range
 '''
-token_kind_all_range = 0
+token_kind_default_range = 0
 token_kind_simplename_range = 1
 token_kind_simplename_approximate_variable_range = 2
 token_kind_non_leaf_at_least_two_children_without_qualified_node = 3

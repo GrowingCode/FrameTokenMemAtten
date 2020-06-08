@@ -6,12 +6,16 @@ from metas.hyper_settings import use_dup_model, \
   consider_all_token_accuracy, only_consider_unseen_var_accuracy,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
-  only_consider_token_kind_accuracy
+  only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
+  token_kind_default_range, token_kind_simplename_range,\
+  token_kind_simplename_approximate_variable_range,\
+  token_kind_non_leaf_at_least_two_children_without_qualified_node
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
-  TokenHitNum, UNK_en, bool_type
+  TokenHitNum, UNK_en, bool_type, default_token_kind,\
+  simplename_approximate_not_variable, simplename_approximate_variable,\
+  non_leaf_at_least_two_children_without_qualified_node
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 import tensorflow as tf
-from models.dup_pattern import is_in_token_kind_range
 
 
 # def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
@@ -373,6 +377,19 @@ class TokenDecoder():
     return token_metrics
   
 
+
+def is_in_token_kind_range(oracle_en_kind):
+  if token_kind_consider_range_mode == token_kind_default_range:
+    ntc_bool = tf.equal(oracle_en_kind, default_token_kind)
+  elif token_kind_consider_range_mode == token_kind_simplename_range:
+    ntc_bool = tf.logical_or(tf.equal(oracle_en_kind, simplename_approximate_variable), tf.equal(oracle_en_kind, simplename_approximate_not_variable))
+  elif token_kind_consider_range_mode == token_kind_simplename_approximate_variable_range:
+    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
+  elif token_kind_consider_range_mode == token_kind_non_leaf_at_least_two_children_without_qualified_node:
+    ntc_bool = tf.equal(oracle_en_kind, non_leaf_at_least_two_children_without_qualified_node)
+  else:
+    assert False
+  return ntc_bool
 
 
 

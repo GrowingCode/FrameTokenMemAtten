@@ -14,7 +14,7 @@ from models.lstm import YLSTMCell, Y2DLSTMCell
 from models.tree.tree_encoder import EncodeOneAST
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
   compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range
-from models.dup_pattern import is_in_token_kind_range
+from models.token_sword_decode import is_in_token_kind_range
 
 
 class TreeDecodeModel(BasicDecodeModel):
