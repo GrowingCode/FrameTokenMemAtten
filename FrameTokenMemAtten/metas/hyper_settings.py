@@ -231,6 +231,10 @@ if composite_config_func == "sequence_token_decode_with_abs_var_novar_concat_dup
 if composite_config_func == "tree_token_decode":
   model_run_mode = tree_decode_mode
   
+if composite_config_func == "tree_token_decode_with_tree_grammar":
+  model_run_mode = tree_decode_mode
+  tree_decode_with_grammar = 1
+
 
 '''
 configuration hard checking
