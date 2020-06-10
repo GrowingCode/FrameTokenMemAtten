@@ -4,7 +4,7 @@ from metas.hyper_settings import top_ks
 
 
 default_metrics_meta = [("all_loss", tf.TensorShape(())), ("all_accurate", tf.TensorShape([len(top_ks)])), ("all_mrr", tf.TensorShape(())), ("all_count", tf.TensorShape(())), ("sword_loss", tf.TensorShape(())), ("sword_accurate", tf.TensorShape([len(top_ks)])), ("sword_mrr", tf.TensorShape(())), ("sword_dup_loss", tf.TensorShape(())), ("sword_dup_accurate", tf.TensorShape([len(top_ks)])), ("sword_dup_mrr", tf.TensorShape(())), ("sword_lm_loss", tf.TensorShape(())), ("sword_lm_accurate", tf.TensorShape([len(top_ks)])), ("sword_lm_mrr", tf.TensorShape(())), ("sword_count", tf.TensorShape(())), ("token_loss", tf.TensorShape(())), ("token_accurate", tf.TensorShape([len(top_ks)])), ("token_mrr", tf.TensorShape(())), ("token_lm_loss", tf.TensorShape(())), ("token_lm_accurate", tf.TensorShape([len(top_ks)])), ("token_lm_mrr", tf.TensorShape(())), ("token_dup_loss", tf.TensorShape(())), ("token_dup_accurate", tf.TensorShape([len(top_ks)])), ("token_dup_mrr", tf.TensorShape(())), ("token_count", tf.TensorShape(()))]
-special_handle_metrics_meta = [("atom_beam", tf.TensorShape(None))]
+special_handle_metrics_meta = [("atom_beam_noavg", tf.TensorShape(None)), ("token_accurate_each_noavg", tf.TensorShape(None))]
 
 def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics_contingent_index):
   result = []
@@ -20,7 +20,11 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
       ct = tf.constant(0.0, float_type)
     elif m_name.endswith("_count"):
       ct = tf.constant(0, int_type)
-    elif m_name.endswith("_beam"):
+    elif m_name.endswith("_accurate_each_noavg"):
+      ct = tf.constant(0, int_type)
+    elif m_name.endswith("_beam_noavg"):
+      ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
+    elif m_name.endswith("_accurate_each_noavg"):
       ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
     else:
 #       if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):

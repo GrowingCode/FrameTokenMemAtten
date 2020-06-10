@@ -1,6 +1,6 @@
 import tensorflow as tf
 from utils.model_tensors_metrics import default_metrics_meta,\
-  special_handle_metrics_meta, create_metrics_contingent_index
+  create_metrics_contingent_index, special_handle_metrics_meta
 from metas.hyper_settings import contingent_parameters_num, num_units, top_ks
 from utils.initializer import random_uniform_variable_initializer
 

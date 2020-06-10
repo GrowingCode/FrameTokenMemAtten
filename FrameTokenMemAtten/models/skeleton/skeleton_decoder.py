@@ -21,7 +21,6 @@ from models.mem import NTMOneDirection
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
-from utils.tensor_array_stand import make_sure_shape_of_tensor_array
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
 from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps,\
   one_lstm_step_and_update_memory
@@ -123,7 +122,7 @@ class SkeletonDecodeModel(BasicDecodeModel):
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
-    f_res = list(post_process_decoder_output(f_res, self.metrics_index))
+#     f_res = list(post_process_decoder_output(f_res, self.metrics_index))
     if print_accurate_of_each_example:
       p_op = tf.print(["accurate:", f_res[self.metrics_index["all_accurate"]], "count:", f_res[self.metrics_index["all_count"]]])
       with tf.control_dependencies([p_op]):
@@ -392,10 +391,10 @@ class SkeletonDecodeModel(BasicDecodeModel):
     return (i, i_len-1, embeds, dup_embeds, *stmt_metrics)
   
   
-def post_process_decoder_output(model_metrics, metrics_index):
-  t_array = model_metrics[metrics_index["atom_beam"]]
-  model_metrics[metrics_index["atom_beam"]] = make_sure_shape_of_tensor_array(t_array)
-  return model_metrics
+# def post_process_decoder_output(model_metrics, metrics_index):
+#   t_array = model_metrics[metrics_index["atom_beam_noavg"]]
+#   model_metrics[metrics_index["atom_beam_noavg"]] = make_sure_shape_of_tensor_array(t_array)
+#   return model_metrics
  
  
  

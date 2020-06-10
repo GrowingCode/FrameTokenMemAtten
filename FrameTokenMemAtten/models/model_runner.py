@@ -7,12 +7,10 @@ from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch
   gradient_clip_abs_range
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
-  np_float_type, testing_mode, training_mode, validating_mode, int_type,\
-  model_storage_parent_dir
+  np_float_type, testing_mode, training_mode, validating_mode,\
+  model_storage_parent_dir, test_noavg, validate_noavg
 import numpy as np
 import tensorflow as tf
-from utils.tensor_array_stand import make_sure_shape_of_tensor_array,\
-  convert_tensor_array_to_lists_of_tensors
 
 
 class ModelRunner():
@@ -41,7 +39,7 @@ class ModelRunner():
     self.type_content_data = {}
     load_type_content_data(self.type_content_data)
     '''
-    Initialize the directory to put the stored model
+    initialize the directory to put the stored model
     '''
     real_model_storage_dir = '../' + model_storage_parent_dir + '/' + model_storage_dir
     if not os.path.exists(real_model_storage_dir):
@@ -56,6 +54,11 @@ class ModelRunner():
     self.best_model_file = self.best_model_directory + '/' + 'model.ckpt'
     self.config_txt = real_model_storage_dir + '/' + model_config
     '''
+    files to store each token accuracy or each token atom accuracy data
+    '''
+    self.test_noavg_txt = real_model_storage_dir + '/' + test_noavg
+    self.validate_noavg_txt = real_model_storage_dir + '/' + validate_noavg
+    '''
     set up necessary data
     '''
     self.sess = sess
@@ -67,10 +70,10 @@ class ModelRunner():
     '''
     self.test_metrics = self.model(place_holders, training = False)
     assert isinstance(self.test_metrics, list)
-    self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
+#     self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
 #     with tf.device('/GPU:0'):
     self.train_metrics = self.model(place_holders, training = True)
-    self.train_metrics[-1] = tf.constant(0, int_type)
+#     self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     final_grads = []
     for (gv, var) in gvs:
@@ -147,6 +150,7 @@ class ModelRunner():
       if train_compute_valid:
         valid_output_result = self.model_running(validating_mode)
         valid_avg = compute_average(valid_output_result)
+        valid_noavg = process_noavg(valid_output_result)
         '''
         compute average loss
         '''
@@ -182,6 +186,9 @@ class ModelRunner():
           tf.compat.v1.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
+          with open(self.validate_noavg_txt, 'w') as validate_noavg_record:
+            validate_noavg_record.write(dict_to_string(valid_noavg))
+          
         turn_infos.append(dict_to_string(valid_avg))
         '''
         save turn model
@@ -223,8 +230,11 @@ class ModelRunner():
     '''
     output_result = self.model_running(testing_mode)
     avg = compute_average(output_result)
+    noavg = process_noavg(output_result)
     with open(self.best_txt, 'w') as best_model_statement_accuracy_record:
       best_model_statement_accuracy_record.write(json.dumps(avg))
+    with open(self.test_noavg_txt, 'w') as test_noavg_record:
+      test_noavg_record.write(json.dumps(noavg))
     print(dict_to_string(avg))
   
   def model_running(self, mode):
@@ -305,16 +315,21 @@ def merge_metric(all_metrics, part_metric):
         all_metrics[key] = {}
       merge_metric(all_metrics[key], p_one_item)
     else:
-      if all_metrics_is_empty:
-        all_metrics[key] = p_one_item
+      if key.endswith("_noavg"):
+        if all_metrics_is_empty:
+          all_metrics[key] = []
+        all_metrics[key].append(p_one_item)
       else:
-        all_metrics[key] = all_metrics[key] + p_one_item
+        if all_metrics_is_empty:
+          all_metrics[key] = p_one_item
+        else:
+          all_metrics[key] = all_metrics[key] + p_one_item
 
 
 def compute_average(dict_t):
   r = {}
   for k in dict_t:
-    if not k.endswith('_count') and not k.endswith('_beam'):
+    if not k.endswith('_count') and not k.endswith('_noavg'):
       idx = k.find('_')
       assert idx > 0
       first_k_part = k[0:idx]
@@ -329,9 +344,22 @@ def compute_average(dict_t):
   return r
 
 
+def process_noavg(dict_t):
+  r = {}
+  for k in dict_t:
+    if k.endswith('_noavg'):
+      r[k] = de_numpy(dict_t[k])
+  pass
+
+
 def de_numpy(d):
-  if isinstance(d, (list, tuple, np.ndarray)):
+  if isinstance(d, (np.ndarray)):
     return d.tolist()
+  elif isinstance(d, (list, tuple)):
+    r = []
+    for ele in d:
+      r.append(de_numpy(ele))
+    return r;
   else:
     if isinstance(d, (np.float16, np.float32, np.float64)):
       return float(d)
