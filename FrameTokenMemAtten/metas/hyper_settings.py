@@ -64,6 +64,8 @@ take_unseen_as_UNK = 1
 token_only_mode = 0
 swords_compose_mode = 1
 token_embedder_mode = token_only_mode
+''' dup base '''
+dup_base_model_directory = "~/"
 ''' dup_mode '''
 use_dup_model = 0
 use_syntax_to_decide_rep = 0
