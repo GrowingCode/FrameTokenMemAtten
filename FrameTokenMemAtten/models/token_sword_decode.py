@@ -332,6 +332,9 @@ class TokenDecoder():
     accurate_of_this_node = accurate_of_this_node * en_valid * t_valid
     mrr_of_this_node = mrr_of_this_node * en_valid * t_valid
     
+    token_metrics[self.metrics_index["token_accurate_each_noavg"]] = token_metrics[self.metrics_index["token_accurate_each_noavg"]].write(token_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node)
+    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node)    
+    
     token_metrics[self.metrics_index["token_lm_loss"]] += loss_of_this_node
     token_metrics[self.metrics_index["token_lm_accurate"]] += accurate_of_this_node
     token_metrics[self.metrics_index["token_lm_mrr"]] += mrr_of_this_node

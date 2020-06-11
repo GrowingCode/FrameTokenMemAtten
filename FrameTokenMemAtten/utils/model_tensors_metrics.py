@@ -22,9 +22,7 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
       ct = tf.constant(0, int_type)
     elif m_name.endswith("_accurate_each_noavg"):
       ct = tf.constant(0, int_type)
-    elif m_name.endswith("_beam_noavg"):
-      ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
-    elif m_name.endswith("_accurate_each_noavg"):
+    elif m_name.endswith("_noavg"):
       ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
     else:
 #       if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):
