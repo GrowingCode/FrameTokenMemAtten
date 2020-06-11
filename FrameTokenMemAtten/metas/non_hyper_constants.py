@@ -51,9 +51,9 @@ turn_info = "turn_info.txt"
 turn = "turn.txt"
 best_info = "best_info.txt"
 best = "best.txt"
-train_noavg = "train_noavg.txt"
-validate_noavg = "valid_noavg.txt"
-test_noavg = "test_noavg.txt"
+train_noavg = "train_noavg.json"
+validate_noavg = "valid_noavg.json"
+test_noavg = "test_noavg.json"
 
 '''
 model_running_mode
