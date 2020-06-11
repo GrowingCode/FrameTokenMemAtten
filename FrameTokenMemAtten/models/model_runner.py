@@ -11,6 +11,8 @@ from metas.non_hyper_constants import model_storage_dir, turn_info, \
   model_storage_parent_dir, test_noavg, validate_noavg, train_noavg
 import numpy as np
 import tensorflow as tf
+from utils.model_tensors_metrics import ensure_tensor_array_to_tensor_list_in_metrics,\
+  filter_out_invalid_mark_in_metrics
 
 
 class ModelRunner():
@@ -70,10 +72,12 @@ class ModelRunner():
     build graph of logic 
     '''
     self.test_metrics = self.model(place_holders, training = False)
+    ensure_tensor_array_to_tensor_list_in_metrics(self.test_metrics, self.model.metrics_meta, self.model.metrics_index)
     assert isinstance(self.test_metrics, list)
 #     self.test_metrics[-1] = convert_tensor_array_to_lists_of_tensors(make_sure_shape_of_tensor_array(self.test_metrics[-1]))
 #     with tf.device('/GPU:0'):
     self.train_metrics = self.model(place_holders, training = True)
+    ensure_tensor_array_to_tensor_list_in_metrics(self.train_metrics, self.model.metrics_meta, self.model.metrics_index)
 #     self.train_metrics[-1] = tf.constant(0, int_type)
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     final_grads = []
@@ -289,8 +293,10 @@ class ModelRunner():
     if training:
       r_metrics = self.sess.run([self.train_op, *self.train_metrics], feed_dict=feed_dict)
       metrics = r_metrics[1:]
+      filter_out_invalid_mark_in_metrics(metrics, self.model.metrics_meta, self.model.metrics_index)
     else:
       metrics = self.sess.run([*self.test_metrics], feed_dict=feed_dict)
+      filter_out_invalid_mark_in_metrics(metrics, self.model.metrics_meta, self.model.metrics_index)
     return metrics
 
 
@@ -353,7 +359,7 @@ def process_noavg(dict_t):
   for k in dict_t:
     if k.endswith('_noavg'):
       r[k] = de_numpy(dict_t[k])
-  pass
+  return r
 
 
 def de_numpy(d):

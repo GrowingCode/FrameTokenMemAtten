@@ -1,6 +1,8 @@
 import tensorflow as tf
 from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks
+from utils.tensor_array_stand import convert_tensor_array_to_lists_of_tensors,\
+  filter_out_invalid_mark
 
 
 default_metrics_meta = [("all_loss", tf.TensorShape(())), ("all_accurate", tf.TensorShape([len(top_ks)])), ("all_mrr", tf.TensorShape(())), ("all_count", tf.TensorShape(())), ("sword_loss", tf.TensorShape(())), ("sword_accurate", tf.TensorShape([len(top_ks)])), ("sword_mrr", tf.TensorShape(())), ("sword_dup_loss", tf.TensorShape(())), ("sword_dup_accurate", tf.TensorShape([len(top_ks)])), ("sword_dup_mrr", tf.TensorShape(())), ("sword_lm_loss", tf.TensorShape(())), ("sword_lm_accurate", tf.TensorShape([len(top_ks)])), ("sword_lm_mrr", tf.TensorShape(())), ("sword_count", tf.TensorShape(())), ("token_loss", tf.TensorShape(())), ("token_accurate", tf.TensorShape([len(top_ks)])), ("token_mrr", tf.TensorShape(())), ("token_lm_loss", tf.TensorShape(())), ("token_lm_accurate", tf.TensorShape([len(top_ks)])), ("token_lm_mrr", tf.TensorShape(())), ("token_dup_loss", tf.TensorShape(())), ("token_dup_accurate", tf.TensorShape([len(top_ks)])), ("token_dup_mrr", tf.TensorShape(())), ("token_count", tf.TensorShape(()))]
@@ -20,10 +22,10 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
       ct = tf.constant(0.0, float_type)
     elif m_name.endswith("_count"):
       ct = tf.constant(0, int_type)
-    elif m_name.endswith("_accurate_each_noavg"):
-      ct = tf.constant(0, int_type)
-    elif m_name.endswith("_noavg"):
+    elif m_name.endswith("beam_noavg"):
       ct = tf.TensorArray(int_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
+    elif m_name.endswith("_noavg"):
+      ct = tf.TensorArray(float_type, size=0, dynamic_size=True, clear_after_read=False, infer_shape=False)
     else:
 #       if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):
 #         ct = contingent_parameters[metrics_contingent_index[m_name]][:,:]
@@ -32,19 +34,20 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
     result.append(ct)
   return tuple(result)
 
-# def create_empty_numpy_metrics(metrics_meta):
-#   result = []
-#   for m_name in metrics_meta:
-#     if m_name.endswith("_loss"):
-#       ct = 0.0
-#     elif m_name.endswith("_accurate"):
-#       ct = np.zeros([len(top_ks)], float_type)
-#     elif m_name.endswith("_mrr"):
-#       ct = 0.0
-#     elif m_name.endswith("_count"):
-#       ct = 0
-#     result.append(ct)
-#   return tuple(result)
+
+def ensure_tensor_array_to_tensor_list_in_metrics(metrics, metrics_meta, metrics_index):
+  for mm in metrics_meta:
+    m_name = mm[0]
+    if m_name.endswith("_noavg"):
+      metrics[metrics_index[m_name]] = convert_tensor_array_to_lists_of_tensors(metrics[metrics_index[m_name]])
+      
+
+def filter_out_invalid_mark_in_metrics(metrics, metrics_meta, metrics_index):
+  for mm in metrics_meta:
+    m_name = mm[0]
+    if m_name.endswith("_noavg"):
+      metrics[metrics_index[m_name]] = filter_out_invalid_mark(metrics[metrics_index[m_name]])
+
 
 def create_metrics_contingent_index(metrics_meta):
   metrics_contingent = {}
