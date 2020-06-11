@@ -8,7 +8,7 @@ from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode,\
-  model_storage_parent_dir, test_noavg, validate_noavg
+  model_storage_parent_dir, test_noavg, validate_noavg, train_noavg
 import numpy as np
 import tensorflow as tf
 
@@ -56,6 +56,7 @@ class ModelRunner():
     '''
     files to store each token accuracy or each token atom accuracy data
     '''
+    self.train_noavg_txt = real_model_storage_dir + '/' + train_noavg
     self.test_noavg_txt = real_model_storage_dir + '/' + test_noavg
     self.validate_noavg_txt = real_model_storage_dir + '/' + validate_noavg
     '''
@@ -138,6 +139,9 @@ class ModelRunner():
       total_turn_average_train_time_cost = total_turn_sum_train_time_cost / total_turn_sum
       ''' exactly record train loss '''
       train_avg = compute_average(train_output_result)
+      train_noavg = process_noavg(train_output_result)
+      with open(self.train_noavg_txt, 'w') as train_noavg_record:
+        train_noavg_record.write(dict_to_string(train_noavg))
       train_average_loss = train_avg["average_all_loss"]
       '''
       compute average loss when training

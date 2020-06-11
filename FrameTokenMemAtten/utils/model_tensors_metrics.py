@@ -4,7 +4,7 @@ from metas.hyper_settings import top_ks
 
 
 default_metrics_meta = [("all_loss", tf.TensorShape(())), ("all_accurate", tf.TensorShape([len(top_ks)])), ("all_mrr", tf.TensorShape(())), ("all_count", tf.TensorShape(())), ("sword_loss", tf.TensorShape(())), ("sword_accurate", tf.TensorShape([len(top_ks)])), ("sword_mrr", tf.TensorShape(())), ("sword_dup_loss", tf.TensorShape(())), ("sword_dup_accurate", tf.TensorShape([len(top_ks)])), ("sword_dup_mrr", tf.TensorShape(())), ("sword_lm_loss", tf.TensorShape(())), ("sword_lm_accurate", tf.TensorShape([len(top_ks)])), ("sword_lm_mrr", tf.TensorShape(())), ("sword_count", tf.TensorShape(())), ("token_loss", tf.TensorShape(())), ("token_accurate", tf.TensorShape([len(top_ks)])), ("token_mrr", tf.TensorShape(())), ("token_lm_loss", tf.TensorShape(())), ("token_lm_accurate", tf.TensorShape([len(top_ks)])), ("token_lm_mrr", tf.TensorShape(())), ("token_dup_loss", tf.TensorShape(())), ("token_dup_accurate", tf.TensorShape([len(top_ks)])), ("token_dup_mrr", tf.TensorShape(())), ("token_count", tf.TensorShape(()))]
-special_handle_metrics_meta = [("atom_beam_noavg", tf.TensorShape(None)), ("token_accurate_each_noavg", tf.TensorShape(None))]
+special_handle_metrics_meta = [("atom_beam_noavg", tf.TensorShape(None)), ("token_accurate_each_noavg", tf.TensorShape(None)), ("token_mrr_each_noavg", tf.TensorShape(None))]
 
 def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics_contingent_index):
   result = []

@@ -1,15 +1,15 @@
-from metas.hyper_settings import use_dup_model, \
-  token_memory_mode, decode_attention_way,\
+from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   decode_no_attention, token_valid_mode,\
   token_in_scope_valid, token_meaningful_valid, decode_with_attention,\
-  no_memory_mode, top_ks, concat_memory_mode, only_consider_var_accuracy,\
+  no_memory_mode, concat_memory_mode, only_consider_var_accuracy,\
   consider_all_token_accuracy, only_consider_unseen_var_accuracy,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
   token_kind_default_range, token_kind_simplename_range,\
   token_kind_simplename_approximate_variable_range,\
-  token_kind_non_leaf_at_least_two_children_without_qualified_node
+  token_kind_non_leaf_at_least_two_children_without_qualified_node,\
+  use_dup_model, top_ks
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type, default_token_kind,\
   simplename_approximate_not_variable, simplename_approximate_variable,\
@@ -375,7 +375,64 @@ class TokenDecoder():
     token_metrics[self.metrics_index["all_count"]] += 1 * t_valid_int
     
     return token_metrics
+
+
+class DupTokenDecoder():
   
+  def __init__(self, type_content_data, metrics_index, dup_token_pointer=None):
+    self.type_content_data = type_content_data
+    self.metrics_index = metrics_index
+    self.dup_token_pointer = dup_token_pointer
+    
+  def decode_one_token(self, token_metrics, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, oracle_type_content_kind, base_model_accuracy, base_model_mrr):
+    if token_accuracy_mode == consider_all_token_accuracy:
+      t_valid_bool = tf.constant(True, bool_type)
+    elif token_accuracy_mode == only_consider_token_kind_accuracy:
+      t_valid_bool = is_in_token_kind_range(oracle_type_content_kind)
+    elif token_accuracy_mode == only_consider_var_accuracy:
+      t_valid_bool = tf.greater(oracle_type_content_var, 0)
+    elif token_accuracy_mode == only_consider_unseen_var_accuracy:
+      t_valid_bool = tf.logical_and(oracle_type_content_var > 0, tf.greater_equal(oracle_type_content_en, self.type_content_data[all_token_summary][TokenHitNum]))
+    elif token_accuracy_mode == only_consider_non_var_accuracy:
+      t_valid_bool = tf.less_equal(oracle_type_content_var, 0)
+    else:
+      assert False
+    t_valid = tf.cast(t_valid_bool, float_type)
+    t_valid_int = tf.cast(t_valid_bool, int_type)
+    
+    assert token_memory_mode > no_memory_mode
+    dup_h = token_metrics[self.metrics_index["dup_token_h"]]
+    dup_acc_hs = token_metrics[self.metrics_index["dup_memory_acc_h"]]
+    dup_acc_ens = token_metrics[self.metrics_index["dup_memory_en"]]
+    if token_memory_mode == only_memory_mode:
+      r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
+    else:
+      r_var_relative = oracle_type_content_var_relative
+      assert token_memory_mode == concat_memory_mode or token_memory_mode == abs_size_concat_memory_mode or token_memory_mode == abs_size_var_novar_all_concat_memory_mode
+      
+#     p_op = tf.print(["dup_acc_ens:", dup_acc_ens, "var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize=100)
+#     with tf.control_dependencies([p_op]):
+    dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
+    is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
+    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+    dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
+    dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
+    predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
+    
+    token_metrics[self.metrics_index["token_dup_loss"]] += dup_loss_of_this_node
+    token_metrics[self.metrics_index["token_dup_accurate"]] += dup_accurate_of_this_node
+    token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
+    token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
+    
+    to_add_accurate_candidates = tf.stack([base_model_accuracy, dup_repeat_accurate_of_this_node])
+    token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
+    to_add_mrr_candidates = tf.stack([base_model_mrr, dup_repeat_mrr_of_this_node])
+    token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
+    
+    token_metrics[self.metrics_index["token_count"]] += 1 * t_valid_int
+    token_metrics[self.metrics_index["all_count"]] += 1 * t_valid_int
+    
+    return token_metrics
 
 
 def is_in_token_kind_range(oracle_en_kind):

@@ -1,10 +1,19 @@
-import numpy as np
+import json
+import os
+
+from metas.hyper_settings import dup_base_model_directory
 from metas.non_hyper_constants import data_dir, np_int_type
+import numpy as np
+
+
+def build_skeleton_dup_feed_dict(mode):
+  examples = build_skeleton_feed_dict(mode)
+  return build_dup_feed_dict(mode, examples)
 
 
 def build_skeleton_feed_dict(mode):
   pfx = "skt"
-  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", ) as data_file:
+  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", 'r') as data_file:
     raw_datas = data_file.readlines()
   
   examples = []
@@ -33,9 +42,14 @@ def build_skeleton_feed_dict(mode):
   return examples
 
 
+def build_statement_dup_feed_dict(mode):
+  examples = build_statement_feed_dict(mode)
+  return build_dup_feed_dict(mode, examples)
+
+
 def build_statement_feed_dict(mode):
   pfx = "stmt"
-  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", ) as data_file:
+  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", 'r') as data_file:
     raw_datas = data_file.readlines()
   
   examples = []
@@ -85,11 +99,16 @@ def build_statement_feed_dict(mode):
 #     , stmt_following_legal_info, stmt_following_legal_info_start, stmt_following_legal_info_end
     examples.append((sequence_decodes_np_array, sequence_decodes_start, sequence_decodes_end))
   return examples
-  
+
+
+def build_linear_dup_feed_dict(mode):
+  examples = build_sequence_feed_dict(mode)
+  return build_dup_feed_dict(mode, examples)
+
   
 def build_sequence_feed_dict(mode):
   pfx = "sequence"
-  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", ) as data_file:
+  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", 'r') as data_file:
     raw_datas = data_file.readlines()
   
   examples = []
@@ -116,7 +135,7 @@ def build_sequence_feed_dict(mode):
 
 def build_tree_feed_dict(mode):
   pfx = "tree"
-  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", ) as data_file:
+  with open(data_dir + "/" + pfx + "_" + mode + "_data.txt", 'r') as data_file:
     raw_datas = data_file.readlines()
   
   examples = []
@@ -152,6 +171,20 @@ def build_tree_feed_dict(mode):
     examples.append((post_order_node_type_content_en, post_order_node_child_start, post_order_node_child_end, post_order_node_children, pre_post_order_node_type_content_en, pre_post_order_node_state, pre_post_order_node_post_order_index, pre_post_order_node_parent_grammar_index, pre_post_order_node_kind))
   
   return examples
+  
+  
+def build_dup_feed_dict(mode, examples):
+  f_path = dup_base_model_directory + "/" + mode + "_noavg.json"
+  assert os.path.exists(f_path), dup_base_model_directory + " contains no such " + mode + "_noavg.json"
+  with open(f_path, 'r') as turn_record:
+    turn_record_json = json.load(turn_record)
+  accuracy_noavg = np.array(turn_record_json["token_accurate_each_noavg"])
+  mrr_noavg = np.array(turn_record_json["token_mrr_each_noavg"])
+  assert len(examples) == len(accuracy_noavg) and len(accuracy_noavg) == len(mrr_noavg)
+  new_examples = []
+  for example, accuracy, mrr in zip(examples, accuracy_noavg, mrr_noavg):
+    new_examples.append([example, accuracy, mrr])
+  return new_examples
   
   
 def validate_relatives(one_swords, e_info):

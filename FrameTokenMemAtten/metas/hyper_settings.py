@@ -31,6 +31,8 @@ sequence_decode_mode = 0
 statement_decode_mode = 1
 skeleton_decode_mode = 2
 tree_decode_mode = 3
+linear_dup_mode = 4
+skeleton_dup_mode = 5
 model_run_mode = skeleton_decode_mode
 ''' tree decode details '''
 tree_decode_with_grammar = 0
@@ -65,7 +67,7 @@ token_only_mode = 0
 swords_compose_mode = 1
 token_embedder_mode = token_only_mode
 ''' dup base '''
-dup_base_model_directory = "~/"
+dup_base_model_directory = "~"
 ''' dup_mode '''
 use_dup_model = 0
 use_syntax_to_decide_rep = 0
@@ -236,6 +238,16 @@ if composite_config_func == "tree_token_decode":
 if composite_config_func == "tree_token_decode_with_tree_grammar":
   model_run_mode = tree_decode_mode
   tree_decode_with_grammar = 1
+  
+if composite_config_func == "linear_dup":
+  model_run_mode = linear_dup_mode
+  token_memory_mode = concat_memory_mode
+  
+if composite_config_func == "linear_rep_dup":
+  model_run_mode = linear_dup_mode
+  token_memory_mode = concat_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
 
 
 '''
