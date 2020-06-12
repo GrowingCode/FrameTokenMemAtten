@@ -4,7 +4,7 @@ import time
 from inputs.type_content_data_loader import load_type_content_data
 from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch, \
   valid_epoch_period, ignore_restrain_count, max_examples_in_one_batch, \
-  gradient_clip_abs_range
+  gradient_clip_abs_range, compute_extra_valid_each_noavg
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode,\
@@ -232,6 +232,14 @@ class ModelRunner():
     print("===== Testing procedure starts! =====")
     print("Restore best model in " + self.best_model_directory)
     tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
+    '''
+    compute valid set each_noavg accuracy
+    '''
+    if compute_extra_valid_each_noavg:
+      output_result = self.model_running(validating_mode)
+      noavg = process_noavg(output_result)
+      with open(self.valid_noavg_json, 'w') as valid_noavg_record:
+        valid_noavg_record.write(json.dumps(noavg))
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score

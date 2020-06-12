@@ -5,6 +5,10 @@ initialize_range = 1.0
 lstm_initialize_range = 0.0
 initialize_seed_base = 0
 '''
+compute extra valid each_noavg
+'''
+compute_extra_valid_each_noavg = 0
+'''
 basic learning mode
 '''
 token_in_scope_valid = 0
