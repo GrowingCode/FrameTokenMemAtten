@@ -6,14 +6,11 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
-  token_kind_default_range, token_kind_simplename_range,\
-  token_kind_simplename_approximate_variable_range,\
-  token_kind_non_leaf_at_least_two_children_without_qualified_node,\
-  use_dup_model, top_ks
-from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
-  TokenHitNum, UNK_en, bool_type, default_token_kind,\
+  use_dup_model, top_ks, ignore_unk_when_computing_accuracy, default_token_kind,\
   simplename_approximate_not_variable, simplename_approximate_variable,\
   non_leaf_at_least_two_children_without_qualified_node
+from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
+  TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 import tensorflow as tf
 
@@ -316,7 +313,8 @@ class TokenDecoder():
     else:
       assert False
     en_valid = tf.cast(en_valid_bool, float_type)
-    out_use_en = tf.stack([UNK_en, oracle_type_content_en])[tf.cast(en_valid_bool, int_type)]
+    en_valid_int = tf.cast(en_valid_bool, int_type)
+    out_use_en = tf.stack([UNK_en, oracle_type_content_en])[en_valid_int]
     
     ''' typical token swords prediction '''
     h = token_metrics[self.metrics_index["token_h"]]
@@ -374,8 +372,12 @@ class TokenDecoder():
     to_add_mrr_candidates = tf.stack([mrr_of_this_node, dup_repeat_mrr_of_this_node])
     token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
     
-    token_metrics[self.metrics_index["token_count"]] += 1 * t_valid_int
-    token_metrics[self.metrics_index["all_count"]] += 1 * t_valid_int
+    r_count = 1 * t_valid_int
+    if ignore_unk_when_computing_accuracy:
+      r_count = r_count * en_valid_int
+    
+    token_metrics[self.metrics_index["token_count"]] += r_count
+    token_metrics[self.metrics_index["all_count"]] += r_count
     
     return token_metrics
 
@@ -439,13 +441,13 @@ class DupTokenDecoder():
 
 
 def is_in_token_kind_range(oracle_en_kind):
-  if token_kind_consider_range_mode == token_kind_default_range:
+  if token_kind_consider_range_mode == default_token_kind:
     ntc_bool = tf.equal(oracle_en_kind, default_token_kind)
-  elif token_kind_consider_range_mode == token_kind_simplename_range:
-    ntc_bool = tf.logical_or(tf.equal(oracle_en_kind, simplename_approximate_variable), tf.equal(oracle_en_kind, simplename_approximate_not_variable))
-  elif token_kind_consider_range_mode == token_kind_simplename_approximate_variable_range:
+  elif token_kind_consider_range_mode == simplename_approximate_not_variable:
+    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_not_variable)
+  elif token_kind_consider_range_mode == simplename_approximate_variable:
     ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
-  elif token_kind_consider_range_mode == token_kind_non_leaf_at_least_two_children_without_qualified_node:
+  elif token_kind_consider_range_mode == non_leaf_at_least_two_children_without_qualified_node:
     ntc_bool = tf.equal(oracle_en_kind, non_leaf_at_least_two_children_without_qualified_node)
   else:
     assert False

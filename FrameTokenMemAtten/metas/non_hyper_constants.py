@@ -64,22 +64,13 @@ testing_mode = 2
 '''
 length threshold for an example
 '''
-max_threshold_example_length = 2000
+max_threshold_example_length = 5000
 '''
 default ID
 '''
 UNK_en = 1
 ''' '''
 skeleton_base = 5000000
-
-'''
-token kind
-'''
-default_token_kind = -1
-simplename_approximate_not_variable = 0
-simplename_approximate_variable = 1
-non_leaf_at_least_two_children_without_qualified_node = 2
-
 
 
 

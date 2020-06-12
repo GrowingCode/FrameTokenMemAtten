@@ -16,14 +16,14 @@ only_consider_var_accuracy = 2
 only_consider_unseen_var_accuracy = 3
 only_consider_non_var_accuracy = 4
 token_accuracy_mode = consider_all_token_accuracy
-'''
-dup range
-'''
-token_kind_default_range = 0
-token_kind_simplename_range = 1
-token_kind_simplename_approximate_variable_range = 2
-token_kind_non_leaf_at_least_two_children_without_qualified_node = 3
-token_kind_consider_range_mode = token_kind_simplename_approximate_variable_range
+ignore_unk_when_computing_accuracy = 0
+''' token kind '''
+default_token_kind = -1
+simplename_approximate_not_variable = 0
+simplename_approximate_variable = 1
+non_leaf_at_least_two_children_without_qualified_node = 2
+''' note that this directly influences the dup_pattern range in consideration '''
+token_kind_consider_range_mode = simplename_approximate_variable
 '''
 details
 '''

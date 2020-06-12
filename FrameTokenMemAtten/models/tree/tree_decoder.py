@@ -5,7 +5,7 @@ from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
   tree_decode_embed, tree_decode_way, tree_decode_with_grammar,\
   consider_all_token_accuracy, token_accuracy_mode,\
-  only_consider_token_kind_accuracy
+  only_consider_token_kind_accuracy, ignore_unk_when_computing_accuracy
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
@@ -106,14 +106,17 @@ class TreeDecodeModel(BasicDecodeModel):
     accurate_of_this_node = tf.stack([tf.zeros([len(top_ks)], float_type), o_accurate_of_this_node])[node_acc_valid]
     loss_of_this_node = tf.stack([0.0, o_loss_of_this_node])[node_acc_valid]
     count_of_this_node = tf.stack([0, 1])[node_acc_valid]
+    r_count = count_of_this_node * t_valid_int
+    if ignore_unk_when_computing_accuracy:
+      r_count = r_count * en_valid_int
     stmt_metrics[self.metrics_index["token_loss"]] = stmt_metrics[self.metrics_index["token_loss"]] + loss_of_this_node * en_valid_float
     stmt_metrics[self.metrics_index["token_accurate"]] = stmt_metrics[self.metrics_index["token_accurate"]] + accurate_of_this_node * en_valid_float * t_valid_float
     stmt_metrics[self.metrics_index["token_mrr"]] = stmt_metrics[self.metrics_index["token_mrr"]] + mrr_of_this_node * en_valid_float * t_valid_float
-    stmt_metrics[self.metrics_index["token_count"]] = stmt_metrics[self.metrics_index["token_count"]] + count_of_this_node * t_valid_int
+    stmt_metrics[self.metrics_index["token_count"]] = stmt_metrics[self.metrics_index["token_count"]] + r_count
     stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + loss_of_this_node * en_valid_float
     stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + accurate_of_this_node * en_valid_float * t_valid_float
     stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + mrr_of_this_node * en_valid_float * t_valid_float
-    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + count_of_this_node * t_valid_int
+    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + r_count
     
     stmt_metrics[self.metrics_index["token_accurate_each_noavg"]] = stmt_metrics[self.metrics_index["token_accurate_each_noavg"]].write(stmt_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node * en_valid_float * t_valid_float)
     stmt_metrics[self.metrics_index["token_mrr_each_noavg"]] = stmt_metrics[self.metrics_index["token_mrr_each_noavg"]].write(stmt_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node * en_valid_float * t_valid_float)
