@@ -429,9 +429,14 @@ class DupTokenDecoder():
     token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
     token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
     
-    to_add_accurate_candidates = tf.stack([base_model_accuracy, dup_repeat_accurate_of_this_node])
+    to_add_accurate_candidates = tf.stack([base_model_accuracy * t_valid, dup_repeat_accurate_of_this_node])
+#     if not training:
+#       p_op = tf.print(["t_valid:", t_valid, "to_add_accurate_candidates:", to_add_accurate_candidates])
+#       with tf.control_dependencies([p_op]):
+#         token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
+#     else:
     token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
-    to_add_mrr_candidates = tf.stack([base_model_mrr, dup_repeat_mrr_of_this_node])
+    to_add_mrr_candidates = tf.stack([base_model_mrr * t_valid, dup_repeat_mrr_of_this_node])
     token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
     
     token_metrics[self.metrics_index["token_count"]] += 1 * t_valid_int
