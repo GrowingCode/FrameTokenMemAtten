@@ -190,12 +190,12 @@ class ModelRunner():
           else:
             restrain_count = restrain_count + 1
         if to_save_best_model:
-          print("========== Saving best model ==========")
           tf.compat.v1.train.Saver().save(self.sess, self.best_model_file)
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
           with open(self.valid_noavg_json, 'w') as valid_noavg_record:
             valid_noavg_record.write(dict_to_string(valid_noavg))
+          print("========== Saved best model ==========")
           
         turn_infos.append(dict_to_string(valid_avg))
         '''
@@ -205,7 +205,6 @@ class ModelRunner():
         save the model if period reached
         save check point model
         '''
-        print("========== Saving check point model ==========")
         tf.compat.v1.train.Saver().save(self.sess, self.check_point_file)
         '''
         write the turn to file
@@ -221,6 +220,7 @@ class ModelRunner():
         with open(self.turn_info_txt, 'w') as turn_info_record:
           t_info_record = '\n'.join(turn_infos)
           turn_info_record.write(t_info_record)
+        print("========== Saved check point model ==========")
         '''
         go to next epoch
         '''
