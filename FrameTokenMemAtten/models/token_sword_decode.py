@@ -431,8 +431,9 @@ class DupTokenDecoder():
     
     to_add_accurate_candidates = tf.stack([base_model_accuracy * t_valid, dup_repeat_accurate_of_this_node])
 #     if not training:
+#       a_op = tf.assert_equal(base_model_accuracy * t_valid, tf.zeros([len(top_ks)], float_type))
 #       p_op = tf.print(["t_valid:", t_valid, "to_add_accurate_candidates:", to_add_accurate_candidates])
-#       with tf.control_dependencies([p_op]):
+#       with tf.control_dependencies([p_op, a_op]):
 #         token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
 #     else:
     token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
