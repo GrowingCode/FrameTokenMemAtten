@@ -145,7 +145,7 @@ class ModelRunner():
       train_avg = compute_average(train_output_result)
       train_noavg = process_noavg(train_output_result)
       with open(self.train_noavg_json, 'w') as train_noavg_record:
-        train_noavg_record.write(dict_to_string(train_noavg))
+        train_noavg_record.write(json.dumps(train_noavg))
       train_average_loss = train_avg["average_all_loss"]
       '''
       compute average loss when training
@@ -194,7 +194,7 @@ class ModelRunner():
           with open(self.best_info_txt, 'w') as best_info_record:
             best_info_record.write("the_turn_generating_best_model:" + str(turn+1) + "#" + dict_to_string(valid_avg))
           with open(self.valid_noavg_json, 'w') as valid_noavg_record:
-            valid_noavg_record.write(dict_to_string(valid_noavg))
+            valid_noavg_record.write(json.dumps(valid_noavg))
           print("========== Saved best model ==========")
           
         turn_infos.append(dict_to_string(valid_avg))
