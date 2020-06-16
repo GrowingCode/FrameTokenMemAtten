@@ -30,7 +30,7 @@ class LinearDupModel(BasicDecodeModel):
     self.dup_token_decoder = DupTokenDecoder(self.type_content_data, self.metrics_index, self.dup_token_pointer)
   
   def __call__(self, one_example, training = True):
-    self.token_info_tensor = one_example[0][0]
+    self.token_info_tensor = one_example[0]
     self.token_base_model_accuracy = one_example[1]
     self.token_base_model_mrr = one_example[2]
     self.training = training

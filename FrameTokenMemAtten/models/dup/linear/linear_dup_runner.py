@@ -26,7 +26,7 @@ class LinearDupRunner(ModelRunner):
     self.model = LinearDupModel(self.type_content_data)
     
   def build_feed_dict(self, one_example):
-    token_info_tensor = one_example[0]
+    token_info_tensor = one_example[0][0]
     token_base_model_accuracy = one_example[1]
     token_base_model_mrr = one_example[2]
     feed_dict = {self.token_info_tensor : token_info_tensor, self.token_base_model_accuracy : token_base_model_accuracy, self.token_base_model_mrr : token_base_model_mrr}
