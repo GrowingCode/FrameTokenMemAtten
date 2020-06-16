@@ -1,10 +1,10 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type
+from metas.non_hyper_constants import float_type, int_type, bool_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep, lstm_initialize_range
+  use_syntax_to_decide_rep, lstm_initialize_range, dup_in_token_kind_range
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 from models.token_sword_decode import is_in_token_kind_range
@@ -88,7 +88,10 @@ class PointerNetwork():
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
-    ntc_bool = is_in_token_kind_range(oracle_en_kind)
+    if dup_in_token_kind_range:
+      ntc_bool = is_in_token_kind_range(oracle_en_kind)
+    else:
+      ntc_bool = tf.constant(True, bool_type)
     need_to_classify = tf.cast(ntc_bool, int_type)
 #     if dup_use_two_poles:
 #       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
