@@ -71,7 +71,7 @@ token_only_mode = 0
 swords_compose_mode = 1
 token_embedder_mode = token_only_mode
 ''' dup base '''
-dup_base_model_directory = "~"
+dup_base_model_directory = "C:/Users/yangy/Desktop/Experiment/log4j/1000unk-sequence_token_decode/zoot_run_info_record"
 ''' dup_mode '''
 use_dup_model = 0
 use_syntax_to_decide_rep = 0
