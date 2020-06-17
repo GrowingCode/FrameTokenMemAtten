@@ -429,6 +429,9 @@ class DupTokenDecoder():
     token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
     token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
     
+    token_metrics[self.metrics_index["token_lm_accurate"]] += base_model_accuracy * t_valid
+    token_metrics[self.metrics_index["token_lm_mrr"]] += base_model_mrr * t_valid
+    
     to_add_accurate_candidates = tf.stack([base_model_accuracy * t_valid, dup_repeat_accurate_of_this_node])
 #     if not training:
 #       a_op = tf.assert_equal(base_model_accuracy * t_valid, tf.zeros([len(top_ks)], float_type))
