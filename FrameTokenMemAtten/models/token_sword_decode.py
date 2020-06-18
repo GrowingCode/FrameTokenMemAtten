@@ -357,7 +357,7 @@ class TokenDecoder():
 #       with tf.control_dependencies([p_op]):
       dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
       is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
       dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
       dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
       predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
@@ -419,7 +419,7 @@ class DupTokenDecoder():
 #     with tf.control_dependencies([p_op]):
     dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
     is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
     dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
     dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
     predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
@@ -450,16 +450,7 @@ class DupTokenDecoder():
 
 
 def is_in_token_kind_range(oracle_en_kind):
-  if token_kind_consider_range_mode == default_token_kind:
-    ntc_bool = tf.equal(oracle_en_kind, default_token_kind)
-  elif token_kind_consider_range_mode == simplename_approximate_not_variable:
-    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_not_variable)
-  elif token_kind_consider_range_mode == simplename_approximate_variable:
-    ntc_bool = tf.equal(oracle_en_kind, simplename_approximate_variable)
-  elif token_kind_consider_range_mode == non_leaf_at_least_two_children_without_qualified_node:
-    ntc_bool = tf.equal(oracle_en_kind, non_leaf_at_least_two_children_without_qualified_node)
-  else:
-    assert False
+  ntc_bool = tf.equal(tf.bitwise.bitwise_and(oracle_en_kind, token_kind_consider_range_mode), token_kind_consider_range_mode)
   return ntc_bool
 
 

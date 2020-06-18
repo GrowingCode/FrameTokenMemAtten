@@ -4,7 +4,8 @@ from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep, lstm_initialize_range, dup_in_token_kind_range
+  use_syntax_to_decide_rep, lstm_initialize_range, dup_all_classify,\
+  dup_classify_mode, dup_var_classify, dup_in_token_kind_range_classify
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
 from models.token_sword_decode import is_in_token_kind_range
@@ -83,15 +84,19 @@ class PointerNetwork():
       assert False, "Unrecognized is_dup_mode!"
     return result
 
-  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_relative, oracle_en_kind, is_dup_logits, dup_logits, neg_dup_logits=None, neg_ele_logit=None):
+  def compute_dup_loss(self, training, accumulated_en, oracle_en, oracle_var, oracle_relative, oracle_en_kind, is_dup_logits, dup_logits, neg_dup_logits=None, neg_ele_logit=None):
     total_length = tf.shape(dup_logits)[-1]
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
-    if dup_in_token_kind_range:
+    if dup_classify_mode == dup_all_classify:
+      ntc_bool = tf.constant(True, bool_type)
+    elif dup_classify_mode == dup_var_classify:
+      ntc_bool = tf.greater(oracle_var, 0)
+    elif dup_classify_mode == dup_in_token_kind_range_classify:
       ntc_bool = is_in_token_kind_range(oracle_en_kind)
     else:
-      ntc_bool = tf.constant(True, bool_type)
+      assert False
     need_to_classify = tf.cast(ntc_bool, int_type)
 #     if dup_use_two_poles:
 #       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]

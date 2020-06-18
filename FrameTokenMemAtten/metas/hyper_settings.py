@@ -22,10 +22,14 @@ only_consider_non_var_accuracy = 4
 token_accuracy_mode = consider_all_token_accuracy
 ignore_unk_when_computing_accuracy = 0
 ''' token kind '''
-default_token_kind = -1
-simplename_approximate_not_variable = 0
-simplename_approximate_variable = 1
-non_leaf_at_least_two_children_without_qualified_node = 2
+default_token_kind = 0b0
+simpletype_simplename = 0b01
+qualified_simplename = 0b010
+methodname_simplename = 0b0100
+simplename_approximate_not_variable = 0b01000
+simplename_approximate_variable = 0b010000
+simplename = 0b0100000
+non_leaf_at_least_two_children_without_qualified_node = 0b01000000
 ''' note that this directly influences the dup_pattern range in consideration '''
 token_kind_consider_range_mode = simplename_approximate_variable
 '''
@@ -72,8 +76,11 @@ swords_compose_mode = 1
 token_embedder_mode = token_only_mode
 ''' dup base '''
 dup_base_model_directory = "C:/Users/yangy/Desktop/Experiment/log4j/1000unk-sequence_token_decode/zoot_run_info_record"
-''' dup in token_kind range '''
-dup_in_token_kind_range = 1
+''' dup classify mode '''
+dup_all_classify = 0
+dup_var_classify = 1
+dup_in_token_kind_range_classify = 2
+dup_classify_mode = dup_var_classify
 ''' dup_mode '''
 use_dup_model = 0
 use_syntax_to_decide_rep = 0
