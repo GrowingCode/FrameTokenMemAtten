@@ -261,6 +261,16 @@ if composite_config_func == "linear_rep_dup":
   token_memory_mode = concat_memory_mode
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
+  
+if composite_config_func == "linear_dup_only_memory_style":
+  model_run_mode = linear_dup_mode
+  token_memory_mode = only_memory_mode
+  
+if composite_config_func == "linear_rep_dup_only_memory_style":
+  model_run_mode = linear_dup_mode
+  token_memory_mode = only_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
 
 
 '''
