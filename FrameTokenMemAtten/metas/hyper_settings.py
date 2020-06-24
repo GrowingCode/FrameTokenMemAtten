@@ -36,11 +36,12 @@ token_kind_consider_range_mode = simplename_approximate_variable
 details
 '''
 sequence_decode_mode = 0
-statement_decode_mode = 1
-skeleton_decode_mode = 2
+skeleton_decode_mode = 1
+statement_decode_mode = 2
 tree_decode_mode = 3
 linear_dup_mode = 4
 skeleton_dup_mode = 5
+statement_dup_mode = 6
 model_run_mode = skeleton_decode_mode
 ''' tree decode details '''
 tree_decode_with_grammar = 0
@@ -272,6 +273,27 @@ if composite_config_func == "linear_rep_dup_only_memory_style":
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
 
+if composite_config_func == "statement_dup":
+  model_run_mode = statement_dup_mode
+  compute_token_memory = 1
+  token_memory_mode = only_memory_mode
+  
+if composite_config_func == "statement_rep_dup":
+  model_run_mode = statement_dup_mode
+  compute_token_memory = 1
+  token_memory_mode = only_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
+  
+if composite_config_func == "statement_dup_sequence_style":
+  model_run_mode = statement_dup_mode
+  token_memory_mode = only_memory_mode
+  
+if composite_config_func == "statement_rep_dup_sequence_style":
+  model_run_mode = statement_dup_mode
+  token_memory_mode = only_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
 
 '''
 configuration hard checking
