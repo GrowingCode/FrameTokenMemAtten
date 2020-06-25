@@ -2,7 +2,8 @@ import json
 import os
 
 from metas.hyper_settings import dup_base_model_directory
-from metas.non_hyper_constants import data_dir, np_int_type
+from metas.non_hyper_constants import data_dir, np_int_type,\
+  min_threshold_example_length, max_threshold_example_length
 import numpy as np
 
 
@@ -25,7 +26,10 @@ def build_skeleton_feed_dict(mode):
     
     i = 0
     i_len = len(strs)
-    stmt_skeleton_token_info = np.zeros([0, len(strs[0].split())], np_int_type)
+    e_len = len(strs[0].split())
+    if (e_len < min_threshold_example_length or e_len > max_threshold_example_length):
+      continue;
+    stmt_skeleton_token_info = np.zeros([0, e_len], np_int_type)
     while (i < 5):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
       stmt_skeleton_token_info = np.concatenate((stmt_skeleton_token_info, one_dim), axis=0)
@@ -61,7 +65,10 @@ def build_statement_feed_dict(mode):
 
     i = 0
     i_len = len(strs)
-    sequence_decodes_np_array = np.zeros([0, len(strs[0].split())], np_int_type)
+    e_len = len(strs[0].split())
+    if (e_len < min_threshold_example_length or e_len > max_threshold_example_length):
+      continue;
+    sequence_decodes_np_array = np.zeros([0, e_len], np_int_type)
     while (i < 5):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
   #     print("np.shape(sequence_decodes_np_array):" + str(np.shape(sequence_decodes_np_array)) + "#np.shape(one_dim):" + str(np.shape(one_dim)))
@@ -120,6 +127,8 @@ def build_sequence_feed_dict(mode):
     
     i = 0
     seq_length = len(strs[0].split())
+    if (seq_length < min_threshold_example_length or seq_length > max_threshold_example_length):
+      continue;
     sequence_token_info = np.zeros([0, seq_length], np_int_type)
     while (i < 5):
       one_dim = np.array([[int(id_str) for id_str in strs[i].split()]])
@@ -157,8 +166,13 @@ def build_tree_feed_dict(mode):
     
     pre_post_order_node_type_content_en = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
+    
     pre_post_order_node_state = [int(id_str) for id_str in strs[i].split()]
+    e_len = len(pre_post_order_node_state) - sum(np.array(pre_post_order_node_state) == 2)
+    if (e_len < min_threshold_example_length or e_len > max_threshold_example_length):
+      continue;
     i = i + 1
+    
     pre_post_order_node_post_order_index = [int(id_str) for id_str in strs[i].split()]
     i = i + 1
     pre_post_order_node_parent_grammar_index = [int(id_str) for id_str in strs[i].split()]
