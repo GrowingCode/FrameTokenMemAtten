@@ -149,8 +149,9 @@ class SkeletonDupModel(BasicDecodeModel):
       compute token memory and compute repetition
       '''
       dup_embeds = tf.zeros([0, num_units], float_type)
-      _, _, dup_embeds = tf.while_loop(self.token_embed_cond, self.token_embed_body, [stmt_start, stmt_end, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
-       
+      e_res = tf.while_loop(self.token_embed_cond, self.token_embed_body, [stmt_start, stmt_end, dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
+      dup_embeds = e_res[2]
+      
       stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = dup_ini_f_cell
       stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = dup_ini_f_h
       f_res = tf.while_loop(self.forward_loop_cond, self.forward_loop_body, [0, stmt_end - (stmt_start), dup_embeds, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, num_units]), *self.metrics_shape], parallel_iterations=1)
@@ -204,9 +205,10 @@ class SkeletonDupModel(BasicDecodeModel):
       oracle_type_content_var = self.token_info_tensor[1][i]
       mem_hs = stmt_metrics[self.metrics_index["dup_memory_acc_h"]]
       use_mem = tf.cast(tf.logical_and(tf.greater(oracle_type_content_var, 0), tf.less(oracle_type_content_var, tf.shape(mem_hs)[0])), int_type)
-      dup_e_emebd = tf.stack([dup_e_emebd, [mem_hs[oracle_type_content_var]]])[use_mem]
+      r_var = oracle_type_content_var * use_mem
+      dup_e_emebd = tf.stack([dup_e_emebd, [mem_hs[r_var]]])[use_mem]
     dup_embeds = tf.concat([dup_embeds, dup_e_emebd], axis=0)
-    return (i + 1, i_len, dup_embeds)
+    return (i + 1, i_len, dup_embeds, *stmt_metrics_tuple)
   
   def forward_loop_cond(self, i, i_len, *_):
     return tf.less_equal(i, i_len)
