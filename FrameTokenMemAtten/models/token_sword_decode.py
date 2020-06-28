@@ -426,7 +426,7 @@ class DupTokenDecoder():
 
 
 def is_in_token_kind_range(oracle_en_kind):
-  ntc_bool = tf.equal(tf.bitwise.bitwise_and(oracle_en_kind, token_kind_consider_range_mode), token_kind_consider_range_mode)
+  ntc_bool = tf.greater(tf.bitwise.bitwise_and(oracle_en_kind, token_kind_consider_range_mode), tf.constant(0, int_type))
   return ntc_bool
 
 
