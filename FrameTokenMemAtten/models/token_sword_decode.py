@@ -11,6 +11,7 @@ from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 import tensorflow as tf
+from models.dup_pattern import is_need_to_classify
 
 
 # def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
@@ -335,7 +336,7 @@ class TokenDecoder():
 #       with tf.control_dependencies([p_op]):
       dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
       is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist, need_to_classify = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
       dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
       dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
       predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
@@ -352,11 +353,11 @@ class TokenDecoder():
     
     r_count = 1 * t_valid_int
     if ignore_unk_when_computing_accuracy:
-      if use_dup_model:
-        if (not need_to_classify):
-          r_count = r_count * en_valid_int
-      else:
-        r_count = r_count * en_valid_int
+      assert not use_dup_model
+#         if (not need_to_classify):
+#           r_count = r_count * en_valid_int
+#       else:
+      r_count = r_count * en_valid_int
     
     token_metrics[self.metrics_index["token_count"]] += r_count
     token_metrics[self.metrics_index["all_count"]] += r_count
@@ -389,7 +390,7 @@ class DupTokenDecoder():
 #     with tf.control_dependencies([p_op]):
     dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
     is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist, need_to_classify = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+    dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
     dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
     dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
     predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
@@ -414,8 +415,9 @@ class DupTokenDecoder():
     token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
     
     r_count = 1 * t_valid_int
-    if ignore_unk_when_computing_accuracy and (not need_to_classify):
-      r_count = r_count * en_valid_int
+    if ignore_unk_when_computing_accuracy:
+      need_to_classify = is_need_to_classify(oracle_type_content_var, oracle_type_content_kind)
+      r_count = r_count * tf.stack([en_valid_int, tf.constant(1, int_type)])[need_to_classify]
     
     token_metrics[self.metrics_index["token_count"]] += r_count
     token_metrics[self.metrics_index["all_count"]] += r_count

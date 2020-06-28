@@ -137,7 +137,7 @@ class PointerNetwork():
     total_loss = r_dup_loss + r_is_dup_loss
     if use_syntax_to_decide_rep:
       predict_to_use_pre_exist = pre_exist
-    return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist, need_to_classify
+    return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist
 
 
 def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
