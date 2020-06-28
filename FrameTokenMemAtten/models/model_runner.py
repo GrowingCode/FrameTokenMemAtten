@@ -13,6 +13,7 @@ import numpy as np
 import tensorflow as tf
 from utils.model_tensors_metrics import ensure_tensor_array_to_tensor_list_in_metrics,\
   filter_out_invalid_mark_in_metrics
+from utils.string_util import get_content_between_two_specified_string
 
 
 class ModelRunner():
@@ -229,22 +230,29 @@ class ModelRunner():
       turn = turn+1
   
   def test(self):
-    print("===== Testing procedure starts! =====")
-    print("Restore best model in " + self.best_model_directory)
     tf.compat.v1.train.Saver().restore(self.sess, self.best_model_file)
+    print("Restored best model in " + self.best_model_directory)
     '''
     compute valid set each_noavg accuracy
     '''
     if compute_extra_valid_each_noavg:
+      print("===== Validating procedure starts! =====")
       output_result = self.model_running(validating_mode)
+      avg = compute_average(output_result)
       noavg = process_noavg(output_result)
+      with open(self.best_info_txt, 'r') as best_info_record:
+        best_turn_str = get_content_between_two_specified_string(best_info_record.read(), ":", "#")
+      with open(self.best_info_txt, 'w') as best_info_record:
+        best_info_record.write("the_turn_generating_best_model:" + best_turn_str + "#" + dict_to_string(avg))
       with open(self.valid_noavg_json, 'w') as valid_noavg_record:
         valid_noavg_record.write(json.dumps(noavg))
-      print("===== Valid extra procedure is over! =====")
+      print(dict_to_string(avg))
+#       print("===== Valid extra procedure is over! =====")
     '''
     compute average loss
     test set loss/accuracy leaves_score/all_score
     '''
+    print("===== Testing procedure starts! =====")
     output_result = self.model_running(testing_mode)
     avg = compute_average(output_result)
     noavg = process_noavg(output_result)
