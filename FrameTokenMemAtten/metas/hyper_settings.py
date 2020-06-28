@@ -29,7 +29,8 @@ methodname_simplename = 0b0100
 simplename_approximate_not_variable = 0b01000
 simplename_approximate_variable = 0b010000
 simplename = 0b0100000
-non_leaf_at_least_two_children_without_qualified_node = 0b01000000
+non_leaf_at_least_two_children = 0b01000000
+non_leaf_only_one_child = 0b010000000
 ''' note that this directly influences the dup_pattern range in consideration '''
 token_kind_consider_range_mode = simplename_approximate_variable
 '''
@@ -154,11 +155,11 @@ composite_config_func = "skeleton_token_decode"
 if composite_config_func == "skeleton_token_decode":
   model_run_mode = skeleton_decode_mode
 
-if composite_config_func == "skeleton_token_decode_with_dup":
-  model_run_mode = skeleton_decode_mode
-  use_dup_model = 1
-  compute_token_memory = 1
-  token_memory_mode = only_memory_mode
+# if composite_config_func == "skeleton_token_decode_with_dup":
+#   model_run_mode = skeleton_decode_mode
+#   use_dup_model = 1
+#   compute_token_memory = 1
+#   token_memory_mode = only_memory_mode
   
 if composite_config_func == "statement_token_decode":
   model_run_mode = statement_decode_mode
@@ -174,77 +175,77 @@ if composite_config_func == "statement_token_decode_with_bi_way_tokens_compose":
   compose_tokens_of_a_statement = 1
   compose_mode = compose_bi_way_lstm
   
-if composite_config_func == "statement_token_decode_with_dup":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  compute_token_memory = 1
-  token_memory_mode = only_memory_mode
-  
-if composite_config_func == "statement_token_decode_with_rep_dup":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  compute_token_memory = 1
-  token_memory_mode = only_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "statement_token_decode_with_dup_with_sequence_concat_style":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  token_memory_mode = concat_memory_mode
-  
-if composite_config_func == "statement_token_decode_with_rep_dup_with_sequence_concat_style":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  token_memory_mode = concat_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "statement_token_decode_with_dup_with_sequence_only_memory_style":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  token_memory_mode = only_memory_mode
-  
-if composite_config_func == "statement_token_decode_with_rep_dup_with_sequence_only_memory_style":
-  model_run_mode = statement_decode_mode
-  use_dup_model = 1
-  token_memory_mode = only_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
+# if composite_config_func == "statement_token_decode_with_dup":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   compute_token_memory = 1
+#   token_memory_mode = only_memory_mode
+#   
+# if composite_config_func == "statement_token_decode_with_rep_dup":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   compute_token_memory = 1
+#   token_memory_mode = only_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
+#   
+# if composite_config_func == "statement_token_decode_with_dup_with_sequence_concat_style":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = concat_memory_mode
+#   
+# if composite_config_func == "statement_token_decode_with_rep_dup_with_sequence_concat_style":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = concat_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
+#   
+# if composite_config_func == "statement_token_decode_with_dup_with_sequence_only_memory_style":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = only_memory_mode
+#   
+# if composite_config_func == "statement_token_decode_with_rep_dup_with_sequence_only_memory_style":
+#   model_run_mode = statement_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = only_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
   
 if composite_config_func == "sequence_token_decode":
   model_run_mode = sequence_decode_mode
   
-if composite_config_func == "sequence_token_decode_with_dup":
-  model_run_mode = sequence_decode_mode
-  use_dup_model = 1
-  token_memory_mode = concat_memory_mode
-  
-if composite_config_func == "sequence_token_decode_with_rep_dup":
-  model_run_mode = sequence_decode_mode
-  use_dup_model = 1
-  token_memory_mode = concat_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "sequence_token_decode_with_only_memory_rep_dup":
-  model_run_mode = sequence_decode_mode
-  use_dup_model = 1
-  token_memory_mode = only_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "sequence_token_decode_with_abs_concat_rep_dup":
-  model_run_mode = sequence_decode_mode
-  use_dup_model = 1
-  token_memory_mode = abs_size_concat_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
-  
-if composite_config_func == "sequence_token_decode_with_abs_var_novar_concat_dup":
-  model_run_mode = sequence_decode_mode
-  use_dup_model = 1
-  token_memory_mode = abs_size_var_novar_all_concat_memory_mode
+# if composite_config_func == "sequence_token_decode_with_dup":
+#   model_run_mode = sequence_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = concat_memory_mode
+#   
+# if composite_config_func == "sequence_token_decode_with_rep_dup":
+#   model_run_mode = sequence_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = concat_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
+#   
+# if composite_config_func == "sequence_token_decode_with_only_memory_rep_dup":
+#   model_run_mode = sequence_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = only_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
+#   
+# if composite_config_func == "sequence_token_decode_with_abs_concat_rep_dup":
+#   model_run_mode = sequence_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = abs_size_concat_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
+#   
+# if composite_config_func == "sequence_token_decode_with_abs_var_novar_concat_dup":
+#   model_run_mode = sequence_decode_mode
+#   use_dup_model = 1
+#   token_memory_mode = abs_size_var_novar_all_concat_memory_mode
   
 if composite_config_func == "tree_token_decode":
   model_run_mode = tree_decode_mode
@@ -263,15 +264,15 @@ if composite_config_func == "linear_rep_dup":
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
   
-if composite_config_func == "linear_dup_only_memory_style":
-  model_run_mode = linear_dup_mode
-  token_memory_mode = only_memory_mode
-  
-if composite_config_func == "linear_rep_dup_only_memory_style":
-  model_run_mode = linear_dup_mode
-  token_memory_mode = only_memory_mode
-  is_dup_mode = simple_is_dup
-  repetition_mode = max_repetition_mode
+# if composite_config_func == "linear_dup_only_memory_style":
+#   model_run_mode = linear_dup_mode
+#   token_memory_mode = only_memory_mode
+#   
+# if composite_config_func == "linear_rep_dup_only_memory_style":
+#   model_run_mode = linear_dup_mode
+#   token_memory_mode = only_memory_mode
+#   is_dup_mode = simple_is_dup
+#   repetition_mode = max_repetition_mode
 
 if composite_config_func == "statement_dup":
   model_run_mode = statement_dup_mode
@@ -285,11 +286,21 @@ if composite_config_func == "statement_rep_dup":
   is_dup_mode = simple_is_dup
   repetition_mode = max_repetition_mode
   
-if composite_config_func == "statement_dup_sequence_style":
+if composite_config_func == "statement_dup_sequence_concat_style":
+  model_run_mode = statement_dup_mode
+  token_memory_mode = concat_memory_mode
+  
+if composite_config_func == "statement_rep_dup_sequence_concat_style":
+  model_run_mode = statement_dup_mode
+  token_memory_mode = concat_memory_mode
+  is_dup_mode = simple_is_dup
+  repetition_mode = max_repetition_mode
+  
+if composite_config_func == "statement_dup_sequence_only_memory_style":
   model_run_mode = statement_dup_mode
   token_memory_mode = only_memory_mode
   
-if composite_config_func == "statement_rep_dup_sequence_style":
+if composite_config_func == "statement_rep_dup_sequence_only_memory_style":
   model_run_mode = statement_dup_mode
   token_memory_mode = only_memory_mode
   is_dup_mode = simple_is_dup

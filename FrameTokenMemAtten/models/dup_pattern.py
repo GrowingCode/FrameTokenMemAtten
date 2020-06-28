@@ -89,15 +89,7 @@ class PointerNetwork():
     pre_real_exist = tf.logical_and(oracle_relative > 0, oracle_relative <= total_length)
     pre_exist = tf.cast(pre_real_exist, int_type)
     specified_index = tf.stack([0, total_length - oracle_relative])[pre_exist]
-    if dup_classify_mode == dup_all_classify:
-      ntc_bool = tf.constant(True, bool_type)
-    elif dup_classify_mode == dup_var_classify:
-      ntc_bool = tf.greater(oracle_var, 0)
-    elif dup_classify_mode == dup_in_token_kind_range_classify:
-      ntc_bool = is_in_token_kind_range(oracle_en_kind)
-    else:
-      assert False
-    need_to_classify = tf.cast(ntc_bool, int_type)
+    need_to_classify = is_need_to_classify(oracle_var, oracle_en_kind)
 #     if dup_use_two_poles:
 #       negative_specified_index = tf.stack([total_length+1-1, 0])[pre_exist]
 #       r_neg_dup_logits = tf.concat([neg_dup_logits, neg_ele_logit], axis=0)
@@ -145,7 +137,7 @@ class PointerNetwork():
     total_loss = r_dup_loss + r_is_dup_loss
     if use_syntax_to_decide_rep:
       predict_to_use_pre_exist = pre_exist
-    return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist
+    return total_mrr, total_accurate, total_loss, dup_mrr, dup_accurate, predict_to_use_pre_exist, need_to_classify
 
 
 def compute_dup_accurate(oracle_token_sequence, oracle_type_content_en, specified_index, dup_logits):
@@ -185,6 +177,19 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
     accs = tf.reduce_sum(zero_one)
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
+
+
+def is_need_to_classify(oracle_var, oracle_en_kind):
+  if dup_classify_mode == dup_all_classify:
+    ntc_bool = tf.constant(True, bool_type)
+  elif dup_classify_mode == dup_var_classify:
+    ntc_bool = tf.greater(oracle_var, 0)
+  elif dup_classify_mode == dup_in_token_kind_range_classify:
+    ntc_bool = is_in_token_kind_range(oracle_en_kind)
+  else:
+    assert False
+  need_to_classify = tf.cast(ntc_bool, int_type)
+  return need_to_classify
 
 
 
