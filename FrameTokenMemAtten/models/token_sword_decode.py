@@ -7,7 +7,8 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
   use_dup_model, top_ks, ignore_unk_when_computing_accuracy, dup_all_classify,\
-  dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify
+  dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify,\
+  extra_ignore_dup_unk_when_computing_accuracy
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -416,8 +417,16 @@ class DupTokenDecoder():
     
     r_count = 1 * t_valid_int
     if ignore_unk_when_computing_accuracy:
-      need_to_classify = is_need_to_classify(oracle_type_content_var, oracle_type_content_kind)
-      r_count = r_count * tf.stack([en_valid_int, tf.constant(1, int_type)])[need_to_classify]
+      r_count_select = is_need_to_classify(oracle_type_content_var, oracle_type_content_kind)
+      if extra_ignore_dup_unk_when_computing_accuracy:
+        r_count_select = predict_to_use_pre_exist * r_count_select
+        '''
+        0 1 unk delete
+        1 1 unk no delete
+        0 0 unk delete
+        1 0 unk delete
+        '''
+      r_count = r_count * tf.stack([en_valid_int, tf.constant(1, int_type)])[r_count_select]
     
     token_metrics[self.metrics_index["token_count"]] += r_count
     token_metrics[self.metrics_index["all_count"]] += r_count
