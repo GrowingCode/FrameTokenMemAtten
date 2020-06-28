@@ -1,14 +1,13 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type, bool_type
+from metas.non_hyper_constants import float_type, int_type
 from metas.hyper_settings import top_ks, mrr_max, num_units, is_dup_mode, \
   simple_is_dup, mlp_is_dup, sigmoid_is_dup, attention_repetition_mode, \
   repetition_mode, max_repetition_mode, en_match, repetition_accuracy_mode, \
   exact_accurate, dup_share_parameters, dup_use_two_poles,\
-  use_syntax_to_decide_rep, lstm_initialize_range, dup_all_classify,\
-  dup_classify_mode, dup_var_classify, dup_in_token_kind_range_classify
+  use_syntax_to_decide_rep, lstm_initialize_range
 from models.attention import YAttention
 from utils.initializer import random_uniform_variable_initializer
-from models.token_sword_decode import is_in_token_kind_range
+from models.token_sword_decode import is_need_to_classify
 
 
 class PointerNetwork():
@@ -177,19 +176,6 @@ def compute_top_k_accurate(oracle_token_sequence, oracle_type_content_en, specif
     accs = tf.reduce_sum(zero_one)
     result = tf.concat([result, [tf.cast(accs > 0, float_type)]], axis=0)
   return mrr, result
-
-
-def is_need_to_classify(oracle_var, oracle_en_kind):
-  if dup_classify_mode == dup_all_classify:
-    ntc_bool = tf.constant(True, bool_type)
-  elif dup_classify_mode == dup_var_classify:
-    ntc_bool = tf.greater(oracle_var, 0)
-  elif dup_classify_mode == dup_in_token_kind_range_classify:
-    ntc_bool = is_in_token_kind_range(oracle_en_kind)
-  else:
-    assert False
-  need_to_classify = tf.cast(ntc_bool, int_type)
-  return need_to_classify
 
 
 

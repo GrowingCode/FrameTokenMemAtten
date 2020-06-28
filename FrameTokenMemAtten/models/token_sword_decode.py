@@ -6,12 +6,12 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
-  use_dup_model, top_ks, ignore_unk_when_computing_accuracy
+  use_dup_model, top_ks, ignore_unk_when_computing_accuracy, dup_all_classify,\
+  dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 import tensorflow as tf
-from models.dup_pattern import is_need_to_classify
 
 
 # def decode_one_token(type_content_data, training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, metrics_index, token_metrics, linear_token_output_w, token_lstm, token_embedder, token_attention, dup_token_lstm=None, dup_token_embedder=None, token_pointer=None):
@@ -458,6 +458,20 @@ def is_en_valid(oracle_type_content_en, vocab_size):
   en_valid = tf.cast(en_valid_bool, float_type)
   en_valid_int = tf.cast(en_valid_bool, int_type)
   return en_valid, en_valid_int
+
+
+def is_need_to_classify(oracle_var, oracle_en_kind):
+  if dup_classify_mode == dup_all_classify:
+    ntc_bool = tf.constant(True, bool_type)
+  elif dup_classify_mode == dup_var_classify:
+    ntc_bool = tf.greater(oracle_var, 0)
+  elif dup_classify_mode == dup_in_token_kind_range_classify:
+    ntc_bool = is_in_token_kind_range(oracle_en_kind)
+  else:
+    assert False
+  need_to_classify = tf.cast(ntc_bool, int_type)
+  return need_to_classify
+
 
 
 
