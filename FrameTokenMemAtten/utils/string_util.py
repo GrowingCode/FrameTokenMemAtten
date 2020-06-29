@@ -7,7 +7,8 @@ def get_content_between_two_specified_string(o_str, b_str, e_str):
   return sp
 
 
-print(get_content_between_two_specified_string("a:12#:34#", ":", "#"))
+if __name__ == "__main__":
+  print(get_content_between_two_specified_string("a:12#:34#", ":", "#"))
 
 
 
