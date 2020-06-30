@@ -8,7 +8,7 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
   use_dup_model, top_ks, ignore_unk_when_computing_accuracy, dup_all_classify,\
   dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify,\
-  extra_ignore_dup_unk_when_computing_accuracy
+  extra_ignore_dup_unk_when_computing_accuracy, vocab_retain_rate
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -458,6 +458,7 @@ def is_token_in_consideration(oracle_type_content_en, oracle_type_content_var, o
 
 
 def is_en_valid(oracle_type_content_en, vocab_size):
+  vocab_size = tf.cast(vocab_size * vocab_retain_rate, int_type)
   if token_valid_mode == token_in_scope_valid:
     en_valid_bool = tf.less(oracle_type_content_en, vocab_size)
   elif token_valid_mode == token_meaningful_valid:

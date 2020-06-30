@@ -22,6 +22,8 @@ only_consider_non_var_accuracy = 4
 token_accuracy_mode = consider_all_token_accuracy
 ignore_unk_when_computing_accuracy = 0
 extra_ignore_dup_unk_when_computing_accuracy = 0
+''' human control how many words in vocabulary are UNK '''
+vocab_retain_rate = 1.0
 ''' token kind '''
 default_token_kind = 0b0
 simpletype_simplename = 0b01
