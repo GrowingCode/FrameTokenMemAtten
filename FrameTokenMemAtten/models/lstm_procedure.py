@@ -1,13 +1,13 @@
 from metas.hyper_settings import only_memory_mode, token_memory_mode,\
   concat_memory_mode, num_units,\
   no_memory_mode, abs_memory_size, abs_size_var_novar_all_concat_memory_mode,\
-  abs_size_concat_memory_mode
-from models.mem import update_one_variable
+  abs_size_concat_memory_mode, compute_memory_in_only_memory_mode
+from models.mem import update_one_variable, compute_integrated_memory
 import tensorflow as tf
 from metas.non_hyper_constants import int_type
 
 
-def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_en, token_var, conserved_memory_length, token_lstm, token_embedder):
+def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_en, token_var, conserved_memory_length, token_lstm, token_embedder, integrate_computer=None):
   dup_cell = token_metrics[metrics_index[prefix + "token_cell"]]
   dup_h = token_metrics[metrics_index[prefix + "token_h"]]
   
@@ -17,7 +17,13 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
     dup_acc_cells = token_metrics[metrics_index[prefix + "memory_acc_cell"]]
     dup_acc_hs = token_metrics[metrics_index[prefix + "memory_acc_h"]]
     dup_acc_ens = token_metrics[metrics_index[prefix + "memory_en"]]
-    token_metrics[metrics_index[prefix + "memory_en"]], token_metrics[metrics_index[prefix + "memory_acc_cell"]], token_metrics[metrics_index[prefix + "memory_acc_h"]] = update_one_variable(token_var, token_en, dup_cell, dup_h, dup_acc_ens, dup_acc_cells, dup_acc_hs)
+    
+    n_dup_cell, n_dup_h = dup_cell, dup_h
+    if compute_memory_in_only_memory_mode:
+      assert integrate_computer != None
+      n_dup_cell, n_dup_h = compute_integrated_memory(integrate_computer, token_var, dup_cell, dup_h, dup_acc_cells, dup_acc_hs)
+    
+    token_metrics[metrics_index[prefix + "memory_en"]], token_metrics[metrics_index[prefix + "memory_acc_cell"]], token_metrics[metrics_index[prefix + "memory_acc_h"]] = update_one_variable(token_var, token_en, n_dup_cell, n_dup_h, dup_acc_ens, dup_acc_cells, dup_acc_hs)
   else:
     if token_memory_mode == concat_memory_mode:
       to_concat = tf.cast(token_var > 0, int_type)

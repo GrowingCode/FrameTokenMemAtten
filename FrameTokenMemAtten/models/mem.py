@@ -115,4 +115,15 @@ def update_one_variable(local_token_index, type_content_en, decode_dup_f_cell, d
   return new_dup_accumulated_en, new_dup_accumulated_cell, new_dup_accumulated_h
 
 
+def compute_integrated_memory(integrate_computer, token_var, dup_cell, dup_h, dup_acc_cells, dup_acc_hs):
+  can_compute = tf.cast(tf.logical_and(token_var > 0, token_var < tf.shape(dup_acc_hs)[0]), int_type)
+  ori_idx = tf.stack([tf.constant(0, int_type), token_var])[can_compute]
+  ori_cell, ori_h = dup_acc_cells[ori_idx], dup_acc_hs[ori_idx]
+  int_cell, int_h = integrate_computer(dup_cell, dup_h, ori_cell, ori_h)
+  f_cell = tf.stack([dup_cell, int_cell])[can_compute]
+  f_h = tf.stack([dup_h, int_h])[can_compute]
+  return f_cell, f_h
+
+
+
 

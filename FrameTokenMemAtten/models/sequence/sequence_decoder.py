@@ -3,11 +3,10 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, decode_attention_way,\
-  decode_no_attention, use_dup_model
+  decode_no_attention
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum
 from models.attention import YAttention
-from models.dup_pattern import PointerNetwork
 from models.token_sword_decode import TokenDecoder
 from models.lstm import YLSTMCell
 from models.lstm_procedure import one_lstm_step_and_update_memory
@@ -32,11 +31,11 @@ class SequenceDecodeModel(BasicDecodeModel):
       self.token_attention = YAttention(10)
     
     self.dup_token_lstm, self.dup_one_hot_token_embedding, self.dup_token_embedder, self.dup_token_pointer = None, None, None, None
-    if use_dup_model:
-      self.dup_token_lstm = YLSTMCell(125)
-      self.dup_one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(25, 56, [number_of_tokens, num_units]))
-      self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.dup_one_hot_token_embedding)
-      self.dup_token_pointer = PointerNetwork(222)
+#     if use_dup_model:
+#       self.dup_token_lstm = YLSTMCell(125)
+#       self.dup_one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(25, 56, [number_of_tokens, num_units]))
+#       self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.dup_one_hot_token_embedding)
+#       self.dup_token_pointer = PointerNetwork(222)
     
     self.token_decoder = TokenDecoder(self.type_content_data, self.metrics_index, self.linear_token_output_w, self.token_attention, self.dup_token_pointer)
   
@@ -66,8 +65,8 @@ class SequenceDecodeModel(BasicDecodeModel):
     token_metrics = list(r_stmt_metrics_tuple)
     
     token_metrics = one_lstm_step_and_update_memory("", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.token_lstm, self.token_embedder)
-    if use_dup_model:
-      token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
+#     if use_dup_model:
+#       token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
     
     return (i + 1, i_len, *token_metrics)
   

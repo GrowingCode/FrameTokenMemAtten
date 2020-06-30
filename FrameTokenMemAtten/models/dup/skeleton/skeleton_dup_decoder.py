@@ -3,12 +3,12 @@ from metas.hyper_settings import num_units, \
   compute_token_memory, \
   atom_decode_mode, token_decode, \
   only_memory_mode, token_memory_mode, \
-  print_accurate_of_each_example
+  print_accurate_of_each_example, compute_memory_in_only_memory_mode
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, TokenHitNum, UNK_en, skeleton_base
 from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, Y2DirectLSTMCell
 from models.lstm_procedure import one_lstm_step, one_lstm_step_and_update_memory
 from models.mem import NTMOneDirection
 from models.token_sword_decode import DupTokenDecoder
@@ -41,6 +41,9 @@ class SkeletonDupModel(BasicDecodeModel):
       self.dup_token_pointer = PointerNetwork(655)
       self.dup_skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(155, 572, [number_of_skeletons, 2, num_units]))
       self.dup_skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(152, 572, [number_of_skeletons, 2, num_units]))
+      self.integrate_computer = None
+      if compute_memory_in_only_memory_mode:
+        self.integrate_computer = Y2DirectLSTMCell(105)
       if compute_token_memory:
         self.dup_mem_nn = NTMOneDirection(800)
         self.dup_forward_token_lstm = YLSTMCell(10)
@@ -185,7 +188,7 @@ class SkeletonDupModel(BasicDecodeModel):
       if compute_token_memory:
         stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
       else:
-        stmt_metrics = one_lstm_step_and_update_memory("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, oracle_type_content_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
+        stmt_metrics = one_lstm_step_and_update_memory("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, oracle_type_content_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder, self.integrate_computer)
     else:
       assert False
     return (i + 1, i_len, ini_i, *stmt_metrics)

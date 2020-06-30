@@ -2,11 +2,11 @@ import tensorflow as tf
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
-from metas.hyper_settings import num_units
+from metas.hyper_settings import num_units, compute_memory_in_only_memory_mode
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum
 from models.dup_pattern import PointerNetwork
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, Y2DirectLSTMCell
 from models.lstm_procedure import one_lstm_step_and_update_memory
 from models.token_sword_decode import DupTokenDecoder
 
@@ -26,6 +26,10 @@ class LinearDupModel(BasicDecodeModel):
     self.dup_one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(25, 56, [number_of_tokens, num_units]))
     self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.dup_one_hot_token_embedding)
     self.dup_token_pointer = PointerNetwork(222)
+    
+    self.integrate_computer = None
+    if compute_memory_in_only_memory_mode:
+      self.integrate_computer = Y2DirectLSTMCell(105)
     
     self.dup_token_decoder = DupTokenDecoder(self.type_content_data, self.metrics_index, self.dup_token_pointer)
   
@@ -58,7 +62,7 @@ class LinearDupModel(BasicDecodeModel):
     r_stmt_metrics_tuple = self.dup_token_decoder.decode_one_token(stmt_metrics, self.training, token_en, token_var, token_var_relative, token_kind, base_model_accuracy, base_model_mrr)
     token_metrics = list(r_stmt_metrics_tuple)
     
-    token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
+    token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder, self.integrate_computer)
     
     return (i + 1, i_len, *token_metrics)
   
