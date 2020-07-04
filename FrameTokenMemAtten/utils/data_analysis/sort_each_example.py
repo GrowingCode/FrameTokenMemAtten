@@ -64,14 +64,22 @@ def analyze_one_set(json_path, compare_json_path=None, mode=0):
 def analyze_two_sets(json_path1, json_path2, compare_json_path1=None, compare_json_path2=None, mode=0):
   res1 = analyze_one_set(json_path1, compare_json_path1, mode)
   res2 = analyze_one_set(json_path2, compare_json_path2, mode)
-  all_size = len(res1) + len(res2)
+  res1_len = len(res1)
+  res2_len = len(res2)
+  all_size = res1_len + res2_len
   r_size = all_size / 2
   new_res = []
   idx1 = 0
   idx2 = 0
   while len(new_res) < r_size:
-    r1 = res1[idx1][0]
-    r2 = res2[idx2][0]
+    if idx1 < res1_len:
+      r1 = res1[idx1][1]
+    else:
+      r1 = 0.0
+    if idx2 < res2_len:
+      r2 = res2[idx2][1]
+    else:
+      r2 = 0.0
     if r1 < r2:
       r = res2[idx2]
       idx2 += 1
