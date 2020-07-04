@@ -311,7 +311,7 @@ class TokenDecoder():
     mrr_of_this_node = mrr_of_this_node * en_valid * t_valid
     
     token_metrics[self.metrics_index["token_accurate_each_noavg"]] = token_metrics[self.metrics_index["token_accurate_each_noavg"]].write(token_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node)
-    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node)    
+    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node)
     
     token_metrics[self.metrics_index["token_lm_loss"]] += loss_of_this_node
     token_metrics[self.metrics_index["token_lm_accurate"]] += accurate_of_this_node
@@ -411,9 +411,14 @@ class DupTokenDecoder():
 #       with tf.control_dependencies([p_op, a_op]):
 #         token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
 #     else:
-    token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
+    r_accurate = to_add_accurate_candidates[predict_to_use_pre_exist]
+    token_metrics[self.metrics_index["all_accurate"]] += r_accurate
     to_add_mrr_candidates = tf.stack([base_model_mrr * en_valid * t_valid, dup_repeat_mrr_of_this_node])
-    token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
+    r_mrr = to_add_mrr_candidates[predict_to_use_pre_exist]
+    token_metrics[self.metrics_index["all_mrr"]] += r_mrr
+    
+    token_metrics[self.metrics_index["token_accurate_each_noavg"]] = token_metrics[self.metrics_index["token_accurate_each_noavg"]].write(token_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), r_accurate)
+    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), r_mrr)
     
     r_count = 1 * t_valid_int
     if ignore_unk_when_computing_accuracy:
