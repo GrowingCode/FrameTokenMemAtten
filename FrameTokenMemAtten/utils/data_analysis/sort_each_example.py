@@ -110,7 +110,8 @@ def analyze_two_sets(json_path1, json_path2, compare_json_path1=None, compare_js
   
 if __name__ == '__main__':
   analyze_two_sets("D:/HomeSpace/paper-workspace/REP/Experiment/simple-sequence_token_decode/zoot_run_info_record/valid_noavg.json", "D:/HomeSpace/paper-workspace/REP/Experiment/simple-sequence_token_decode/zoot_run_info_record/test_noavg.json")
-  analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/no_unk-0.1-consider_all_token_accuracy/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/no_unk-0.1-consider_all_token_accuracy/zoot_run_info_record/test_noavg.json")
+  analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/zoot_run_info_record/test_noavg.json")
+  
   
   
 
