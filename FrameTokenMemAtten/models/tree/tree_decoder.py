@@ -123,6 +123,8 @@ class TreeDecodeModel(BasicDecodeModel):
     stmt_metrics[self.metrics_index["token_accurate_each_noavg"]] = stmt_metrics[self.metrics_index["token_accurate_each_noavg"]].write(stmt_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node * en_valid_float * t_valid_float)
     stmt_metrics[self.metrics_index["token_mrr_each_noavg"]] = stmt_metrics[self.metrics_index["token_mrr_each_noavg"]].write(stmt_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node * en_valid_float * t_valid_float)
     
+    stmt_metrics[self.metrics_index["token_count_each_int_noavg"]] = stmt_metrics[self.metrics_index["token_count_each_int_noavg"]].write(stmt_metrics[self.metrics_index["token_count_each_int_noavg"]].size(), r_count)
+    
     ''' infer next cell/h '''
 #       p_op = tf.print("loss_of_this_node:", loss_of_this_node, "accurate_of_this_node:", accurate_of_this_node)
 #       with tf.control_dependencies([p_op]):

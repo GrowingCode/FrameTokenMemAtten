@@ -6,7 +6,7 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   token_accuracy_mode, only_memory_mode, abs_size_concat_memory_mode,\
   abs_size_var_novar_all_concat_memory_mode, only_consider_non_var_accuracy,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
-  use_dup_model, top_ks, ignore_unk_when_computing_accuracy, dup_all_classify,\
+  use_dup_model, ignore_unk_when_computing_accuracy, dup_all_classify,\
   dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify,\
   extra_ignore_dup_unk_when_computing_accuracy, vocab_retain_rate
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
@@ -310,47 +310,50 @@ class TokenDecoder():
     accurate_of_this_node = accurate_of_this_node * en_valid * t_valid
     mrr_of_this_node = mrr_of_this_node * en_valid * t_valid
     
-    token_metrics[self.metrics_index["token_accurate_each_noavg"]] = token_metrics[self.metrics_index["token_accurate_each_noavg"]].write(token_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node)
-    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node)
-    
     token_metrics[self.metrics_index["token_lm_loss"]] += loss_of_this_node
     token_metrics[self.metrics_index["token_lm_accurate"]] += accurate_of_this_node
     token_metrics[self.metrics_index["token_lm_mrr"]] += mrr_of_this_node
     token_metrics[self.metrics_index["all_loss"]] += loss_of_this_node
     
-    dup_repeat_mrr_of_this_node = tf.constant(0.0, float_type)
-    dup_repeat_accurate_of_this_node = tf.zeros([len(top_ks)], float_type)
-    predict_to_use_pre_exist = 0
+#     dup_repeat_mrr_of_this_node = tf.constant(0.0, float_type)
+#     dup_repeat_accurate_of_this_node = tf.zeros([len(top_ks)], float_type)
+#     predict_to_use_pre_exist = 0
     
-    if use_dup_model:
-      assert token_memory_mode > no_memory_mode
-      dup_h = token_metrics[self.metrics_index["dup_token_h"]]
-      dup_acc_hs = token_metrics[self.metrics_index["dup_memory_acc_h"]]
-      dup_acc_ens = token_metrics[self.metrics_index["dup_memory_en"]]
-      if token_memory_mode == only_memory_mode:
-        r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
-      else:
-        r_var_relative = oracle_type_content_var_relative
-        assert token_memory_mode == concat_memory_mode or token_memory_mode == abs_size_concat_memory_mode or token_memory_mode == abs_size_var_novar_all_concat_memory_mode
+#     if use_dup_model:
+#       assert token_memory_mode > no_memory_mode
+#       dup_h = token_metrics[self.metrics_index["dup_token_h"]]
+#       dup_acc_hs = token_metrics[self.metrics_index["dup_memory_acc_h"]]
+#       dup_acc_ens = token_metrics[self.metrics_index["dup_memory_en"]]
+#       if token_memory_mode == only_memory_mode:
+#         r_var_relative = tf.shape(dup_acc_hs)[0] - oracle_type_content_var
+#       else:
+#         r_var_relative = oracle_type_content_var_relative
+#         assert token_memory_mode == concat_memory_mode or token_memory_mode == abs_size_concat_memory_mode or token_memory_mode == abs_size_var_novar_all_concat_memory_mode
+#       
+# #       p_op = tf.print(["dup_acc_ens:", dup_acc_ens, "var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize=100)
+# #       with tf.control_dependencies([p_op]):
+#       dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
+#       is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
+#       dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
+#       dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
+#       dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
+#       predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
+#       
+#       token_metrics[self.metrics_index["token_dup_loss"]] += dup_loss_of_this_node
+#       token_metrics[self.metrics_index["token_dup_accurate"]] += dup_accurate_of_this_node
+#       token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
+#       token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
       
-#       p_op = tf.print(["dup_acc_ens:", dup_acc_ens, "var:", oracle_type_content_var, "r_var_relative:", r_var_relative], summarize=100)
-#       with tf.control_dependencies([p_op]):
-      dup_logits, neg_dup_logits, neg_ele_logit, dup_max_arg_acc_h, dup_min_cared_h = self.dup_token_pointer.compute_logits(dup_acc_hs, dup_h)
-      is_dup_logits = self.dup_token_pointer.compute_is_dup_logits(dup_max_arg_acc_h, dup_min_cared_h, dup_h)
-      dup_mrr_of_this_node, dup_accurate_of_this_node, dup_loss_of_this_node, dup_repeat_mrr_of_this_node, dup_repeat_accurate_of_this_node, predict_to_use_pre_exist = self.dup_token_pointer.compute_dup_loss(training, dup_acc_ens, oracle_type_content_en, oracle_type_content_var, r_var_relative, oracle_type_content_kind, is_dup_logits, dup_logits, neg_dup_logits, neg_ele_logit)
-      dup_mrr_of_this_node = dup_mrr_of_this_node * t_valid
-      dup_accurate_of_this_node = dup_accurate_of_this_node * t_valid
-      predict_to_use_pre_exist = predict_to_use_pre_exist * t_valid_int
-      
-      token_metrics[self.metrics_index["token_dup_loss"]] += dup_loss_of_this_node
-      token_metrics[self.metrics_index["token_dup_accurate"]] += dup_accurate_of_this_node
-      token_metrics[self.metrics_index["token_dup_mrr"]] += dup_mrr_of_this_node
-      token_metrics[self.metrics_index["all_loss"]] += dup_loss_of_this_node
-      
-    to_add_accurate_candidates = tf.stack([accurate_of_this_node, dup_repeat_accurate_of_this_node])
-    token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
-    to_add_mrr_candidates = tf.stack([mrr_of_this_node, dup_repeat_mrr_of_this_node])
-    token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
+#     to_add_accurate_candidates = tf.stack([accurate_of_this_node, dup_repeat_accurate_of_this_node])
+#     token_metrics[self.metrics_index["all_accurate"]] += to_add_accurate_candidates[predict_to_use_pre_exist]
+#     to_add_mrr_candidates = tf.stack([mrr_of_this_node, dup_repeat_mrr_of_this_node])
+#     token_metrics[self.metrics_index["all_mrr"]] += to_add_mrr_candidates[predict_to_use_pre_exist]
+    
+    token_metrics[self.metrics_index["all_accurate"]] += accurate_of_this_node
+    token_metrics[self.metrics_index["all_mrr"]] += mrr_of_this_node
+    
+    token_metrics[self.metrics_index["token_accurate_each_noavg"]] = token_metrics[self.metrics_index["token_accurate_each_noavg"]].write(token_metrics[self.metrics_index["token_accurate_each_noavg"]].size(), accurate_of_this_node)
+    token_metrics[self.metrics_index["token_mrr_each_noavg"]] = token_metrics[self.metrics_index["token_mrr_each_noavg"]].write(token_metrics[self.metrics_index["token_mrr_each_noavg"]].size(), mrr_of_this_node)
     
     r_count = 1 * t_valid_int
     if ignore_unk_when_computing_accuracy:
@@ -359,6 +362,8 @@ class TokenDecoder():
 #           r_count = r_count * en_valid_int
 #       else:
       r_count = r_count * en_valid_int
+      
+    token_metrics[self.metrics_index["token_count_each_int_noavg"]] = token_metrics[self.metrics_index["token_count_each_int_noavg"]].write(token_metrics[self.metrics_index["token_count_each_int_noavg"]].size(), r_count)
     
     token_metrics[self.metrics_index["token_count"]] += r_count
     token_metrics[self.metrics_index["all_count"]] += r_count
@@ -426,12 +431,15 @@ class DupTokenDecoder():
       if extra_ignore_dup_unk_when_computing_accuracy:
         r_count_select = predict_to_use_pre_exist * r_count_select
         '''
-        0 1 unk delete
-        1 1 unk no delete
-        0 0 unk delete
-        1 0 unk delete
+        predict_to_use_pre_exist,  r_count_select
+        0                          1:               unk delete
+        1                          1:               unk no delete
+        0                          0:               unk delete
+        1                          0:               unk delete
         '''
       r_count = r_count * tf.stack([en_valid_int, tf.constant(1, int_type)])[r_count_select]
+    
+    token_metrics[self.metrics_index["token_count_each_int_noavg"]] = token_metrics[self.metrics_index["token_count_each_int_noavg"]].write(token_metrics[self.metrics_index["token_count_each_int_noavg"]].size(), r_count)
     
     token_metrics[self.metrics_index["token_count"]] += r_count
     token_metrics[self.metrics_index["all_count"]] += r_count

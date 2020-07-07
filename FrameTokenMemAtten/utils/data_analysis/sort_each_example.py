@@ -12,10 +12,12 @@ def analyze_one_set(json_path, compare_json_path=None, mode=0):
   with open(json_path, 'r') as json_record:
     record_json = json.load(json_record)
     each_noavg = record_json["token_accurate_each_noavg"]
+    each_count_noavg = record_json["token_count_each_int_noavg"]
   if compare_json_path != None:
     with open(compare_json_path, 'r') as compare_json_record:
       compare_record_json = json.load(compare_json_record)
       compare_each_noavg = compare_record_json["token_accurate_each_noavg"]
+      compare_each_count_noavg = record_json["token_count_each_int_noavg"]
   
   quota = []
   info = []
@@ -26,26 +28,31 @@ def analyze_one_set(json_path, compare_json_path=None, mode=0):
   
   num_of_examples = len(each_noavg)
   for index in range(num_of_examples):
-    one_example_noavg = each_noavg[index]
-    one_example_noavg = np.array(one_example_noavg)
-    noavg_size = np.shape(one_example_noavg)[0]
-    avg = np.sum(one_example_noavg, axis=0) / noavg_size
-    info.append(avg)
-    size_info.append(noavg_size)
     if compare_json_path:
-      compare_one_example_noavg = compare_each_noavg[index]
-      compare_one_example_noavg = np.array(compare_one_example_noavg)
-      compare_noavg_size = np.shape(compare_one_example_noavg)[0]
-      compare_avg = np.sum(compare_one_example_noavg, axis=0) / compare_noavg_size
-      compare_info.append(compare_avg)
-      compare_size_info.append(compare_noavg_size)
+      assert each_count_noavg[index] <= compare_each_count_noavg[index], "compare count must be no-filtered or less-filtered"
     
-    if mode == 0:
-      quota.append(avg[0])
-    elif mode == 1:
-      quota.append(avg[0] / compare_avg[0])
-    else:
-      assert False
+    if each_count_noavg[index]:
+      one_example_noavg = each_noavg[index]
+      one_example_noavg = np.array(one_example_noavg)
+      noavg_size = np.shape(one_example_noavg)[0]
+      avg = np.sum(one_example_noavg, axis=0) / noavg_size
+      info.append(avg)
+      size_info.append(noavg_size)
+      if compare_json_path:
+        compare_one_example_noavg = compare_each_noavg[index]
+        compare_one_example_noavg = np.array(compare_one_example_noavg)
+        compare_noavg_size = np.shape(compare_one_example_noavg)[0]
+        compare_avg = np.sum(compare_one_example_noavg, axis=0) / compare_noavg_size
+        compare_info.append(compare_avg)
+        compare_size_info.append(compare_noavg_size)
+      
+      if mode == 0:
+        quota.append(avg[0])
+      elif mode == 1:
+        assert compare_json_path
+        quota.append(avg[0] / compare_avg[0])
+      else:
+        assert False
     
   np_quota = np.array(quota)
   sorted_index = np.argsort(-np_quota)
