@@ -74,7 +74,7 @@ def analyze_two_sets(json_path1, json_path2, compare_json_path1=None, compare_js
   res1_len = len(res1)
   res2_len = len(res2)
   all_size = res1_len + res2_len
-  r_size = all_size / 2
+  r_size = int(all_size * 0.5)
   new_res = []
   idx1 = 0
   idx2 = 0
@@ -100,7 +100,7 @@ def analyze_two_sets(json_path1, json_path2, compare_json_path1=None, compare_js
   if compare_json_path1:
     c_f_tk = np.array([0.0, 0.0, 0.0, 0.0])
     c_f_size = 0.0
-  for i in range(int(r_size)):
+  for i in range(r_size):
     f_tk += new_res[i][2] * new_res[i][3]
     f_size += new_res[i][3]
     if compare_json_path1:
