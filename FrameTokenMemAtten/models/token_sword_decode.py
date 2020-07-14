@@ -8,7 +8,8 @@ from metas.hyper_settings import token_memory_mode, decode_attention_way,\
   only_consider_token_kind_accuracy, token_kind_consider_range_mode,\
   use_dup_model, ignore_unk_when_computing_accuracy, dup_all_classify,\
   dup_classify_mode, dup_in_token_kind_range_classify, dup_var_classify,\
-  extra_ignore_dup_unk_when_computing_accuracy, vocab_retain_rate
+  extra_ignore_dup_unk_when_computing_accuracy, vocab_retain_rate,\
+  token_extra_ignore_range_mode, ignore_useless_extra_token
 from metas.non_hyper_constants import int_type, float_type, all_token_summary,\
   TokenHitNum, UNK_en, bool_type
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
@@ -452,6 +453,11 @@ def is_in_token_kind_range(oracle_en_kind):
   return ntc_bool
 
 
+def is_in_token_extra_ignore_range(oracle_en_kind):
+  ntc_bool = tf.greater(tf.bitwise.bitwise_and(oracle_en_kind, token_extra_ignore_range_mode), tf.constant(0, int_type))
+  return ntc_bool
+
+
 def is_token_in_consideration(oracle_type_content_en, oracle_type_content_var, oracle_type_content_kind, vocab_size):
   if token_accuracy_mode == consider_all_token_accuracy:
     t_valid_bool = tf.constant(True, bool_type)
@@ -465,8 +471,12 @@ def is_token_in_consideration(oracle_type_content_en, oracle_type_content_var, o
     t_valid_bool = tf.less_equal(oracle_type_content_var, 0)
   else:
     assert False
-  t_valid = tf.cast(t_valid_bool, float_type)
-  t_valid_int = tf.cast(t_valid_bool, int_type)
+  final_t_valid_bool = t_valid_bool
+  if ignore_useless_extra_token:
+    is_extra_ignore = is_in_token_extra_ignore_range(oracle_type_content_kind)
+    final_t_valid_bool = tf.logical_and(t_valid_bool, tf.logical_not(is_extra_ignore))
+  t_valid = tf.cast(final_t_valid_bool, float_type)
+  t_valid_int = tf.cast(final_t_valid_bool, int_type)
   return t_valid, t_valid_int
 
 

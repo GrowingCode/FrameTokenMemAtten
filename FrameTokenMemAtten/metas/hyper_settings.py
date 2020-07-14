@@ -22,6 +22,7 @@ only_consider_non_var_accuracy = 4
 token_accuracy_mode = consider_all_token_accuracy
 ignore_unk_when_computing_accuracy = 0
 extra_ignore_dup_unk_when_computing_accuracy = 0
+ignore_useless_extra_token = 0
 ''' human control how many words in vocabulary are UNK '''
 vocab_retain_rate = 1.0
 ''' token kind '''
@@ -34,8 +35,10 @@ simplename_approximate_variable = 0b010000
 simplename = 0b0100000
 non_leaf_at_least_two_children = 0b01000000
 non_leaf_only_one_child = 0b010000000
+useless_non_leaf_only_one_child = 0b0100000000
 ''' note that this directly influences the dup_pattern range in consideration '''
 token_kind_consider_range_mode = simplename_approximate_variable
+token_extra_ignore_range_mode = useless_non_leaf_only_one_child
 '''
 details
 '''
