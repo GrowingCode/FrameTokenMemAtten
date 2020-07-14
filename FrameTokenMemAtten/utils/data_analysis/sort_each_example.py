@@ -3,6 +3,8 @@ import numpy as np
 from builtins import len
 
 
+top_rate = 0.5
+
 '''
 mode
 0: sort by (1st arg)
@@ -74,7 +76,7 @@ def analyze_two_sets(json_path1, json_path2, compare_json_path1=None, compare_js
   res1_len = len(res1)
   res2_len = len(res2)
   all_size = res1_len + res2_len
-  r_size = int(all_size * 0.5)
+  r_size = int(all_size * top_rate)
   new_res = []
   idx1 = 0
   idx2 = 0
