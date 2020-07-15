@@ -19,7 +19,7 @@ def analyze_one_set(json_path, compare_json_path=None, mode=0):
     with open(compare_json_path, 'r') as compare_json_record:
       compare_record_json = json.load(compare_json_record)
       compare_each_noavg = compare_record_json["token_accurate_each_noavg"]
-      compare_each_count_noavg = record_json["token_count_each_int_noavg"]
+      compare_each_count_noavg = compare_record_json["token_count_each_int_noavg"]
   
   quota = []
   info = []
@@ -121,7 +121,7 @@ if __name__ == '__main__':
   analyze_two_sets("D:/HomeSpace/paper-workspace/REP/Experiment/simple-sequence_token_decode/zoot_run_info_record/valid_noavg.json", "D:/HomeSpace/paper-workspace/REP/Experiment/simple-sequence_token_decode/zoot_run_info_record/test_noavg.json")
   analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/1000unk-5stop-specified_fold-statement_rep_dup_sequence_only_memory_style/simplename/zoot_run_info_record/test_noavg.json")
   analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/consider_all_token_accuracy/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/consider_all_token_accuracy/zoot_run_info_record/test_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/test_noavg.json", 0)
-  analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/no_extra_ignore-consider_all_token_accuracy/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/no_extra_ignore-consider_all_token_accuracy/zoot_run_info_record/test_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/test_noavg.json", 0)
+  analyze_two_sets("C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/extra_ignore-consider_all_token_accuracy/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_rep_dup_sequence_only_memory_style/extra_ignore-consider_all_token_accuracy/zoot_run_info_record/test_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/valid_noavg.json", "C:/Users/yangy/Desktop/Experiment/findbugs/9000unk-statement_token_decode/zoot_run_info_record/test_noavg.json", 0)
 
 
 
