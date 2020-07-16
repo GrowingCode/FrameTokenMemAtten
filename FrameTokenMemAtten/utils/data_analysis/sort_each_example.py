@@ -42,8 +42,6 @@ def analyze_one_set(json_path, compare_json_path=None, mode=0):
     record_json = json.load(json_record)
     each_noavg = record_json["token_accurate_each_noavg"]
     each_count_noavg = record_json["token_count_each_int_noavg"]
-  compare_each_noavg = None
-  compare_each_count_noavg = None
   if compare_json_path != None:
     with open(compare_json_path, 'r') as compare_json_record:
       compare_record_json = json.load(compare_json_record)
