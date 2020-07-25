@@ -5,7 +5,7 @@ from metas.hyper_settings import num_units, \
   only_memory_mode, token_memory_mode, \
   print_accurate_of_each_example, compute_memory_in_only_memory_mode
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, TokenHitNum, UNK_en, skeleton_base
+  int_type, SkeletonHitNum, TokenHitNum, UNK_en
 from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
 from models.lstm import YLSTMCell, Y2DirectLSTMCell
@@ -85,7 +85,7 @@ class SkeletonDupModel(BasicDecodeModel):
     if self.treat_first_element_as_skeleton:
       stmt_start_offset = 1
       ''' handle skeleton '''
-      skt_id = self.token_info_tensor[0][stmt_start] - skeleton_base
+      skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
        
       dup_cell = stmt_metrics[self.metrics_index["dup_token_cell"]]
       dup_h = stmt_metrics[self.metrics_index["dup_token_h"]]
