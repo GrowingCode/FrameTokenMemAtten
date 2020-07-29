@@ -23,10 +23,10 @@ from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps
 from models.token_sword_decode import TokenDecoder
 
 
-class SkeletonOnlyDecodeModel(BasicDecodeModel):
+class SkeletonOnlyDupDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
-    super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
+    super(SkeletonOnlyDupDecodeModel, self).__init__(type_content_data)
     
     assert False
     
