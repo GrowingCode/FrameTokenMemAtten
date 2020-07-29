@@ -21,12 +21,15 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
 from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps
 from models.token_sword_decode import TokenDecoder
+from models.stmt.stmt_decoder import StatementDecodeModel
 
 
-class SkeletonDecodeModel(BasicDecodeModel):
+class SkeletonDecodeModel(StatementDecodeModel):
   
   def __init__(self, type_content_data):
     super(SkeletonDecodeModel, self).__init__(type_content_data)
+    
+    assert False
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
     self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))

@@ -16,12 +16,15 @@ import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
+from models.dup.stmt.stmt_dup_decoder import StatementDupModel
 
 
-class SkeletonDupModel(BasicDecodeModel):
+class SkeletonDupModel(StatementDupModel):
   
   def __init__(self, type_content_data):
     super(SkeletonDupModel, self).__init__(type_content_data)
+    
+    assert False
     
     self.treat_first_element_as_skeleton = 1
     
@@ -171,71 +174,32 @@ class SkeletonDupModel(BasicDecodeModel):
        
     return stmt_metrics
   
-  def token_iterate_cond(self, i, i_len, *_):
-    return tf.less_equal(i, i_len)
-  
-  def token_iterate_body(self, i, i_len, ini_i, *stmt_metrics_tuple):
-    stmt_metrics = list(stmt_metrics_tuple)
-    oracle_type_content_en = self.token_info_tensor[0][i]
-    oracle_type_content_var = self.token_info_tensor[1][i]
-    oracle_type_content_var_relative = self.token_info_tensor[2][i]
-    conserved_memory_length = self.token_info_tensor[3][i]
-    token_kind = self.token_info_tensor[4][i]
-    base_model_accuracy = self.token_base_model_accuracy[i]
-    base_model_mrr = self.token_base_model_mrr[i]
-    if atom_decode_mode == token_decode:
-      stmt_metrics = self.dup_token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en, oracle_type_content_var, oracle_type_content_var_relative, token_kind, base_model_accuracy, base_model_mrr)
-      if compute_token_memory:
-        stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
-      else:
-        stmt_metrics = one_lstm_step_and_update_memory("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, oracle_type_content_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder, self.integrate_computer)
-    else:
-      assert False
-    return (i + 1, i_len, ini_i, *stmt_metrics)
-  
-  '''
-  build memory
-  '''
-
-  def token_embed_cond(self, i, i_len, *_):
-    return tf.less_equal(i, i_len)
-  
-  def token_embed_body(self, i, i_len, dup_embeds, *stmt_metrics_tuple):
-    stmt_metrics = list(stmt_metrics_tuple)
-    oracle_type_content_en = self.token_info_tensor[0][i]
-    dup_e_emebd = self.dup_token_embedder.compute_h(oracle_type_content_en)
-    if compute_token_memory:
-      oracle_type_content_var = self.token_info_tensor[1][i]
-      mem_hs = stmt_metrics[self.metrics_index["dup_memory_acc_h"]]
-      use_mem = tf.cast(tf.logical_and(tf.greater(oracle_type_content_var, 0), tf.less(oracle_type_content_var, tf.shape(mem_hs)[0])), int_type)
-      r_var = oracle_type_content_var * use_mem
-      dup_e_emebd = tf.stack([dup_e_emebd, [mem_hs[r_var]]])[use_mem]
-    dup_embeds = tf.concat([dup_embeds, dup_e_emebd], axis=0)
-    return (i + 1, i_len, dup_embeds, *stmt_metrics_tuple)
-  
-  def forward_loop_cond(self, i, i_len, *_):
-    return tf.less_equal(i, i_len)
-  
-  def forward_loop_body(self, i, i_len, dup_embeds, *stmt_metrics_tuple):
-    stmt_metrics = list(stmt_metrics_tuple)
-    dup_f_cell = [stmt_metrics[self.metrics_index["dup_loop_forward_cells"]][-1]]
-    dup_f_h = [stmt_metrics[self.metrics_index["dup_loop_forward_hs"]][-1]]
-    _, (new_dup_f_cell, new_dup_f_h) = self.dup_forward_token_lstm(tf.expand_dims(dup_embeds[i], axis=0), (dup_f_cell, dup_f_h))
-    stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], new_dup_f_cell, -1)
-    stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], new_dup_f_h, -1)
-    return (i + 1, i_len, dup_embeds, *stmt_metrics)
-  
-  def backward_loop_cond(self, i, i_len, *_):
-    return tf.less_equal(i, i_len)
-  
-  def backward_loop_body(self, i, i_len, dup_embeds, *stmt_metrics_tuple):
-    stmt_metrics = list(stmt_metrics_tuple)
-    dup_b_cell = [stmt_metrics[self.metrics_index["dup_loop_backward_cells"]][0]]
-    dup_b_h = [stmt_metrics[self.metrics_index["dup_loop_backward_hs"]][0]]
-    _, (new_dup_b_cell, new_dup_b_h) = self.dup_backward_token_lstm(tf.expand_dims(dup_embeds[i_len], axis=0), (dup_b_cell, dup_b_h))
-    stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(new_dup_b_cell, stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], -1)
-    stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(new_dup_b_h, stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], -1)
-    return (i, i_len - 1, dup_embeds, *stmt_metrics)
+#   def token_iterate_cond(self, i, i_len, *_):
+#     return tf.less_equal(i, i_len)
+#   
+#   def forward_loop_cond(self, i, i_len, *_):
+#     return tf.less_equal(i, i_len)
+#   
+#   def forward_loop_body(self, i, i_len, dup_embeds, *stmt_metrics_tuple):
+#     stmt_metrics = list(stmt_metrics_tuple)
+#     dup_f_cell = [stmt_metrics[self.metrics_index["dup_loop_forward_cells"]][-1]]
+#     dup_f_h = [stmt_metrics[self.metrics_index["dup_loop_forward_hs"]][-1]]
+#     _, (new_dup_f_cell, new_dup_f_h) = self.dup_forward_token_lstm(tf.expand_dims(dup_embeds[i], axis=0), (dup_f_cell, dup_f_h))
+#     stmt_metrics[self.metrics_index["dup_loop_forward_cells"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_cells"]], new_dup_f_cell, -1)
+#     stmt_metrics[self.metrics_index["dup_loop_forward_hs"]] = concat_in_fixed_length_two_dimension(stmt_metrics[self.metrics_index["dup_loop_forward_hs"]], new_dup_f_h, -1)
+#     return (i + 1, i_len, dup_embeds, *stmt_metrics)
+#   
+#   def backward_loop_cond(self, i, i_len, *_):
+#     return tf.less_equal(i, i_len)
+#   
+#   def backward_loop_body(self, i, i_len, dup_embeds, *stmt_metrics_tuple):
+#     stmt_metrics = list(stmt_metrics_tuple)
+#     dup_b_cell = [stmt_metrics[self.metrics_index["dup_loop_backward_cells"]][0]]
+#     dup_b_h = [stmt_metrics[self.metrics_index["dup_loop_backward_hs"]][0]]
+#     _, (new_dup_b_cell, new_dup_b_h) = self.dup_backward_token_lstm(tf.expand_dims(dup_embeds[i_len], axis=0), (dup_b_cell, dup_b_h))
+#     stmt_metrics[self.metrics_index["dup_loop_backward_cells"]] = concat_in_fixed_length_two_dimension(new_dup_b_cell, stmt_metrics[self.metrics_index["dup_loop_backward_cells"]], -1)
+#     stmt_metrics[self.metrics_index["dup_loop_backward_hs"]] = concat_in_fixed_length_two_dimension(new_dup_b_h, stmt_metrics[self.metrics_index["dup_loop_backward_hs"]], -1)
+#     return (i, i_len - 1, dup_embeds, *stmt_metrics)
 
 
 

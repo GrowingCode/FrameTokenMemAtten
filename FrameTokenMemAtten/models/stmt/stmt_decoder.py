@@ -1,4 +1,3 @@
-from models.skeleton.skeleton_decoder import SkeletonDecodeModel
 from metas.hyper_settings import compute_token_memory,\
   compose_tokens_of_a_statement, compose_mode, compose_one_way_lstm,\
   compose_one_way_lstm_mode, one_way_three_way_compose, one_way_two_way_compose,\
@@ -19,9 +18,10 @@ from inputs.atom_embeddings import TokenAtomEmbed, SwordAtomEmbed, BiLSTMEmbed
 from models.lstm_procedure import backward_varied_lstm_steps, one_lstm_step
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
+from models.basic_decoder import BasicDecodeModel
 
 
-class StatementDecodeModel(SkeletonDecodeModel):
+class StatementDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(StatementDecodeModel, self).__init__(type_content_data)
@@ -90,7 +90,7 @@ class StatementDecodeModel(SkeletonDecodeModel):
       assert False, "Wrong token_embedder_mode"
   
   def create_in_use_tensors_meta(self):
-    result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("f_stmt_cell", tf.TensorShape([1, num_units])), ("f_stmt_h", tf.TensorShape([1, num_units]))]
+    result = super(StatementDecodeModel, self).create_in_use_tensors_meta() + [("loop_forward_cells", tf.TensorShape([None, num_units])), ("loop_forward_hs", tf.TensorShape([None, num_units])), ("loop_backward_cells", tf.TensorShape([None, num_units])), ("loop_backward_hs", tf.TensorShape([None, num_units])), ("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units])), ("f_stmt_cell", tf.TensorShape([1, num_units])), ("f_stmt_h", tf.TensorShape([1, num_units]))]
     return result
   
   def set_up_field_when_calling(self, one_example, training):
