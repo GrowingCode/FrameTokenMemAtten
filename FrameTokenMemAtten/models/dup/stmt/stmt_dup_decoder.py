@@ -19,6 +19,8 @@ class StatementDupModel(StatementDecodeModel):
   def __init__(self, type_content_data):
     super(StatementDupModel, self).__init__(type_content_data)
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
+    self.dup_skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(155, 572, [1, 2, num_units]))
+    self.dup_skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(152, 572, [1, 2, num_units]))
     if atom_decode_mode == token_decode:
       self.one_dup_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(252, 226, [number_of_tokens, num_units]))
       self.dup_token_embedder = TokenAtomEmbed(self.type_content_data, self.one_dup_hot_token_embedding)
@@ -39,9 +41,8 @@ class StatementDupModel(StatementDecodeModel):
     self.token_info_tensor = one_example[0]
     self.token_info_start_tensor = one_example[1]
     self.token_info_end_tensor = one_example[2]
-    self.token_info_struct_end_tensor = one_example[3]
-    self.token_base_model_accuracy = one_example[4]
-    self.token_base_model_mrr = one_example[5]
+    self.token_base_model_accuracy = one_example[3]
+    self.token_base_model_mrr = one_example[4]
     self.training = training
     
   def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):

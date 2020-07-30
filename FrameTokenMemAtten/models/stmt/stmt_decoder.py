@@ -26,6 +26,9 @@ class StatementDecodeModel(BasicDecodeModel):
   def __init__(self, type_content_data):
     super(StatementDecodeModel, self).__init__(type_content_data)
     
+    self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [1, 2, num_units]))
+    self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [1, 2, num_units]))
+    
     if compute_token_memory:
       self.mem_nn = NTMOneDirection(500)
       self.forward_token_lstm = YLSTMCell(3)

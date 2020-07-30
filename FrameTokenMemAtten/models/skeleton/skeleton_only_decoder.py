@@ -73,31 +73,31 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     stmt_struct_end = self.token_info_struct_end_tensor[i]
      
     
-      stmt_start_offset = 1
-      ''' handle skeleton '''
-      skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
-      skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
-      skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
-      skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
-       
-      cell = stmt_metrics[self.metrics_index["token_cell"]]
-      h = stmt_metrics[self.metrics_index["token_h"]]
-      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
-       
-      stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
-       
-      stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
-      stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
-      
-      skt_embed = self.skeleton_embedder.compute_h(skt_id)
-      _, (next_cell, next_h) = self.skeleton_lstm_cell(skt_embed, (cell, h))
-      stmt_metrics[self.metrics_index["token_cell"]] = next_cell
-      stmt_metrics[self.metrics_index["token_h"]] = next_h
+    stmt_start_offset = 1
+    ''' handle skeleton '''
+    skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
+    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
+    skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
+    skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
+     
+    cell = stmt_metrics[self.metrics_index["token_cell"]]
+    h = stmt_metrics[self.metrics_index["token_h"]]
+    o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
+     
+    stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
+     
+    stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
+    
+    skt_embed = self.skeleton_embedder.compute_h(skt_id)
+    _, (next_cell, next_h) = self.skeleton_lstm_cell(skt_embed, (cell, h))
+    stmt_metrics[self.metrics_index["token_cell"]] = next_cell
+    stmt_metrics[self.metrics_index["token_h"]] = next_h
       
 #       if use_dup_model:
 #         dup_cell = stmt_metrics[self.metrics_index["dup_token_cell"]]
