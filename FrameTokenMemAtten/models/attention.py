@@ -22,10 +22,10 @@ class YAttention():
   def compute_attention_logits(self, atten_hs, h):
     if attention_algorithm == v_attention:
       atten_size = tf.shape(atten_hs)[0]
-      ons = tf.ones([atten_size], float_type)
+      ons = tf.ones([1, atten_size], float_type)
       logits1 = tf.matmul(tf.matmul(self.v, self.w_v), atten_hs, transpose_b=True)
       logits1 = tf.squeeze(logits1, axis=0)
-      logits2 = tf.matmul(self.v, tf.matmul(tf.matmul(self.w_h, h, transpose_b=True), [ons]))
+      logits2 = tf.matmul(self.v, tf.matmul(tf.matmul(self.w_h, h, transpose_b=True), ons))
       logits2 = tf.squeeze(logits2, axis=0)
       logits = logits1 + logits2
     elif attention_algorithm == stand_attention:
