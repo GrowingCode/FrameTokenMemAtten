@@ -94,7 +94,7 @@ dup_classify_mode = dup_var_classify
 use_dup_model = 0
 use_syntax_to_decide_rep = 0
 ''' dup share parameters '''
-dup_share_parameters = 0
+dup_share_parameters = 1
 ''' is_dup_mode '''
 max_repetition_mode = 0
 attention_repetition_mode = 1
