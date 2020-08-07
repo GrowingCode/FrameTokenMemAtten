@@ -67,18 +67,19 @@ class SkeletonDupModel(StatementDupModel):
     self.token_info_tensor = one_example[0]
     self.token_info_start_tensor = one_example[1]
     self.token_info_end_tensor = one_example[2]
-    self.token_info_struct_end_tensor = one_example[3]
-    self.token_base_model_accuracy = one_example[4]
-    self.token_base_model_mrr = one_example[5]
+#     self.token_info_struct_end_tensor = one_example[3]
+    self.token_base_model_accuracy = one_example[3]
+    self.token_base_model_mrr = one_example[4]
     self.training = training
   
   def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
      
+    stmt_start = self.token_info_start_tensor[i]
     stmt_end = self.token_info_end_tensor[i]
-    stmt_struct_end = self.token_info_struct_end_tensor[i]
+#     stmt_struct_end = self.token_info_struct_end_tensor[i]
     
-    stmt_metrics = self.skt_only_dup(stmt_metrics, self.token_info_tensor, self.token_info_start_tensor, self.token_info_struct_end_tensor, self.token_base_model_accuracy, self.token_base_model_mrr)
+    stmt_metrics = self.skt_only_dup(stmt_metrics, self.token_info_tensor, stmt_start, self.token_base_model_accuracy, self.token_base_model_mrr)
     
 #     stmt_start_offset = 0
 #     if self.treat_first_element_as_skeleton:
@@ -98,7 +99,7 @@ class SkeletonDupModel(StatementDupModel):
     '''
     this step ignores the statement with no type content tokens (only with skeleton token). 
     '''
-    r_stmt_start = stmt_struct_end + 1
+    r_stmt_start = stmt_start + 1
     itearate_tokens_continue = tf.cast(stmt_end >= r_stmt_start, int_type)
     f_res = tf.while_loop(self.itearate_tokens_cond, self.itearate_tokens_body, [tf.constant(0, int_type), itearate_tokens_continue, r_stmt_start, stmt_end, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = f_res[4:]

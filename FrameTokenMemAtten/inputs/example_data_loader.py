@@ -39,12 +39,12 @@ def build_skeleton_feed_dict(mode):
     i = i + 1
     stmt_skeleton_token_info_end = np.array([int(id_str) for id_str in strs[i].split()])
     i = i + 1
-    stmt_skeleton_token_struct_info_end = np.array([int(id_str) for id_str in strs[i].split()])
-    i = i + 1
+#     stmt_skeleton_token_struct_info_end = np.array([int(id_str) for id_str in strs[i].split()])
+#     i = i + 1
     
     assert i == i_len
     
-    examples.append((stmt_skeleton_token_info, stmt_skeleton_token_info_start, stmt_skeleton_token_info_end, stmt_skeleton_token_struct_info_end))
+    examples.append((stmt_skeleton_token_info, stmt_skeleton_token_info_start, stmt_skeleton_token_info_end))#, stmt_skeleton_token_struct_info_end
   
   return examples
 
