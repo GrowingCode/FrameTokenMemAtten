@@ -1,14 +1,6 @@
-from inputs.atom_embeddings import BiLSTMEmbed, \
-  TokenAtomEmbed, SwordAtomEmbed, SkeletonAtomEmbed
-from metas.hyper_settings import num_units, compute_token_memory, \
-  atom_decode_mode, token_decode, sword_decode, compose_tokens_of_a_statement, \
-  token_embedder_mode, swords_compose_mode, token_only_mode, \
-  decode_attention_way, decode_no_attention, compose_one_way_lstm, compose_mode,\
-  compose_bi_way_lstm, compose_half_one_way_lstm, compose_one_way_lstm_mode,\
-  one_way_stand_compose, one_way_two_way_compose, one_way_three_way_compose,\
-  print_accurate_of_each_example
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, SkeletonPEHitNum,\
+  SkeletonEachHitNum
 from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
 from models.embed_merger import EmbedMerger
@@ -25,28 +17,31 @@ from models.token_sword_decode import TokenDecoder
 
 class SkeletonOnlyDecodeModel(BasicDecodeModel):
   
-  def __init__(self, type_content_data):
+  def __init__(self, type_content_data, compute_noavg = True):
     super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
+    self.compute_noavg = compute_noavg
     
     assert False
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
-    self.skeleton_forward_cell_h = tf.Variable(random_uniform_variable_initializer(255, 572, [number_of_skeletons, 2, num_units]))
-    self.skeleton_backward_cell_h = tf.Variable(random_uniform_variable_initializer(252, 572, [number_of_skeletons, 2, num_units]))
-     
+    pe_number_of_skeletons = self.type_content_data[all_token_summary][SkeletonPEHitNum]
+    each_number_of_skeletons = self.type_content_data[all_token_summary][SkeletonEachHitNum]
+    
     self.skeleton_lstm_cell = YLSTMCell(1)
-    self.skeleton_dup_lstm_cell = YLSTMCell(2)
+    
     self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [number_of_skeletons, num_units]))
     self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding)
     self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
+    
     self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
     self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
+    
     
   def set_up_field_when_calling(self, one_example, training):
     self.token_info_tensor = one_example[0]
     self.token_info_start_tensor = one_example[1]
     self.token_info_end_tensor = one_example[2]
-    self.token_info_struct_end_tensor = one_example[3]
+#     self.token_info_struct_end_tensor = one_example[3]
     self.training = training
     
   def __call__(self, one_example, training = True, ini_metrics = None):
@@ -70,10 +65,10 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
      
     stmt_start = self.token_info_start_tensor[i]
     stmt_end = self.token_info_end_tensor[i]
-    stmt_struct_end = self.token_info_struct_end_tensor[i]
+#     stmt_struct_end = self.token_info_struct_end_tensor[i]
      
     
-    stmt_start_offset = 1
+#     stmt_start_offset = 1
     ''' handle skeleton '''
     skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
     skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
@@ -110,7 +105,7 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     '''
     this step ignores the statement with no type content tokens (only with skeleton token). 
     '''
-    r_stmt_start = stmt_struct_end + 1
+    r_stmt_start = stmt_start + 1
     itearate_tokens_continue = tf.cast(stmt_end >= r_stmt_start, int_type)
     f_res = tf.while_loop(self.itearate_tokens_cond, self.itearate_tokens_body, [tf.constant(0, int_type), itearate_tokens_continue, r_stmt_start, stmt_end, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = f_res[4:]

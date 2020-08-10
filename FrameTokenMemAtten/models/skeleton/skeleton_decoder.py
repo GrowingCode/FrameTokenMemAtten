@@ -20,15 +20,10 @@ class SkeletonDecodeModel(StatementDecodeModel):
 #     self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
 #     self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
     self.skt_only = SkeletonOnlyDecodeModel(type_content_data)
-    
-    
-  def set_up_field_when_calling(self, one_example, training):
-    self.token_info_tensor = one_example[0]
-    self.token_info_start_tensor = one_example[1]
-    self.token_info_end_tensor = one_example[2]
-#     self.token_info_struct_end_tensor = one_example[3]
-    self.training = training
-    
+  
+  def create_in_use_tensors_meta(self):
+    result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("skt_e_int_noavg", tf.TensorShape(None)), ("skt_pe_int_noavg", tf.TensorShape(None))]
+    return result
   
   def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)

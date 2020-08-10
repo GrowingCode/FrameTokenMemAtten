@@ -78,7 +78,7 @@ class StatementDecodeModel(BasicDecodeModel):
       self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
       self.sword_lstm = YLSTMCell(12)
       r_token_embedder_mode = swords_compose_mode
-       
+      
     else:
       assert False, "Wrong atom_decode_mode"
        

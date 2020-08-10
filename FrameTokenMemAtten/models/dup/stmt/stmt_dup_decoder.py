@@ -36,6 +36,10 @@ class StatementDupModel(StatementDecodeModel):
       self.dup_token_decoder = DupTokenDecoder(type_content_data, self.metrics_index, self.dup_token_pointer) 
     else:
       assert False, "Wrong atom_decode_mode"
+    
+  def create_in_use_tensors_meta(self):
+    result = super(StatementDupModel, self).create_in_use_tensors_meta() + [("dup_loop_forward_cells", tf.TensorShape([None, num_units])), ("dup_loop_forward_hs", tf.TensorShape([None, num_units])), ("dup_loop_backward_cells", tf.TensorShape([None, num_units])), ("dup_loop_backward_hs", tf.TensorShape([None, num_units]))]
+    return result
   
   def set_up_field_when_calling(self, one_example, training):
     self.token_info_tensor = one_example[0]

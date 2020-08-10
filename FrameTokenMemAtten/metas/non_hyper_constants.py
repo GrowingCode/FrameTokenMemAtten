@@ -19,6 +19,8 @@ all_token_summary = "all_token_summary"
 
 SkeletonNum = "SkeletonNum"
 SkeletonHitNum = "SkeletonHitNum"
+SkeletonPEHitNum = "SkeletonPEHitNum"
+SkeletonEachHitNum = "SkeletonEachHitNum"
 TokenNum = "TokenNum"
 TokenHitNum = "TokenHitNum"
 SwordNum = "SwordNum"
