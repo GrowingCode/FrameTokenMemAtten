@@ -50,6 +50,11 @@ linear_dup_mode = 4
 skeleton_dup_mode = 5
 statement_dup_mode = 6
 model_run_mode = skeleton_decode_mode
+''' skeleton decode details '''
+skeleton_as_one = 0
+skeleton_as_pair_encoded = 1
+skeleton_as_each = 2
+skeleton_decode_way = skeleton_as_one;
 ''' tree decode details '''
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0

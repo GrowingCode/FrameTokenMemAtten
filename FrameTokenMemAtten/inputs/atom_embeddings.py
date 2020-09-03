@@ -33,11 +33,12 @@ class AtomEmbed():
 
 class SkeletonAtomEmbed(AtomEmbed):
   
-  def __init__(self, type_content_data, vocab_embeddings):
+  def __init__(self, type_content_data, vocab_embeddings, skeleton_hit_num):
     super(SkeletonAtomEmbed, self).__init__(type_content_data, vocab_embeddings)
+    self.skeleton_hit_num = skeleton_hit_num
   
   def compute_h(self, token_en):
-    return self.compute_h_util(token_en, self.type_content_data[all_token_summary][SkeletonHitNum])
+    return self.compute_h_util(token_en, self.skeleton_hit_num)
 
 
 class TokenAtomEmbed(AtomEmbed):

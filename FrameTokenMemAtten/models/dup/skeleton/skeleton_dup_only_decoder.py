@@ -1,51 +1,36 @@
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum,\
+  int_type, SkeletonHitNum, SwordHitNum, TokenHitNum, UNK_en, SkeletonPEHitNum,\
   SkeletonEachHitNum
+from models.attention import YAttention
 from models.basic_decoder import BasicDecodeModel
+from models.embed_merger import EmbedMerger
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, Y2DirectLSTMCell, Y3DirectLSTMCell
+from models.mem import NTMOneDirection
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
-from models.lstm_procedure import one_lstm_step
+from utils.tensor_concat import concat_in_fixed_length_two_dimension
+from models.lstm_procedure import one_lstm_step, backward_varied_lstm_steps
+from models.token_sword_decode import TokenDecoder
 from metas.hyper_settings import skeleton_decode_way, skeleton_as_one,\
-  skeleton_as_pair_encoded, skeleton_as_each, num_units, atom_decode_mode,\
-  token_decode
+  skeleton_as_pair_encoded, skeleton_as_each, num_units
 from inputs.atom_embeddings import SkeletonAtomEmbed
+from models.skeleton.skeleton_only_decoder import SkeletonOnlyDecodeModel
 
 
-class SkeletonOnlyDecodeModel(BasicDecodeModel):
+class SkeletonOnlyDecodeModel(SkeletonOnlyDecodeModel):
   
   def __init__(self, type_content_data, compute_noavg = True):
     super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
-    self.compute_noavg = compute_noavg
-    
-    assert False
-    
-    number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
-    pe_number_of_skeletons = self.type_content_data[all_token_summary][SkeletonPEHitNum]
-    each_number_of_skeletons = self.type_content_data[all_token_summary][SkeletonEachHitNum]
-    
-    if skeleton_decode_way == skeleton_as_one:
-      vocab_num = number_of_skeletons
-    elif skeleton_decode_way == skeleton_as_pair_encoded:
-      vocab_num = pe_number_of_skeletons
-    elif skeleton_decode_way == skeleton_as_each:
-      vocab_num = each_number_of_skeletons
-    else:
-      assert False, "Unrecognized skeleton_decode_way!"
-    self.vocab_num = vocab_num
-    
-    self.initialize_parameters();
     
   def initialize_parameters(self):
     
-    self.skeleton_lstm_cell = YLSTMCell(1)
+    self.dup_skeleton_lstm_cell = YLSTMCell(1)
     
-    self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [self.vocab_num, num_units]))
-    self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding, self.vocab_num)
-    self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [self.vocab_num, num_units]))
-    
+    self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [self.vocab_num, num_units]))
+    self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding, self.vocab_num)
+  
   def set_up_field_when_calling(self, one_example, training):
     self.token_info_tensor = one_example[0]
     self.token_info_start_tensor = one_example[1]
@@ -75,13 +60,15 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     stmt_start = self.token_info_start_tensor[i]
     stmt_end = self.token_info_end_tensor[i]
 #     stmt_struct_end = self.token_info_struct_end_tensor[i]
+     
+    
 #     stmt_start_offset = 1
     ''' handle skeleton '''
     skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
     skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
     skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
-    
+     
     cell = stmt_metrics[self.metrics_index["token_cell"]]
     h = stmt_metrics[self.metrics_index["token_h"]]
     o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
