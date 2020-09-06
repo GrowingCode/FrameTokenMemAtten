@@ -1,12 +1,11 @@
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum,\
-  SkeletonEachHitNum
+  SkeletonEachHitNum, all_skt_one_to_pe, all_skt_one_to_each
 from models.basic_decoder import BasicDecodeModel
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from models.lstm import YLSTMCell
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
-from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.lstm_procedure import one_lstm_step
 from metas.hyper_settings import skeleton_decode_way, skeleton_as_one,\
   skeleton_as_pair_encoded, skeleton_as_each, num_units, atom_decode_mode,\
@@ -46,18 +45,18 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding, self.vocab_num)
     self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [self.vocab_num, num_units]))
     
-  def set_up_field_when_calling(self, one_example, training):
-    self.token_info_tensor = one_example[0]
-    self.token_info_start_tensor = one_example[1]
-    self.token_info_end_tensor = one_example[2]
-#     self.token_info_struct_end_tensor = one_example[3]
+  def __call__(self, stmt_metrics, skt_id, training = True):
+    
     self.training = training
     
-  def __call__(self, one_example, training = True, ini_metrics = None):
-    self.set_up_field_when_calling(one_example, training);
-    if ini_metrics == None:
-      ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
-    f_res = tf.while_loop(self.stmt_iterate_cond, self.stmt_iterate_body, [0, tf.shape(self.token_info_start_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
+    if skeleton_decode_way == skeleton_as_one:
+      self.skt_info = [skt_id]
+    elif skeleton_decode_way == skeleton_as_pair_encoded:
+      self.skt_info = self.type_content_data[all_skt_one_to_pe]
+    elif skeleton_decode_way == skeleton_as_each:
+      self.skt_info = self.type_content_data[all_skt_one_to_each]
+    
+    f_res = tf.while_loop(self.skt_iterate_cond, self.skt_iterate_body, [0, tf.shape(self.skt_info)[-1], *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
 #     f_res = list(post_process_decoder_output(f_res, self.metrics_index))
 #     if print_accurate_of_each_example:
@@ -78,6 +77,9 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
 #     stmt_start_offset = 1
     ''' handle skeleton '''
     skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
+    
+    
+    
     skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
     skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]

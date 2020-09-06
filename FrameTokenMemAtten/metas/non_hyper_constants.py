@@ -5,6 +5,7 @@ import os
 
 home_dir = os.path.expanduser('~')
 data_dir = home_dir + "/" + "AST_Tensors"
+meta_dir = home_dir + "/" + "AST_Metas"
 
 bool_type = tf.bool
 float_type = tf.float32
@@ -14,8 +15,11 @@ bp_bool_type = np.bool
 np_float_type = np.float32
 np_int_type = np.int32
 
+meta_of_ast2tensor = "meta_of_ast2tensor"
 all_token_summary = "all_token_summary"
 # all_skeleton_id = "all_skeleton_id"
+
+GenerateSkeletonToken = "GenerateSkeletonToken"
 
 SkeletonNum = "SkeletonNum"
 SkeletonHitNum = "SkeletonHitNum"
@@ -43,6 +47,8 @@ all_token_each_char_sequence_end = "all_token_each_char_sequence_end"
 all_token_grammar_ids = "all_token_grammar_ids"
 all_token_grammar_start = "all_token_grammar_start"
 all_token_grammar_end = "all_token_grammar_end"
+all_skt_one_to_each = "all_skt_one_to_each"
+all_skt_one_to_pe = "all_skt_one_to_pe"
 
 model_storage_parent_dir = 'zoot'
 model_storage_dir = "zoot_run_info_record"
