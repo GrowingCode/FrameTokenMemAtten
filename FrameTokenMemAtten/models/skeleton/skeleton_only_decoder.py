@@ -1,6 +1,7 @@
 from inputs.atom_embeddings import SkeletonAtomEmbed
 from metas.hyper_settings import skeleton_decode_way, skeleton_as_one, \
-  skeleton_as_pair_encoded, skeleton_as_each, num_units
+  skeleton_as_pair_encoded, skeleton_as_each, num_units,\
+  skeleton_multi_decode_num, skeleton_multi_decode_mode_on
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum, \
   SkeletonEachHitNum, all_skt_one_to_pe_base, all_skt_one_to_pe_start, \
@@ -45,6 +46,9 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     self.one_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(258, 578, [self.vocab_num, num_units]))
     self.skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_hot_skeleton_embedding, self.vocab_num)
     self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [self.vocab_num, num_units]))
+    
+    if skeleton_multi_decode_mode_on:
+      self.skeleton_multi_decode_transfer = tf.Variable(random_uniform_variable_initializer(527, 567, [skeleton_multi_decode_num, num_units, num_units]))
     
   def __call__(self, stmt_metrics, skt_id, training = True):
     
@@ -108,7 +112,47 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     
     return (i + 1, i_len, *stmt_metrics)
   
+  def skt_multi_decode(self, *stmt_metrics_tuple):
+    
+    stmt_metrics = list(stmt_metrics_tuple)
+    cell = stmt_metrics[self.metrics_index["token_cell"]]
+    h = stmt_metrics[self.metrics_index["token_h"]]
+    
+    i = 0
+    i_len = tf.minimum(tf.shape(self.skt_info)[-1], skeleton_multi_decode_num)
+    
+    _, _, _, stmt_metrics = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), *self.metrics_shape], parallel_iterations=1)
+    
+    
+    pass
   
+  def skt_multi_cond(self, i, i_len, *_):
+    return tf.less(i, i_len)
+  
+  def skt_multi_body(self, i, i_len, h, *stmt_metrics_tuple):
+    stmt_metrics = list(stmt_metrics_tuple)
+    transfer_mat = self.skeleton_multi_decode_transfer[i]
+    t_h = tf.matmul(h, transfer_mat)
+    
+    skt_id = self.skt_info[i]
+    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
+    skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
+    skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
+    
+    o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
+    
+    stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
+    
+    stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
+    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
+    
+    
+    return i+1, i_len, stmt_metrics
   
   
   
