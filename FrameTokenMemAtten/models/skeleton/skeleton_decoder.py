@@ -21,9 +21,9 @@ class SkeletonDecodeModel(StatementDecodeModel):
 #     self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
     self.skt_only = SkeletonOnlyDecodeModel(type_content_data)
   
-  def create_in_use_tensors_meta(self):
-    result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("skt_e_int_noavg", tf.TensorShape(None)), ("skt_pe_int_noavg", tf.TensorShape(None))]
-    return result
+#   def create_in_use_tensors_meta(self):
+#     result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("skt_e_int_noavg", tf.TensorShape(None)), ("skt_pe_int_noavg", tf.TensorShape(None))]
+#     return result
   
   def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)

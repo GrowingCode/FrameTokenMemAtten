@@ -1,19 +1,20 @@
+from inputs.atom_embeddings import SkeletonAtomEmbed
+from metas.hyper_settings import skeleton_decode_way, skeleton_as_one, \
+  skeleton_as_pair_encoded, skeleton_as_each, num_units
 from metas.non_hyper_constants import float_type, all_token_summary, \
-  int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum,\
-  SkeletonEachHitNum, all_skt_one_to_pe, all_skt_one_to_each
-from models.basic_decoder import BasicDecodeModel
+  int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum, \
+  SkeletonEachHitNum, all_skt_one_to_pe_base, all_skt_one_to_pe_start, \
+  all_skt_one_to_pe_end, all_skt_one_to_each_base, all_skt_one_to_each_start, \
+  all_skt_one_to_each_end
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
 from models.lstm import YLSTMCell
+from models.stmt.stmt_decoder import StatementDecodeModel
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
-from models.lstm_procedure import one_lstm_step
-from metas.hyper_settings import skeleton_decode_way, skeleton_as_one,\
-  skeleton_as_pair_encoded, skeleton_as_each, num_units, atom_decode_mode,\
-  token_decode
-from inputs.atom_embeddings import SkeletonAtomEmbed
+from utils.tensor_slice import extract_subsequence_with_start_end_info
 
 
-class SkeletonOnlyDecodeModel(BasicDecodeModel):
+class SkeletonOnlyDecodeModel(StatementDecodeModel):
   
   def __init__(self, type_content_data, compute_noavg = True):
     super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
@@ -50,11 +51,17 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     self.training = training
     
     if skeleton_decode_way == skeleton_as_one:
-      self.skt_info = [skt_id]
+      self.skt_info = tf.convert_to_tensor([skt_id])
     elif skeleton_decode_way == skeleton_as_pair_encoded:
-      self.skt_info = self.type_content_data[all_skt_one_to_pe]
+      ope_base = self.type_content_data[all_skt_one_to_pe_base]
+      ope_start = self.type_content_data[all_skt_one_to_pe_start]
+      ope_end = self.type_content_data[all_skt_one_to_pe_end]
+      self.skt_info = extract_subsequence_with_start_end_info(ope_base, ope_start[skt_id], ope_end[skt_id])
     elif skeleton_decode_way == skeleton_as_each:
-      self.skt_info = self.type_content_data[all_skt_one_to_each]
+      oe_base = self.type_content_data[all_skt_one_to_each_base]
+      oe_start = self.type_content_data[all_skt_one_to_each_start]
+      oe_end = self.type_content_data[all_skt_one_to_each_end]
+      self.skt_info = extract_subsequence_with_start_end_info(oe_base, oe_start[skt_id], oe_end[skt_id])
     
     f_res = tf.while_loop(self.skt_iterate_cond, self.skt_iterate_body, [0, tf.shape(self.skt_info)[-1], *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     f_res = list(f_res[2:2+len(self.statistical_metrics_meta)])
@@ -65,20 +72,16 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
 #         f_res[self.metrics_index["all_count"]] += 0
     return f_res
   
-  def stmt_iterate_cond(self, i, i_len, *_):
+  def skt_iterate_cond(self, i, i_len, *_):
     return tf.less(i, i_len)
   
-  def stmt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
+  def skt_iterate_body(self, i, i_len, *stmt_metrics_tuple):
     stmt_metrics = list(stmt_metrics_tuple)
-     
-    stmt_start = self.token_info_start_tensor[i]
-    stmt_end = self.token_info_end_tensor[i]
+    
 #     stmt_struct_end = self.token_info_struct_end_tensor[i]
 #     stmt_start_offset = 1
     ''' handle skeleton '''
-    skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base
-    
-    
+    skt_id = self.skt_info[i]# - skeleton_base
     
     skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
@@ -102,45 +105,15 @@ class SkeletonOnlyDecodeModel(BasicDecodeModel):
     _, (next_cell, next_h) = self.skeleton_lstm_cell(skt_embed, (cell, h))
     stmt_metrics[self.metrics_index["token_cell"]] = next_cell
     stmt_metrics[self.metrics_index["token_h"]] = next_h
-      
-#       if use_dup_model:
-#         dup_cell = stmt_metrics[self.metrics_index["dup_token_cell"]]
-#         dup_h = stmt_metrics[self.metrics_index["dup_token_h"]]
-#         dup_skt_embed = self.dup_skeleton_embedder.compute_h(skt_id)
-#         _, (next_dup_cell, next_dup_h) = self.skeleton_dup_lstm_cell(dup_skt_embed, (dup_cell, dup_h))
-#         stmt_metrics[self.metrics_index["dup_token_cell"]] = next_dup_cell
-#         stmt_metrics[self.metrics_index["dup_token_h"]] = next_dup_h
     
-    '''
-    this step ignores the statement with no type content tokens (only with skeleton token). 
-    '''
-    r_stmt_start = stmt_start + 1
-    itearate_tokens_continue = tf.cast(stmt_end >= r_stmt_start, int_type)
-    f_res = tf.while_loop(self.itearate_tokens_cond, self.itearate_tokens_body, [tf.constant(0, int_type), itearate_tokens_continue, r_stmt_start, stmt_end, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
-    stmt_metrics = f_res[4:]
     return (i + 1, i_len, *stmt_metrics)
   
-  def skt_iterate_cond(self, i, i_len, *_):
-    return tf.less_equal(i, i_len)
   
-  def skt_iterate_body(self, i, i_len, ini_i, *stmt_metrics_tuple):
-    stmt_metrics = list(stmt_metrics_tuple)
-    oracle_type_content_en = self.token_info_tensor[0][i]
-#     conserved_memory_length = self.token_info_tensor[3][i]
-    if atom_decode_mode == token_decode:
-      stmt_metrics = self.token_decoder.decode_one_token(stmt_metrics, self.training, oracle_type_content_en)
-      stmt_metrics = one_lstm_step("", stmt_metrics, self.metrics_index, oracle_type_content_en, self.token_lstm, self.token_embedder)
-#       if use_dup_model:
-#         if compute_token_memory:
-#           stmt_metrics = one_lstm_step("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, self.dup_token_lstm, self.dup_token_embedder)
-#         else:
-#           stmt_metrics = one_lstm_step_and_update_memory("dup_", stmt_metrics, self.metrics_index, oracle_type_content_en, oracle_type_content_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder)
-#     elif atom_decode_mode == sword_decode:
-#       oracle_sword_en_sequence = sword_sequence_for_token(self.type_content_data, oracle_type_content_en)
-#       r_stmt_metrics_tuple = decode_swords_of_one_token(self.type_content_data, self.training, oracle_type_content_en, oracle_sword_en_sequence, self.metrics_index, self.metrics_shape, stmt_metrics, self.token_lstm, self.token_embedder, self.linear_sword_output_w, self.sword_embedder, self.sword_lstm)
-    else:
-      assert False
-    return (i + 1, i_len, ini_i, *stmt_metrics)
+  
+  
+  
+  
+  
 
 
 

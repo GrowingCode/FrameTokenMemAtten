@@ -1,15 +1,18 @@
 import json
+
+from metas.non_hyper_constants import all_token_summary, \
+  SkeletonNum, TokenNum, \
+  MaximumStringLength, all_token_char_sequences, \
+  all_token_each_char_sequence_start, all_token_each_char_sequence_end, \
+  all_token_each_subword_sequence_end, all_token_each_subword_sequence_start, \
+  all_token_subword_sequences, data_dir, SkeletonHitNum, TokenHitNum, SwordNum, \
+  SwordHitNum, CharNum, CharHitNum, all_subword_is_start_end, \
+  all_token_grammar_ids, all_token_grammar_start, all_token_grammar_end, \
+  meta_dir, meta_of_ast2tensor, \
+  GenerateSkeletonToken, all_skt_one_to_pe_end, all_skt_one_to_pe_start, \
+  all_skt_one_to_pe_base, all_skt_one_to_each_base, all_skt_one_to_each_start, \
+  all_skt_one_to_each_end
 import tensorflow as tf
-from metas.non_hyper_constants import all_token_summary,\
-  SkeletonNum, TokenNum,\
-  MaximumStringLength, all_token_char_sequences,\
-  all_token_each_char_sequence_start, all_token_each_char_sequence_end,\
-  all_token_each_subword_sequence_end, all_token_each_subword_sequence_start,\
-  all_token_subword_sequences, data_dir, SkeletonHitNum, TokenHitNum, SwordNum,\
-  SwordHitNum, CharNum, CharHitNum, all_subword_is_start_end,\
-  all_token_grammar_ids, all_token_grammar_start, all_token_grammar_end,\
-  all_skt_one_to_each, all_skt_one_to_pe, meta_dir, meta_of_ast2tensor,\
-  GenerateSkeletonToken
 
 
 def load_type_content_data(type_content_data):
@@ -97,15 +100,19 @@ def load_type_content_data(type_content_data):
   type_content_data[all_token_grammar_end] = tf.convert_to_tensor(all_token_grammar_end_ts)
   
   if type_content_data[meta_of_ast2tensor][GenerateSkeletonToken]:
-    all_skt_one_to_each_file = open(data_dir + "/All_map_skt_one_to_each.json", 'r', encoding='UTF-8')
+    all_skt_one_to_each_file = open(data_dir + "/All_skt_one_to_each.json", 'r', encoding='UTF-8')
     all_skt_one_to_each_ts = json.load(all_skt_one_to_each_file)
     all_skt_one_to_each_file.close()
-    type_content_data[all_skt_one_to_each] = tf.convert_to_tensor(all_skt_one_to_each_ts)
+    type_content_data[all_skt_one_to_each_base] = tf.convert_to_tensor(all_skt_one_to_each_ts[0])
+    type_content_data[all_skt_one_to_each_start] = tf.convert_to_tensor(all_skt_one_to_each_ts[1])
+    type_content_data[all_skt_one_to_each_end] = tf.convert_to_tensor(all_skt_one_to_each_ts[2])
     
-    all_skt_one_to_pe_file = open(data_dir + "/All_map_skt_one_to_pe.json", 'r', encoding='UTF-8')
+    all_skt_one_to_pe_file = open(data_dir + "/All_skt_one_to_pe.json", 'r', encoding='UTF-8')
     all_skt_one_to_pe_ts = json.load(all_skt_one_to_pe_file)
     all_skt_one_to_pe_file.close()
-    type_content_data[all_skt_one_to_pe] = tf.convert_to_tensor(all_skt_one_to_pe_ts)
+    type_content_data[all_skt_one_to_pe_base] = tf.convert_to_tensor(all_skt_one_to_pe_ts[0])
+    type_content_data[all_skt_one_to_pe_start] = tf.convert_to_tensor(all_skt_one_to_pe_ts[1])
+    type_content_data[all_skt_one_to_pe_end] = tf.convert_to_tensor(all_skt_one_to_pe_ts[2])
   
   
   

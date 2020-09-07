@@ -25,7 +25,7 @@ class BasicDecodeModel():
     self.contingent_parameters_for_idle = tf.Variable(random_uniform_variable_initializer(20, 50, [2, 1, num_units]))
     
   def create_extra_default_metrics_meta(self):
-    return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
+    return [("skeleton_loss", tf.TensorShape(())), ("skeleton_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_mrr", tf.TensorShape(())), ("skeleton_whole_accurate", tf.TensorShape([len(top_ks)])), ("skeleton_whole_mrr", tf.TensorShape(())), ("skeleton_count", tf.TensorShape(()))]
   
   def create_in_use_tensors_meta(self):
     result = [("token_cell", tf.TensorShape([1, num_units])), ("token_h", tf.TensorShape([1, num_units])), ("memory_en", tf.TensorShape([None])), ("memory_acc_cell", tf.TensorShape([None, num_units])), ("memory_acc_h", tf.TensorShape([None, num_units])), ("dup_token_cell", tf.TensorShape([1, num_units])), ("dup_token_h", tf.TensorShape([1, num_units])), ("dup_memory_en", tf.TensorShape([None])), ("dup_memory_acc_cell", tf.TensorShape([None, num_units])), ("dup_memory_acc_h", tf.TensorShape([None, num_units]))]
