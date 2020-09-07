@@ -77,6 +77,10 @@ def compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq):
   def compute_acc_body(i, i_len, each_acc, whole_acc):
     one_computed_en_seq = computed_en_seqs[i]
     eq = tf.cast(tf.equal(one_computed_en_seq, oracle_computed_en_seq), float_type)
+    eq_all_acc = tf.reduce_sum(eq)
+    eq_all_count = tf.cast(tf.shape(eq)[-1], float_type)
+    approx_right = eq_all_acc / eq_all_count
+    exact_right = tf.equal(eq_all_acc, eq_all_count)
     
     todo
     return i+1, i_len, each_acc, whole_acc
