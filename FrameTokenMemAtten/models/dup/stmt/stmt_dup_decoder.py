@@ -1,5 +1,5 @@
 from metas.hyper_settings import atom_decode_mode, token_decode,\
-  compute_token_memory, compute_memory_in_only_memory_mode, num_units,\
+  compute_token_memory, compute_memory_in_memory_mode, num_units,\
   only_memory_mode, token_memory_mode
 from models.lstm_procedure import one_lstm_step, one_lstm_step_and_update_memory
 import tensorflow as tf
@@ -27,7 +27,7 @@ class StatementDupModel(StatementDecodeModel):
       self.dup_token_lstm = YLSTMCell(9)
       self.dup_token_pointer = PointerNetwork(655)
       self.integrate_computer = None
-      if compute_memory_in_only_memory_mode:
+      if compute_memory_in_memory_mode:
         self.integrate_computer = Y2DirectLSTMCell(105)
       if compute_token_memory:
         self.dup_mem_nn = NTMOneDirection(800)

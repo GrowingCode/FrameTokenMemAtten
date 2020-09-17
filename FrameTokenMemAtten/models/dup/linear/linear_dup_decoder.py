@@ -1,14 +1,14 @@
-import tensorflow as tf
-from utils.model_tensors_metrics import create_empty_tensorflow_tensors
-from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
-from metas.hyper_settings import num_units, compute_memory_in_only_memory_mode
-from utils.initializer import random_uniform_variable_initializer
+from metas.hyper_settings import compute_memory_in_memory_mode, num_units
 from metas.non_hyper_constants import all_token_summary, TokenHitNum
+from models.basic_decoder import BasicDecodeModel
 from models.dup_pattern import PointerNetwork
 from models.lstm import YLSTMCell, Y2DirectLSTMCell
 from models.lstm_procedure import one_lstm_step_and_update_memory
 from models.token_sword_decode import DupTokenDecoder
+import tensorflow as tf
+from utils.initializer import random_uniform_variable_initializer
+from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 
 
 class LinearDupModel(BasicDecodeModel):
@@ -28,7 +28,7 @@ class LinearDupModel(BasicDecodeModel):
     self.dup_token_pointer = PointerNetwork(222)
     
     self.integrate_computer = None
-    if compute_memory_in_only_memory_mode:
+    if compute_memory_in_memory_mode:
       self.integrate_computer = Y2DirectLSTMCell(105)
     
     self.dup_token_decoder = DupTokenDecoder(self.type_content_data, self.metrics_index, self.dup_token_pointer)
