@@ -1,27 +1,29 @@
 from metas.hyper_settings import only_memory_mode, token_memory_mode,\
   concat_memory_mode, num_units,\
   no_memory_mode, abs_memory_size, abs_size_var_novar_all_concat_memory_mode,\
-  abs_size_concat_memory_mode, compute_memory_in_only_memory_mode
-from models.mem import update_one_variable, compute_integrated_memory
+  abs_size_concat_memory_mode, compute_memory_in_memory_mode
 import tensorflow as tf
 from metas.non_hyper_constants import int_type
+from models.mem import compute_only_memory, update_one_variable,\
+  compute_concat_memory
 
 
-def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_en, token_var, conserved_memory_length, token_lstm, token_embedder, integrate_computer=None):
+def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_en, token_var, token_var_relative, conserved_memory_length, token_lstm, token_embedder, integrate_computer=None):
+  
+  dup_acc_cells = token_metrics[metrics_index[prefix + "memory_acc_cell"]]
+  dup_acc_hs = token_metrics[metrics_index[prefix + "memory_acc_h"]]
+  dup_acc_ens = token_metrics[metrics_index[prefix + "memory_en"]]
+  
   dup_cell = token_metrics[metrics_index[prefix + "token_cell"]]
   dup_h = token_metrics[metrics_index[prefix + "token_h"]]
   
   if token_memory_mode == no_memory_mode:
     pass
   elif token_memory_mode == only_memory_mode:
-    dup_acc_cells = token_metrics[metrics_index[prefix + "memory_acc_cell"]]
-    dup_acc_hs = token_metrics[metrics_index[prefix + "memory_acc_h"]]
-    dup_acc_ens = token_metrics[metrics_index[prefix + "memory_en"]]
-    
     n_dup_cell, n_dup_h = dup_cell, dup_h
-    if compute_memory_in_only_memory_mode:
+    if compute_memory_in_memory_mode:
       assert integrate_computer != None
-      n_dup_cell, n_dup_h = compute_integrated_memory(integrate_computer, token_var, dup_cell, dup_h, dup_acc_cells, dup_acc_hs)
+      n_dup_cell, n_dup_h = compute_only_memory(integrate_computer, token_var, dup_cell, dup_h, dup_acc_cells, dup_acc_hs)
     
     token_metrics[metrics_index[prefix + "memory_en"]], token_metrics[metrics_index[prefix + "memory_acc_cell"]], token_metrics[metrics_index[prefix + "memory_acc_h"]] = update_one_variable(token_var, token_en, n_dup_cell, n_dup_h, dup_acc_ens, dup_acc_cells, dup_acc_hs)
   else:
@@ -38,13 +40,18 @@ def one_lstm_step_and_update_memory(prefix, token_metrics, metrics_index, token_
     concat_en = [token_en]
     concat_cell = dup_cell
     concat_h = dup_h
+    
+    if compute_memory_in_memory_mode:
+      assert integrate_computer != None
+      concat_cell, concat_h = compute_concat_memory(integrate_computer, token_var_relative, dup_cell, dup_h, dup_acc_cells, dup_acc_hs)
+    
     concat_en = tf.slice(concat_en, [1-to_concat], [to_concat])
     concat_cell = tf.slice(concat_cell, [1-to_concat, 0], [to_concat, num_units])
     concat_h = tf.slice(concat_h, [1-to_concat, 0], [to_concat, num_units])
     
-    token_metrics[metrics_index[prefix + "memory_en"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_en"]], concat_en], axis=0)
-    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_cell"]], concat_cell], axis=0)
-    token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.concat([token_metrics[metrics_index[prefix + "memory_acc_h"]], concat_h], axis=0)
+    token_metrics[metrics_index[prefix + "memory_en"]] = tf.concat([dup_acc_ens, concat_en], axis=0)
+    token_metrics[metrics_index[prefix + "memory_acc_cell"]] = tf.concat([dup_acc_cells, concat_cell], axis=0)
+    token_metrics[metrics_index[prefix + "memory_acc_h"]] = tf.concat([dup_acc_hs, concat_h], axis=0)
     
     curr_mem_len = tf.shape(token_metrics[metrics_index[prefix + "memory_en"]])[0]
     slice_start = curr_mem_len - r_memory_length

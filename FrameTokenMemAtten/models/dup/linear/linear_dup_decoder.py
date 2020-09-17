@@ -62,7 +62,7 @@ class LinearDupModel(BasicDecodeModel):
     r_stmt_metrics_tuple = self.dup_token_decoder.decode_one_token(stmt_metrics, self.training, token_en, token_var, token_var_relative, token_kind, base_model_accuracy, base_model_mrr)
     token_metrics = list(r_stmt_metrics_tuple)
     
-    token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder, self.integrate_computer)
+    token_metrics = one_lstm_step_and_update_memory("dup_", token_metrics, self.metrics_index, token_en, token_var, token_var_relative, conserved_memory_length, self.dup_token_lstm, self.dup_token_embedder, self.integrate_computer)
     
     return (i + 1, i_len, *token_metrics)
   

@@ -83,7 +83,7 @@ abs_size_concat_memory_mode = 3
 abs_size_var_novar_all_concat_memory_mode = 4
 token_memory_mode = no_memory_mode
 abs_memory_size = 25
-compute_memory_in_only_memory_mode = 0
+compute_memory_in_memory_mode = 0
 ''' take unseen as UNK '''
 take_unseen_as_UNK = 1
 ''' token_embedder_mode '''
@@ -333,8 +333,6 @@ if use_dup_model:
   assert token_memory_mode > no_memory_mode
 if compose_tokens_of_a_statement:
   assert model_run_mode == statement_decode_mode
-if compute_memory_in_only_memory_mode:
-  assert token_memory_mode == only_memory_mode
   
   
   
