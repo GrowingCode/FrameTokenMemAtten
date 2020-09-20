@@ -89,4 +89,34 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_ra
   return r_mrr, r_accurate, r_loss
 
 
+def compute_linear_accurate_with_top_k_prediction(oracle_type_content_en, logits):
+  mrr, accurate = compute_linear_accurate(oracle_type_content_en, logits)
+  log_probs = tf.nn.log_softmax(logits)
+  log_probs_r, indices_r = tf.nn.top_k(log_probs, top_ks[-1])
+  return log_probs_r, indices_r, mrr, accurate
+  
+
+def compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings(training, computed_embeddings, oracle_index_in_computed_embeddings, output):
+  '''
+  public class for computing loss and accurate
+  '''
+  logits = compute_logits_given_to_deocde_embed_with_computed_embeddings(computed_embeddings, output)
+  loss = linear_loss(oracle_index_in_computed_embeddings, logits)# desc_prefix, type_content_data, 
+  '''
+  the following two functions are to compute accurate
+  compute accuracy for type and content
+  '''
+  if training:
+    log_probs, ens, mrr, accurate = tf.zeros([top_ks[-1]], float_type)-10000000, tf.zeros([top_ks[-1]], int_type)-1, tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  else:
+    log_probs, ens, mrr, accurate = compute_linear_accurate_with_top_k_prediction(oracle_index_in_computed_embeddings, logits)
+  return log_probs, ens, mrr, accurate, loss
+
+
+
+
+
+
+
+
 

@@ -7,7 +7,8 @@ from metas.non_hyper_constants import float_type, all_token_summary, \
   SkeletonEachHitNum, all_skt_one_to_pe_base, all_skt_one_to_pe_start, \
   all_skt_one_to_pe_end, all_skt_one_to_each_base, all_skt_one_to_each_start, \
   all_skt_one_to_each_end
-from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings
+from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
+  compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings
 from models.lstm import YLSTMCell
 from models.stmt.stmt_decoder import StatementDecodeModel
 import tensorflow as tf
@@ -121,7 +122,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     i = 0
     i_len = tf.minimum(tf.shape(self.skt_info)[-1], skeleton_multi_decode_num)
     
-    _, _, _, stmt_metrics = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), *self.metrics_shape], parallel_iterations=1)
+    _, _, _, stmt_metrics = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), *self.metrics_shape], parallel_iterations=10)
     
     
     pass
@@ -139,7 +140,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
     skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
     
-    o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
+    o_log_probs_of_this_node, o_ens_of_this_node, o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, t_h)
     
     stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
     stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
