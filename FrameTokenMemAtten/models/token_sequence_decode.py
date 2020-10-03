@@ -1,7 +1,14 @@
 import tensorflow as tf
-from metas.non_hyper_constants import float_type, int_type
-from metas.hyper_settings import num_units, top_ks
+from metas.non_hyper_constants import float_type, int_type,\
+  all_skt_pe_to_each_end, all_skt_pe_to_each_start, all_skt_one_to_each_end,\
+  all_skt_one_to_each_start
+from metas.hyper_settings import num_units, top_ks, skeleton_as_one,\
+  skeleton_decode_way, skeleton_as_pair_encoded, skeleton_as_each,\
+  skeleton_accuracy_mode, skeleton_unit_each_accuracy,\
+  skeleton_unit_whole_accuracy
 from models.loss_accurate import compute_logits_given_to_deocde_embed_with_computed_embeddings
+from utils.cartesian_util import cartesian_add_one_dim_vector,\
+  cartesian_concat_two_dim_mats
 
 
 def compute_beam_sequences(linear_atom_output_w, atom_lstm, atom_embedder, begin_cell, begin_h, atom_length):
@@ -69,18 +76,42 @@ def compute_beam_sequences(linear_atom_output_w, atom_lstm, atom_embedder, begin
   return computed_ens
 
 
-def compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq):
+def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_computed_en_seq):
+  
+  if skeleton_decode_way == skeleton_as_one:
+    o_en_e_start = tf.gather(type_content_data[all_skt_one_to_each_start], [oracle_computed_en_seq])
+    o_en_e_end = tf.gather(type_content_data[all_skt_one_to_each_end], [oracle_computed_en_seq])
+    e_lens = o_en_e_end - o_en_e_start + 1
+  elif skeleton_decode_way == skeleton_as_pair_encoded:
+    o_en_e_start = tf.gather(type_content_data[all_skt_pe_to_each_start], [oracle_computed_en_seq])
+    o_en_e_end = tf.gather(type_content_data[all_skt_pe_to_each_end], [oracle_computed_en_seq])
+    e_lens = o_en_e_end - o_en_e_start + 1
+  elif skeleton_decode_way == skeleton_as_each:
+    e_lens = tf.ones([tf.shape(oracle_computed_en_seq)[-1]], int_type)
+  
+  e_lens = tf.cast(e_lens, float_type)
+  eq_all_lens = tf.reduce_sum(e_lens)
   
   def compute_acc_cond(i, i_len, *_):
     return i < i_len
   
   def compute_acc_body(i, i_len, epos_acc, whole_acc):
     one_computed_en_seq = computed_en_seqs[i]
-    eq = tf.cast(tf.equal(one_computed_en_seq, oracle_computed_en_seq), float_type)
-    eq_all_acc = tf.reduce_sum(eq)
-    eq_all_count = tf.cast(tf.shape(eq)[-1], float_type)
-    epos_right = eq_all_acc / eq_all_count
-    whole_right = tf.equal(eq_all_acc, eq_all_count)
+    tc = tf.zeros([tf.shape(oracle_computed_en_seq)[-1] - tf.shape(one_computed_en_seq)[-1]], int_type) - 1
+    r_one_computed_en_seq = tf.concat([one_computed_en_seq, tc], axis=0)
+    
+    eq = tf.cast(tf.equal(r_one_computed_en_seq, oracle_computed_en_seq), float_type)
+    eq_lens = eq * e_lens
+#     eq_all_acc = tf.reduce_sum(eq)
+#     eq_all_count = tf.cast(tf.shape(eq)[-1], float_type)
+    if skeleton_accuracy_mode == skeleton_unit_whole_accuracy:
+      epos_right = eq_lens / eq_all_lens
+      whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type)
+    elif skeleton_accuracy_mode == skeleton_unit_each_accuracy:
+      epos_right = eq_lens
+      whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type) * eq_all_lens
+    else:
+      assert False
     
     epos_r_acc = tf.maximum(epos_acc[-1], epos_right)
     whole_r_acc = tf.maximum(whole_acc[-1], whole_right)
@@ -105,7 +136,46 @@ def compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq):
     f_each_acc = tf.concat([f_each_acc, [each_acc[r_sel]]], axis=0)
     f_whole_acc = tf.concat([f_whole_acc, [whole_acc[r_sel]]], axis=0)
   
-  return f_each_acc, f_whole_acc
+  if skeleton_accuracy_mode == skeleton_unit_whole_accuracy:
+    f_count = tf.constant(1, int_type)
+  elif skeleton_accuracy_mode == skeleton_unit_each_accuracy:
+    f_count = eq_all_lens
+  else:
+    assert False
+  
+  return f_each_acc, f_whole_acc, f_count
+
+
+def dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens):
+  
+  def compute_ens_cond(i, i_len, *_):
+    return i < i_len
+  
+  def compute_ens_body(i, i_len, acc_log_probs, acc_ens):
+    o_prob = o_log_probs[i]
+    o_en = o_ens[i]
+    
+    fa_log_probs = cartesian_add_one_dim_vector(acc_log_probs, o_prob)
+    fa_ens = cartesian_concat_two_dim_mats(acc_ens, tf.expand_dims(o_en, axis=1))
+    
+    _, indices = tf.nn.top_k(fa_log_probs, top_ks[-1])
+    sorted_probs = fa_log_probs[indices]
+    sorted_ens = fa_ens[indices]
+    
+    return i+1, i_len, sorted_probs, sorted_ens 
+  
+  seq_len = tf.shape(o_log_probs)[0]
+  acc_log_probs = tf.zeros([0, top_ks[-1]], float_type)
+  acc_ens = tf.zeros([0, top_ks[-1]], int_type)
+  _, _, acc_log_probs, acc_ens = tf.while_loop(compute_ens_cond, compute_ens_body, [tf.constant(0, int_type), seq_len, acc_log_probs, acc_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
+  return acc_ens
+
+
+# def compute_accuracy_of_distinct_parallel_tokens(o_log_probs, o_ens, oracle_computed_en_seq):
+#   computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
+#   return compute_accuracy_of_sequences(computed_en_seqs, oracle_computed_en_seq)
+  
+
 
 
 

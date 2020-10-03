@@ -55,6 +55,9 @@ all_skt_one_to_each_end = "all_skt_one_to_each_end"
 all_skt_one_to_pe_base = "all_skt_one_to_pe_base"
 all_skt_one_to_pe_start = "all_skt_one_to_pe_start"
 all_skt_one_to_pe_end = "all_skt_one_to_pe_end"
+all_skt_pe_to_each_base = "all_skt_pe_to_each_base"
+all_skt_pe_to_each_start = "all_skt_pe_to_each_start"
+all_skt_pe_to_each_end = "all_skt_pe_to_each_end"
 
 model_storage_parent_dir = 'zoot'
 model_storage_dir = "zoot_run_info_record"
