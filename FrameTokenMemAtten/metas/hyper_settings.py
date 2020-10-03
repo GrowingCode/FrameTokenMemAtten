@@ -58,9 +58,9 @@ skeleton_decode_way = skeleton_as_one
 skeleton_multi_decode_num = 10
 skeleton_multi_decode_mode_on = 0
 ''' skeleton accuracy mode '''
-skeleton_unit_whole_accuracy = 0
-skeleton_unit_each_accuracy = 1
-skeleton_accuracy_mode = skeleton_unit_whole_accuracy
+skeleton_seq_accuracy_based_on_one = 0
+skeleton_seq_accuracy_based_on_each = 1
+skeleton_seq_accuracy_mode = skeleton_seq_accuracy_based_on_one
 ''' tree decode details '''
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0

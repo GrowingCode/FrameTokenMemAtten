@@ -4,8 +4,8 @@ from metas.non_hyper_constants import float_type, int_type,\
   all_skt_one_to_each_start
 from metas.hyper_settings import num_units, top_ks, skeleton_as_one,\
   skeleton_decode_way, skeleton_as_pair_encoded, skeleton_as_each,\
-  skeleton_accuracy_mode, skeleton_unit_each_accuracy,\
-  skeleton_unit_whole_accuracy
+  skeleton_seq_accuracy_mode, skeleton_seq_accuracy_based_on_each,\
+  skeleton_seq_accuracy_based_on_one
 from models.loss_accurate import compute_logits_given_to_deocde_embed_with_computed_embeddings
 from utils.cartesian_util import cartesian_add_one_dim_vector,\
   cartesian_concat_two_dim_mats
@@ -101,13 +101,13 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
     r_one_computed_en_seq = tf.concat([one_computed_en_seq, tc], axis=0)
     
     eq = tf.cast(tf.equal(r_one_computed_en_seq, oracle_computed_en_seq), float_type)
-    eq_lens = eq * e_lens
+    eq_lens = tf.reduce_sum(eq * e_lens)
 #     eq_all_acc = tf.reduce_sum(eq)
 #     eq_all_count = tf.cast(tf.shape(eq)[-1], float_type)
-    if skeleton_accuracy_mode == skeleton_unit_whole_accuracy:
+    if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one:
       epos_right = eq_lens / eq_all_lens
       whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type)
-    elif skeleton_accuracy_mode == skeleton_unit_each_accuracy:
+    elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each:
       epos_right = eq_lens
       whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type) * eq_all_lens
     else:
@@ -124,7 +124,7 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
   n = tf.shape(computed_en_seqs)[0]
   each_acc = tf.zeros([1], float_type)
   whole_acc = tf.zeros([1], float_type)
-  _, _, each_acc, whole_acc = tf.while_loop(compute_acc_cond, compute_acc_body, [0, n, each_acc, whole_acc])
+  _, _, each_acc, whole_acc = tf.while_loop(compute_acc_cond, compute_acc_body, [0, n, each_acc, whole_acc], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None]), tf.TensorShape([None])])
   
   f_each_acc = tf.zeros([0], float_type)
   f_whole_acc = tf.zeros([0], float_type)
@@ -136,9 +136,9 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
     f_each_acc = tf.concat([f_each_acc, [each_acc[r_sel]]], axis=0)
     f_whole_acc = tf.concat([f_whole_acc, [whole_acc[r_sel]]], axis=0)
   
-  if skeleton_accuracy_mode == skeleton_unit_whole_accuracy:
+  if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one:
     f_count = tf.constant(1, int_type)
-  elif skeleton_accuracy_mode == skeleton_unit_each_accuracy:
+  elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each:
     f_count = eq_all_lens
   else:
     assert False

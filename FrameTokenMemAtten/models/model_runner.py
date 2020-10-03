@@ -80,6 +80,11 @@ class ModelRunner():
     self.train_metrics = self.model(place_holders, training = True)
     ensure_tensor_array_to_tensor_list_in_metrics(self.train_metrics, self.model.metrics_meta, self.model.metrics_index)
 #     self.train_metrics[-1] = tf.constant(0, int_type)
+#     with tf.GradientTape() as tape:
+#       metrics = model(np_array[0], np_array[1], np_array[2], training = training)
+#       grads = tape.gradient(metrics[model.metrics_index["all_loss"]], model.trainable_variables)
+#       grads = clip_gradients(grads)
+#       self.optimizer.apply_gradients(zip(grads, model.trainable_variables))
     gvs = self.optimizer.compute_gradients(self.train_metrics[self.model.metrics_index["all_loss"]], tf.compat.v1.trainable_variables(), colocate_gradients_with_ops=True)
     final_grads = []
     for (gv, var) in gvs:

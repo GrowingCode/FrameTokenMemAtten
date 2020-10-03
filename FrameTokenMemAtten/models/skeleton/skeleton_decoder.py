@@ -32,7 +32,7 @@ class SkeletonDecodeModel(StatementDecodeModel):
     stmt_end = self.token_info_end_tensor[i]
 #     stmt_struct_end = self.token_info_struct_end_tensor[i]
     
-    stmt_metrics = self.skt_only(self.token_info_tensor[0][stmt_start], stmt_metrics, self.training)
+    stmt_metrics = self.skt_only(stmt_metrics, self.token_info_tensor[0][stmt_start], self.training)
 #       stmt_start_offset = 1
 #       ''' handle skeleton '''
 #       skt_id = self.token_info_tensor[0][stmt_start]# - skeleton_base

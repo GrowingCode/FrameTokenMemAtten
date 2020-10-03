@@ -57,7 +57,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     self.training = training
     
     if skeleton_decode_way == skeleton_as_one:
-      self.skt_info = tf.convert_to_tensor([skt_id])
+      self.skt_info = tf.convert_to_tensor([skt_id], int_type)
     elif skeleton_decode_way == skeleton_as_pair_encoded:
       ope_base = self.type_content_data[all_skt_one_to_pe_base]
       ope_start = self.type_content_data[all_skt_one_to_pe_start]
@@ -76,7 +76,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
         stmt_metrics = self.skt_beam_decode(stmt_metrics)
     
     stmt_metrics = tf.while_loop(self.skt_iterate_cond, self.skt_iterate_body, [0, tf.shape(self.skt_info)[-1], *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
-    stmt_metrics = list(stmt_metrics[2:2+len(self.statistical_metrics_meta)])
+    stmt_metrics = list(stmt_metrics[2:])
     
 #     f_res = list(post_process_decoder_output(f_res, self.metrics_index))
 #     if print_accurate_of_each_example:
@@ -129,12 +129,12 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
   def skt_beam_decode(self, stmt_metrics):    
     begin_cell = stmt_metrics[self.metrics_index["token_cell"]]
     begin_h = stmt_metrics[self.metrics_index["token_h"]]
-    computed_ens = compute_beam_sequences(self.linear_atom_output_w, self.skeleton_lstm_cell, self.skeleton_embedder, begin_cell, begin_h, tf.shape(self.skt_info)[-1])
+    computed_ens = compute_beam_sequences(self.linear_skeleton_output_w, self.skeleton_lstm_cell, self.skeleton_embedder, begin_cell, begin_h, tf.shape(self.skt_info)[-1])
     f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(self.type_content_data, computed_ens, self.skt_info)
     
-    stmt_metrics[self.metrics_index["sktacc_each"]] = stmt_metrics[self.metrics_index["sktacc_each"]] + f_each_acc
-    stmt_metrics[self.metrics_index["sktacc_whole"]] = stmt_metrics[self.metrics_index["sktacc_whole"]] + f_whole_acc
-    stmt_metrics[self.metrics_index["sktacc_count"]] = stmt_metrics[self.metrics_index["sktacc_whole"]] + f_count
+    stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] + f_each_acc
+    stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] + f_whole_acc
+    stmt_metrics[self.metrics_index["sktseq_count"]] = stmt_metrics[self.metrics_index["sktseq_count"]] + f_count
     
     return stmt_metrics
   
@@ -153,9 +153,9 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
     f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(self.type_content_data, computed_en_seqs, self.skt_info)
     
-    stmt_metrics[self.metrics_index["sktacc_each"]] = stmt_metrics[self.metrics_index["sktacc_each"]] + f_each_acc
-    stmt_metrics[self.metrics_index["sktacc_whole"]] = stmt_metrics[self.metrics_index["sktacc_whole"]] + f_whole_acc
-    stmt_metrics[self.metrics_index["sktacc_count"]] = stmt_metrics[self.metrics_index["sktacc_whole"]] + f_count
+    stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] + f_each_acc
+    stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] + f_whole_acc
+    stmt_metrics[self.metrics_index["sktseq_count"]] = stmt_metrics[self.metrics_index["sktseq_count"]] + f_count
     
     return stmt_metrics
   
