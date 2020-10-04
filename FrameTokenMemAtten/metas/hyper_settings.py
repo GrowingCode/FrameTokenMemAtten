@@ -55,12 +55,13 @@ skeleton_as_one = 0
 skeleton_as_pair_encoded = 1
 skeleton_as_each = 2
 skeleton_decode_way = skeleton_as_one
-skeleton_multi_decode_num = 10
+''' skeleton sequence accuracy mode '''
+skeleton_compute_seq_accurate_on = 0
+skeleton_seq_accuracy_based_on_one_whole = 0
+skeleton_seq_accuracy_based_on_each_atom = 1
+skeleton_seq_accuracy_mode = skeleton_seq_accuracy_based_on_one_whole
 skeleton_multi_decode_mode_on = 0
-''' skeleton accuracy mode '''
-skeleton_seq_accuracy_based_on_one = 0
-skeleton_seq_accuracy_based_on_each = 1
-skeleton_seq_accuracy_mode = skeleton_seq_accuracy_based_on_one
+skeleton_multi_decode_num = 10
 ''' tree decode details '''
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0
@@ -172,7 +173,38 @@ composite_config_func = "skeleton_token_decode"
 
 if composite_config_func == "skeleton_token_decode":
   model_run_mode = skeleton_decode_mode
+  
+if composite_config_func == "skeleton_pe_token_decode":
+  model_run_mode = skeleton_decode_mode
+  skeleton_decode_way = skeleton_as_pair_encoded
+  
+if composite_config_func == "skeleton_each_token_decode":
+  model_run_mode = skeleton_decode_mode
+  skeleton_decode_way = skeleton_as_each
 
+if composite_config_func.startswith("skeleton_"):
+  
+  skeleton_sideline_composite_config_func = "skeleton_not_compute_seq_accurate"
+  
+  if skeleton_sideline_composite_config_func == "skeleton_not_compute_seq_accurate":
+    pass
+  
+  if skeleton_sideline_composite_config_func == "skeleton_compute_seq_accurate_with_common_mode_based_on_one_whole":
+    skeleton_compute_seq_accurate_on = 1
+    
+  if skeleton_sideline_composite_config_func == "skeleton_compute_seq_accurate_with_common_mode_based_on_each_atom":
+    skeleton_compute_seq_accurate_on = 1
+    skeleton_seq_accuracy_mode = skeleton_seq_accuracy_based_on_each_atom
+    
+  if skeleton_sideline_composite_config_func == "skeleton_compute_seq_accurate_with_multi_mode_based_on_one_whole":
+    skeleton_compute_seq_accurate_on = 1
+    skeleton_multi_decode_mode_on = 1
+  
+  if skeleton_sideline_composite_config_func == "skeleton_compute_seq_accurate_with_multi_mode_based_on_each_atom":
+    skeleton_compute_seq_accurate_on = 1
+    skeleton_multi_decode_mode_on = 1
+    skeleton_seq_accuracy_mode = skeleton_seq_accuracy_based_on_each_atom
+    
 # if composite_config_func == "skeleton_token_decode_with_dup":
 #   model_run_mode = skeleton_decode_mode
 #   use_dup_model = 1

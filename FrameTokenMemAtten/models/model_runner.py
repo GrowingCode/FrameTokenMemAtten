@@ -8,12 +8,13 @@ from metas.hyper_settings import top_ks, restrain_maximum_count, max_train_epoch
 from metas.non_hyper_constants import model_storage_dir, turn_info, \
   turn, model_check_point, model_best, best, best_info, model_config, \
   np_float_type, testing_mode, training_mode, validating_mode,\
-  model_storage_parent_dir, test_noavg, validate_noavg, train_noavg
+  model_storage_parent_dir, test_noavg, validate_noavg, train_noavg, meta_dir
 import numpy as np
 import tensorflow as tf
 from utils.model_tensors_metrics import ensure_tensor_array_to_tensor_list_in_metrics,\
   filter_out_invalid_mark_in_metrics
 from utils.string_util import get_content_between_two_specified_string
+from utils.file_util import copy_files_from_one_directory_to_another_directory
 
 
 class ModelRunner():
@@ -47,6 +48,11 @@ class ModelRunner():
     real_model_storage_dir = '../' + model_storage_parent_dir + '/' + model_storage_dir
     if not os.path.exists(real_model_storage_dir):
       os.makedirs(real_model_storage_dir)
+    ast_meta_info_dir = real_model_storage_dir + "/" + 'data_meta_info'
+    if not os.path.exists(ast_meta_info_dir):
+      os.makedirs(ast_meta_info_dir)
+    copy_files_from_one_directory_to_another_directory(meta_dir, ast_meta_info_dir)
+    
     self.turn_info_txt = real_model_storage_dir + '/' + turn_info
     self.turn_txt = real_model_storage_dir + '/' + turn
     self.check_point_directory = real_model_storage_dir + '/' + model_check_point

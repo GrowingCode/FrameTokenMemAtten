@@ -4,8 +4,8 @@ from metas.non_hyper_constants import float_type, int_type,\
   all_skt_one_to_each_start
 from metas.hyper_settings import num_units, top_ks, skeleton_as_one,\
   skeleton_decode_way, skeleton_as_pair_encoded, skeleton_as_each,\
-  skeleton_seq_accuracy_mode, skeleton_seq_accuracy_based_on_each,\
-  skeleton_seq_accuracy_based_on_one
+  skeleton_seq_accuracy_mode, skeleton_seq_accuracy_based_on_each_atom,\
+  skeleton_seq_accuracy_based_on_one_whole
 from models.loss_accurate import compute_logits_given_to_deocde_embed_with_computed_embeddings
 from utils.cartesian_util import cartesian_add_one_dim_vector,\
   cartesian_concat_two_dim_mats
@@ -104,10 +104,10 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
     eq_lens = tf.reduce_sum(eq * e_lens)
 #     eq_all_acc = tf.reduce_sum(eq)
 #     eq_all_count = tf.cast(tf.shape(eq)[-1], float_type)
-    if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one:
+    if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one_whole:
       epos_right = eq_lens / eq_all_lens
       whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type)
-    elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each:
+    elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each_atom:
       epos_right = eq_lens
       whole_right = tf.cast(tf.equal(eq_lens, eq_all_lens), float_type) * eq_all_lens
     else:
@@ -136,9 +136,9 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
     f_each_acc = tf.concat([f_each_acc, [each_acc[r_sel]]], axis=0)
     f_whole_acc = tf.concat([f_whole_acc, [whole_acc[r_sel]]], axis=0)
   
-  if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one:
+  if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one_whole:
     f_count = tf.constant(1, int_type)
-  elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each:
+  elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each_atom:
     f_count = eq_all_lens
   else:
     assert False

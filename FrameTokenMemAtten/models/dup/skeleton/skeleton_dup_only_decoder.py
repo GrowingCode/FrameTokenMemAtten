@@ -5,8 +5,7 @@ class SkeletonDupOnlyDecodeModel(SkeletonOnlyDecodeModel):
   
   def __init__(self, type_content_data, compute_noavg = True):
     super(SkeletonDupOnlyDecodeModel, self).__init__(type_content_data, compute_noavg)
-    self.compute_seq_accurate = False
-  
+    self.skt_seq_acc_control = False
   
   
 

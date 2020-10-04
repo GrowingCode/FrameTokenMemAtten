@@ -1,7 +1,8 @@
 from inputs.atom_embeddings import SkeletonAtomEmbed
 from metas.hyper_settings import skeleton_decode_way, skeleton_as_one, \
   skeleton_as_pair_encoded, skeleton_as_each, num_units,\
-  skeleton_multi_decode_num, skeleton_multi_decode_mode_on, top_ks
+  skeleton_multi_decode_num, skeleton_multi_decode_mode_on, top_ks,\
+  skeleton_compute_seq_accurate_on
 from metas.non_hyper_constants import float_type, all_token_summary, \
   int_type, SkeletonHitNum, UNK_en, SkeletonPEHitNum, \
   SkeletonEachHitNum, all_skt_one_to_pe_base, all_skt_one_to_pe_start, \
@@ -23,7 +24,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
   def __init__(self, type_content_data, compute_noavg = True):
     super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
     self.compute_noavg = compute_noavg
-    self.compute_seq_accurate = True
+    self.skt_seq_acc_control = True
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
     pe_number_of_skeletons = self.type_content_data[all_token_summary][SkeletonPEHitNum]
@@ -69,7 +70,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
       oe_end = self.type_content_data[all_skt_one_to_each_end]
       self.skt_info = extract_subsequence_with_start_end_info(oe_base, oe_start[skt_id], oe_end[skt_id])
     
-    if self.compute_seq_accurate:
+    if self.skt_seq_acc_control and skeleton_compute_seq_accurate_on:
       if skeleton_multi_decode_mode_on:
         stmt_metrics = self.skt_multi_decode(stmt_metrics)
       else:
