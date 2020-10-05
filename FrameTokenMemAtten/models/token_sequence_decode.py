@@ -89,6 +89,7 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
   elif skeleton_decode_way == skeleton_as_each:
     e_lens = tf.ones([tf.shape(oracle_computed_en_seq)[-1]], int_type)
   
+  eq_all_lens_int = tf.reduce_sum(e_lens)
   e_lens = tf.cast(e_lens, float_type)
   eq_all_lens = tf.reduce_sum(e_lens)
   
@@ -139,7 +140,7 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
   if skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_one_whole:
     f_count = tf.constant(1, int_type)
   elif skeleton_seq_accuracy_mode == skeleton_seq_accuracy_based_on_each_atom:
-    f_count = eq_all_lens
+    f_count = eq_all_lens_int
   else:
     assert False
   
@@ -159,15 +160,15 @@ def dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens):
     fa_ens = cartesian_concat_two_dim_mats(acc_ens, tf.expand_dims(o_en, axis=1))
     
     _, indices = tf.nn.top_k(fa_log_probs, top_ks[-1])
-    sorted_probs = fa_log_probs[indices]
-    sorted_ens = fa_ens[indices]
+    sorted_probs = tf.gather(fa_log_probs, indices)
+    sorted_ens = tf.gather(fa_ens, indices)
     
     return i+1, i_len, sorted_probs, sorted_ens 
   
   seq_len = tf.shape(o_log_probs)[0]
-  acc_log_probs = tf.zeros([0, top_ks[-1]], float_type)
-  acc_ens = tf.zeros([0, top_ks[-1]], int_type)
-  _, _, acc_log_probs, acc_ens = tf.while_loop(compute_ens_cond, compute_ens_body, [tf.constant(0, int_type), seq_len, acc_log_probs, acc_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]])], parallel_iterations=1)
+  acc_log_probs = o_log_probs[0] # tf.zeros([top_ks[-1]], float_type)
+  acc_ens = tf.expand_dims(o_ens[0], axis=1) # tf.zeros([top_ks[-1], 0], int_type)
+  _, _, acc_log_probs, acc_ens = tf.while_loop(compute_ens_cond, compute_ens_body, [tf.constant(1, int_type), seq_len, acc_log_probs, acc_ens], [tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([top_ks[-1]]), tf.TensorShape([top_ks[-1], None])], parallel_iterations=1)
   return acc_ens
 
 

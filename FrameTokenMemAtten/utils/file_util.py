@@ -28,7 +28,7 @@ def all_files_in_directory(d):
     if os.path.isdir(sub_dir):
       result.extend(all_files_in_directory(sub_dir))
     else:
-      result.append(i)
+      result.append(sub_dir)
   return result
 
 

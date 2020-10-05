@@ -140,6 +140,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     return stmt_metrics
   
   def skt_multi_decode(self, stmt_metrics):
+#     print("stmt_metrics type:" + str(type(stmt_metrics)))
 #     cell = stmt_metrics[self.metrics_index["token_cell"]]
     i = 0
     i_len = tf.minimum(tf.shape(self.skt_info)[-1], skeleton_multi_decode_num)
@@ -149,7 +150,10 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     o_log_probs = tf.zeros([0, top_ks[-1]], float_type)
     o_ens = tf.zeros([0, top_ks[-1]], int_type)
     
-    _, _, _, o_log_probs, o_ens, stmt_metrics = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, o_log_probs, o_ens, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]]), *self.metrics_shape], parallel_iterations=1)
+    f_res = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, o_log_probs, o_ens, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]]), *self.metrics_shape], parallel_iterations=1)
+    
+    o_log_probs, o_ens = f_res[3], f_res[4]
+    stmt_metrics = f_res[5:]
     
     computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
     f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(self.type_content_data, computed_en_seqs, self.skt_info)
@@ -188,7 +192,7 @@ class SkeletonOnlyDecodeModel(StatementDecodeModel):
     stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
     stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
     
-    return (i+1, i_len, h, o_log_probs, o_ens, stmt_metrics)
+    return (i+1, i_len, h, o_log_probs, o_ens, *stmt_metrics)
   
   
   
