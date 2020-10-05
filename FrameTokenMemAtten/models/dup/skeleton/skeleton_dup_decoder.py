@@ -9,7 +9,7 @@ class SkeletonDupModel(StatementDupModel):
   def __init__(self, type_content_data):
     super(SkeletonDupModel, self).__init__(type_content_data)
     
-    self.skt_only = SkeletonOnlyDecodeModel(type_content_data, compute_noavg = False)
+    self.skt_only = SkeletonOnlyDecodeModel(type_content_data, self.metrics_shape, self.metrics_index)
     
 #     self.treat_first_element_as_skeleton = 1
     

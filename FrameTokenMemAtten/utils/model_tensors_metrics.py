@@ -30,7 +30,12 @@ def create_empty_tensorflow_tensors(metrics_meta, contingent_parameters, metrics
 #       if m_name.endswith("accumulated_cell") or m_name.endswith("accumulated_h"):
 #         ct = contingent_parameters[metrics_contingent_index[m_name]][:,:]
 #       else:
-      ct = contingent_parameters[metrics_contingent_index[m_name]]#[-2:-1,:]
+      m_idx = metrics_contingent_index[m_name]
+#       print("m_name:" + m_name + "#m_idx:" + str(m_idx))
+#       print(contingent_parameters)
+#       p_op = tf.print(['m_idx', m_idx, 'shape_of_contingent_parameters', tf.shape(contingent_parameters)])
+#       with tf.control_dependencies([p_op]):
+      ct = contingent_parameters[m_idx]#[-2:-1,:]
     result.append(ct)
   return tuple(result)
 

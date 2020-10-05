@@ -19,8 +19,8 @@ class SkeletonDecodeModel(StatementDecodeModel):
 #     self.linear_skeleton_output_w = tf.Variable(random_uniform_variable_initializer(257, 576, [number_of_skeletons, num_units]))
 #     self.one_dup_hot_skeleton_embedding = tf.Variable(random_uniform_variable_initializer(259, 579, [number_of_skeletons, num_units]))
 #     self.dup_skeleton_embedder = SkeletonAtomEmbed(self.type_content_data, self.one_dup_hot_skeleton_embedding)
-    self.skt_only = SkeletonOnlyDecodeModel(type_content_data)
-  
+    self.skt_only = SkeletonOnlyDecodeModel(type_content_data, self.metrics_shape, self.metrics_index)
+    
 #   def create_in_use_tensors_meta(self):
 #     result = super(SkeletonDecodeModel, self).create_in_use_tensors_meta() + [("skt_e_int_noavg", tf.TensorShape(None)), ("skt_pe_int_noavg", tf.TensorShape(None))]
 #     return result

@@ -11,7 +11,6 @@ from metas.non_hyper_constants import float_type, all_token_summary, \
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
   compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_embeddings
 from models.lstm import YLSTMCell
-from models.stmt.stmt_decoder import StatementDecodeModel
 import tensorflow as tf
 from utils.initializer import random_uniform_variable_initializer
 from utils.tensor_slice import extract_subsequence_with_start_end_info
@@ -19,11 +18,13 @@ from models.token_sequence_decode import compute_beam_sequences, compute_accurac
   dp_compute_en_seqs_from_distinct_parallel_tokens
 
 
-class SkeletonOnlyDecodeModel(StatementDecodeModel):
+class SkeletonOnlyDecodeModel():
   
-  def __init__(self, type_content_data, compute_noavg = True):
-    super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
-    self.compute_noavg = compute_noavg
+  def __init__(self, type_content_data, metrics_shape, metrics_index):
+#     super(SkeletonOnlyDecodeModel, self).__init__(type_content_data)
+    self.type_content_data = type_content_data
+    self.metrics_shape = metrics_shape
+    self.metrics_index = metrics_index
     self.skt_seq_acc_control = True
     
     number_of_skeletons = self.type_content_data[all_token_summary][SkeletonHitNum]
