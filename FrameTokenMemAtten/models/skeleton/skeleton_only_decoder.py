@@ -144,6 +144,8 @@ class SkeletonOnlyDecodeModel():
 #     print("stmt_metrics type:" + str(type(stmt_metrics)))
 #     cell = stmt_metrics[self.metrics_index["token_cell"]]
     i = 0
+#     p_op = tf.print(['tf.shape(self.skt_info):', tf.shape(self.skt_info)])
+#     with tf.control_dependencies([p_op]):
     i_len = tf.minimum(tf.shape(self.skt_info)[-1], skeleton_multi_decode_num)
     
     h = stmt_metrics[self.metrics_index["token_h"]]
@@ -152,6 +154,7 @@ class SkeletonOnlyDecodeModel():
     o_ens = tf.zeros([0, top_ks[-1]], int_type)
     
     f_res = tf.while_loop(self.skt_multi_cond, self.skt_multi_body, [i, i_len, h, o_log_probs, o_ens, *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), tf.TensorShape([1, num_units]), tf.TensorShape([None, top_ks[-1]]), tf.TensorShape([None, top_ks[-1]]), *self.metrics_shape], parallel_iterations=1)
+    f_res = list(f_res)
     
     o_log_probs, o_ens = f_res[3], f_res[4]
     stmt_metrics = f_res[5:]

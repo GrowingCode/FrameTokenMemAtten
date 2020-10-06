@@ -79,12 +79,12 @@ def compute_beam_sequences(linear_atom_output_w, atom_lstm, atom_embedder, begin
 def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_computed_en_seq):
   
   if skeleton_decode_way == skeleton_as_one:
-    o_en_e_start = tf.gather(type_content_data[all_skt_one_to_each_start], [oracle_computed_en_seq])
-    o_en_e_end = tf.gather(type_content_data[all_skt_one_to_each_end], [oracle_computed_en_seq])
+    o_en_e_start = tf.gather(type_content_data[all_skt_one_to_each_start], oracle_computed_en_seq)
+    o_en_e_end = tf.gather(type_content_data[all_skt_one_to_each_end], oracle_computed_en_seq)
     e_lens = o_en_e_end - o_en_e_start + 1
   elif skeleton_decode_way == skeleton_as_pair_encoded:
-    o_en_e_start = tf.gather(type_content_data[all_skt_pe_to_each_start], [oracle_computed_en_seq])
-    o_en_e_end = tf.gather(type_content_data[all_skt_pe_to_each_end], [oracle_computed_en_seq])
+    o_en_e_start = tf.gather(type_content_data[all_skt_pe_to_each_start], oracle_computed_en_seq)
+    o_en_e_end = tf.gather(type_content_data[all_skt_pe_to_each_end], oracle_computed_en_seq)
     e_lens = o_en_e_end - o_en_e_start + 1
   elif skeleton_decode_way == skeleton_as_each:
     e_lens = tf.ones([tf.shape(oracle_computed_en_seq)[-1]], int_type)
@@ -150,7 +150,7 @@ def compute_accuracy_of_sequences(type_content_data, computed_en_seqs, oracle_co
 def dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens):
   
   def compute_ens_cond(i, i_len, *_):
-    return i < i_len
+    return tf.less(i, i_len)
   
   def compute_ens_body(i, i_len, acc_log_probs, acc_ens):
     o_prob = o_log_probs[i]
