@@ -41,7 +41,7 @@ class SkeletonOnlyDecodeModel():
       assert False, "Unrecognized skeleton_decode_way!"
     self.vocab_num = vocab_num
     
-    self.initialize_parameters();
+    self.initialize_parameters()
     
   def initialize_parameters(self):
     
@@ -71,11 +71,11 @@ class SkeletonOnlyDecodeModel():
       oe_end = self.type_content_data[all_skt_one_to_each_end]
       self.skt_info = extract_subsequence_with_start_end_info(oe_base, oe_start[skt_id], oe_end[skt_id])
     
-    if self.skt_seq_acc_control and skeleton_compute_seq_accurate_on:
-      if skeleton_multi_decode_mode_on:
-        stmt_metrics = self.skt_multi_decode(stmt_metrics)
-      else:
-        stmt_metrics = self.skt_beam_decode(stmt_metrics)
+    if skeleton_multi_decode_mode_on:
+      stmt_metrics = self.skt_multi_decode(stmt_metrics)
+    
+    if (not training) and skeleton_compute_seq_accurate_on and self.skt_seq_acc_control and (not skeleton_multi_decode_mode_on):
+      stmt_metrics = self.skt_beam_decode(stmt_metrics)
     
     stmt_metrics = tf.while_loop(self.skt_iterate_cond, self.skt_iterate_body, [0, tf.shape(self.skt_info)[-1], *stmt_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
     stmt_metrics = list(stmt_metrics[2:])
@@ -98,25 +98,25 @@ class SkeletonOnlyDecodeModel():
     ''' handle skeleton '''
     skt_id = self.skt_info[i]# - skeleton_base
     
-    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
+    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.vocab_num))
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
     skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
     
     cell = stmt_metrics[self.metrics_index["token_cell"]]
     h = stmt_metrics[self.metrics_index["token_h"]]
     
-#     if not skeleton_multi_decode_mode_on:
-    o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
-    
-    stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
-     
-    stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
-    stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
+    if not skeleton_multi_decode_mode_on:
+      o_mrr_of_this_node, o_accurate_of_this_node, o_loss_of_this_node = compute_loss_and_accurate_from_linear_with_computed_embeddings(self.training, self.linear_skeleton_output_w, skt_out_use_id, h)
+      
+      stmt_metrics[self.metrics_index["skeleton_loss"]] = stmt_metrics[self.metrics_index["skeleton_loss"]] + o_loss_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_accurate"]] = stmt_metrics[self.metrics_index["skeleton_accurate"]] + o_accurate_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_mrr"]] = stmt_metrics[self.metrics_index["skeleton_mrr"]] + o_mrr_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["skeleton_count"]] = stmt_metrics[self.metrics_index["skeleton_count"]] + 1
+       
+      stmt_metrics[self.metrics_index["all_loss"]] = stmt_metrics[self.metrics_index["all_loss"]] + o_loss_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_accurate"]] = stmt_metrics[self.metrics_index["all_accurate"]] + o_accurate_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_mrr"]] = stmt_metrics[self.metrics_index["all_mrr"]] + o_mrr_of_this_node * skt_id_valid
+      stmt_metrics[self.metrics_index["all_count"]] = stmt_metrics[self.metrics_index["all_count"]] + 1
     
     skt_embed = self.skeleton_embedder.compute_h(skt_id)
     _, (next_cell, next_h) = self.skeleton_lstm_cell(skt_embed, (cell, h))
@@ -159,12 +159,13 @@ class SkeletonOnlyDecodeModel():
     o_log_probs, o_ens = f_res[3], f_res[4]
     stmt_metrics = f_res[5:]
     
-    computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
-    f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(self.type_content_data, computed_en_seqs, self.skt_info)
-    
-    stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] + f_each_acc
-    stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] + f_whole_acc
-    stmt_metrics[self.metrics_index["sktseq_count"]] = stmt_metrics[self.metrics_index["sktseq_count"]] + f_count
+    if (not self.training) and skeleton_compute_seq_accurate_on and self.skt_seq_acc_control:
+      computed_en_seqs = dp_compute_en_seqs_from_distinct_parallel_tokens(o_log_probs, o_ens)
+      f_each_acc, f_whole_acc, f_count = compute_accuracy_of_sequences(self.type_content_data, computed_en_seqs, self.skt_info)
+      
+      stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_each_accurate"]] + f_each_acc
+      stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] = stmt_metrics[self.metrics_index["sktseq_as_one_accurate"]] + f_whole_acc
+      stmt_metrics[self.metrics_index["sktseq_count"]] = stmt_metrics[self.metrics_index["sktseq_count"]] + f_count
     
     return stmt_metrics
   
@@ -177,7 +178,7 @@ class SkeletonOnlyDecodeModel():
     t_h = tf.matmul(h, transfer_mat)
     
     skt_id = self.skt_info[i]
-    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.type_content_data[all_token_summary][SkeletonHitNum]))
+    skt_id_valid_bool = tf.logical_and(tf.greater(skt_id, 2), tf.less(skt_id, self.vocab_num))
     skt_id_valid = tf.cast(skt_id_valid_bool, float_type)
     skt_out_use_id = tf.stack([UNK_en, skt_id])[tf.cast(skt_id_valid_bool, int_type)]
     
