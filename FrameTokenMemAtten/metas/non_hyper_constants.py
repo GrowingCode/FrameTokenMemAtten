@@ -11,7 +11,7 @@ bool_type = tf.bool
 float_type = tf.float32
 int_type = tf.int32
 
-bp_bool_type = np.bool
+np_bool_type = np.bool
 np_float_type = np.float32
 np_int_type = np.int32
 
