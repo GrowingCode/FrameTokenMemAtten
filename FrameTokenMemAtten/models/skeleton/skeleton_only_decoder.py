@@ -128,7 +128,7 @@ class SkeletonOnlyDecodeModel():
   '''
   the followings are sequence whole decode
   '''
-  def skt_beam_decode(self, stmt_metrics):    
+  def skt_beam_decode(self, stmt_metrics):
     begin_cell = stmt_metrics[self.metrics_index["token_cell"]]
     begin_h = stmt_metrics[self.metrics_index["token_h"]]
     computed_ens = compute_beam_sequences(self.linear_skeleton_output_w, self.skeleton_lstm_cell, self.skeleton_embedder, begin_cell, begin_h, tf.shape(self.skt_info)[-1])
