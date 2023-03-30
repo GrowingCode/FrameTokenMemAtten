@@ -112,7 +112,9 @@ class YLSTMCell():
   def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
     self.forget_bias = forget_bias
     self.activation = activation
+    ''' w shape: [256=128*2, 512=128*4] '''
     self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 4 * num_units], ini_range=lstm_initialize_range))
+    ''' b shape: [1, 512=128*4] '''
     self.b = tf.Variable(zero_variable_initializer([1, 4 * num_units]))
     if use_layer_norm:
       self.norm_weights = []
@@ -127,11 +129,25 @@ class YLSTMCell():
     @param: inputs (batch,n)
     @param state: the states and hidden unit of the two cells
     """
+    ''' inputs:[1,128] '''
+    ''' c:[1,128], h:[1,128] '''
     c, h = state
+    # linear_input = tf.concat([inputs, h], 0)
+    # ''' linear_input:[2,128] '''
     linear_input = tf.concat([inputs, h], 1)
+    ''' linear_input:[1,256] '''
+    
+    # ''' c:[1,128], h:[1,128] '''
+    ''' w shape: [256=128*2, 512=128*4] '''
     res = tf.matmul(linear_input, self.w)
+    ''' res shape: [1, 512] '''
     res = tf.add(res, self.b)
+    ''' res shape: [1, 512] '''
     i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
+    ''' i shape: [1, 128] '''
+    ''' j shape: [1, 128] '''
+    ''' f shape: [1, 128] '''
+    ''' o shape: [1, 128] '''
     if use_layer_norm:
       i = layer_normalization(i, self.norm_weights[0], self.norm_biases[0])
       j = layer_normalization(j, self.norm_weights[1], self.norm_biases[1])

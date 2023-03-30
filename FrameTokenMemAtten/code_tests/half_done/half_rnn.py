@@ -2,8 +2,54 @@ import tensorflow as tf
 import numpy as np
 
 embed_size = 128
-hidden_size = 64
+hidden_size = embed_size
 vocab_size = 15
+
+class YLSTMCell():
+  
+  def __init__(self, forget_bias=0.0, activation=tf.nn.tanh):
+    self.forget_bias = forget_bias
+    self.activation = activation
+    ''' w shape: [256=128*2, 512=128*4] '''
+    self.w = tf.Variable(tf.random.uniform([2 * embed_size, 4 * embed_size], minval=-0.1, maxval=0.1, seed=18))
+    ''' b shape: [1, 512=128*4] '''
+    self.b = tf.Variable(tf.random.uniform([1, 4 * embed_size], minval=-0.1, maxval=0.1, seed=17))
+  
+  def ACall(self, x, state):
+    """
+    Long short-term memory cell (LSTM)
+    @param: inputs (batch,n)
+    @param state: the states and hidden unit of the two cells
+    """
+    ''' inputs:[1,128] '''
+    ''' c:[1,128], h:[1,128] '''
+    c, h = state
+    # linear_input = tf.concat([inputs, h], 0)
+    # ''' linear_input:[2,128] '''
+    linear_input = tf.concat([x, h], 1)
+    ''' linear_input:[1,256] '''
+    
+    # ''' c:[1,128], h:[1,128] '''
+    ''' w shape: [256=128*2, 512=128*4] '''
+    res = tf.matmul(linear_input, self.w)
+    ''' res shape: [1, 512] '''
+    res = tf.add(res, self.b)
+    ''' res shape: [1, 512] '''
+    i, j, f, o = tf.split(value=res, num_or_size_splits=4, axis=1)
+    ''' i shape: [1, 128] '''
+    ''' j shape: [1, 128] '''
+    ''' f shape: [1, 128] '''
+    ''' o shape: [1, 128] '''
+    '''
+    compute cell
+    '''
+    new_c1 = (c * tf.nn.sigmoid(f + self.forget_bias) + 
+             self.activation(j) * tf.nn.sigmoid(i))
+    '''
+    compute h
+    '''
+    new_h1 = self.activation(new_c1) * tf.nn.sigmoid(o)
+    return (new_c1, new_h1)
 
 class RNN(tf.keras.Model):
   
@@ -37,8 +83,10 @@ class TrainTest(tf.keras.Model):
   def __init__(self):
     super().__init__()
     self.X = tf.Variable(tf.random.uniform([vocab_size, embed_size], minval=-0.1, maxval=0.1, seed=4))
+    self.c0 = tf.Variable(tf.random.uniform([1,embed_size], minval=-0.1, maxval=0.1, seed=29), trainable=True)
     self.h0 = tf.Variable(tf.random.uniform([1,embed_size], minval=-0.1, maxval=0.1, seed=20), trainable=True)
-    self.fc1 = RNN();
+    # self.fc1 = RNN();
+    self.fc1 = YLSTMCell();
     self.cfy = Classify();
     self.optimizer = tf.optimizers.Adam()
   
@@ -50,6 +98,7 @@ class TrainTest(tf.keras.Model):
     for i in range(data.shape[0]):
       with tf.GradientTape() as tape:
         loss = 0.0
+        c = self.c0
         h = self.h0
         ''' iterate every token in sentence '''
         for j in range(data.shape[1]-1):
@@ -61,7 +110,8 @@ class TrainTest(tf.keras.Model):
           good_shape_x_embed = tf.expand_dims(x_embed, axis=0)
           # print("good_shape_x_embed shape:" + str(tf.shape(good_shape_x_embed)))
           x = good_shape_x_embed
-          new_h = self.fc1.ACall(x, h)
+          # new_h = self.fc1.ACall(x, h)
+          new_c, new_h = self.fc1.ACall(x, (c, h))
           logit = self.cfy.BCall(new_h)
           p = tf.nn.softmax(logit)
           # m = tf.argmax(p,1)
@@ -71,6 +121,7 @@ class TrainTest(tf.keras.Model):
           loss += tf.nn.sparse_softmax_cross_entropy_with_logits([label], logit)
           if label in m:
             total_correct += 1
+          c = new_c
           h = new_h
           # print(m)
         total_loss += loss
