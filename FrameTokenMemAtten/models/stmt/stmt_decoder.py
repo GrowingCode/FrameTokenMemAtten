@@ -2,8 +2,8 @@ from metas.hyper_settings import compute_token_memory,\
   compose_tokens_of_a_statement, compose_mode, compose_one_way_lstm,\
   compose_one_way_lstm_mode, one_way_three_way_compose, one_way_two_way_compose,\
   compose_bi_way_lstm, num_units, decode_attention_way, decode_no_attention,\
-  token_embedder_mode, atom_decode_mode, token_decode, sword_decode,\
-  swords_compose_mode, token_only_mode, compose_half_one_way_lstm,\
+  token_embedder_mode, atom_decode_mode, token_decode,\
+  token_only_mode, compose_half_one_way_lstm,\
   one_way_stand_compose
 from models.mem import NTMOneDirection
 from models.lstm import YLSTMCell, Y2DirectLSTMCell, Y3DirectLSTMCell
@@ -12,9 +12,9 @@ from utils.initializer import random_uniform_variable_initializer
 import tensorflow as tf
 from models.attention import YAttention
 from metas.non_hyper_constants import all_token_summary, TokenHitNum,\
-  SwordHitNum, float_type, int_type
+  float_type, int_type
 from models.token_sword_decode import TokenDecoder
-from inputs.atom_embeddings import TokenAtomEmbed, SwordAtomEmbed, BiLSTMEmbed
+from inputs.atom_embeddings import TokenAtomEmbed
 from models.lstm_procedure import backward_varied_lstm_steps, one_lstm_step
 from utils.tensor_concat import concat_in_fixed_length_two_dimension
 from utils.model_tensors_metrics import create_empty_tensorflow_tensors
@@ -58,7 +58,7 @@ class StatementDecodeModel(BasicDecodeModel):
     r_token_embedder_mode = token_embedder_mode
      
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
-    number_of_subwords = self.type_content_data[all_token_summary][SwordHitNum]
+    # number_of_subwords = self.type_content_data[all_token_summary][SwordHitNum]
      
     if atom_decode_mode == token_decode:
       self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
@@ -76,10 +76,10 @@ class StatementDecodeModel(BasicDecodeModel):
 #           self.dup_backward_token_lstm = YLSTMCell(11)
       self.token_decoder = TokenDecoder(type_content_data, self.metrics_index, self.linear_token_output_w, self.token_attention, self.dup_token_pointer)
        
-    elif atom_decode_mode == sword_decode:
-      self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
-      self.sword_lstm = YLSTMCell(12)
-      r_token_embedder_mode = swords_compose_mode
+    # elif atom_decode_mode == sword_decode:
+    #   self.linear_sword_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_subwords, num_units]))
+    #   self.sword_lstm = YLSTMCell(12)
+    #   r_token_embedder_mode = swords_compose_mode
       
     else:
       assert False, "Wrong atom_decode_mode"
@@ -87,10 +87,10 @@ class StatementDecodeModel(BasicDecodeModel):
     if r_token_embedder_mode == token_only_mode:
       self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))
       self.token_embedder = TokenAtomEmbed(self.type_content_data, self.one_hot_token_embedding)
-    elif r_token_embedder_mode == swords_compose_mode:
-      self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
-      self.sword_embedder = SwordAtomEmbed(self.type_content_data, self.one_hot_sword_embedding)
-      self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
+    # elif r_token_embedder_mode == swords_compose_mode:
+    #   self.one_hot_sword_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_subwords, num_units]))
+    #   self.sword_embedder = SwordAtomEmbed(self.type_content_data, self.one_hot_sword_embedding)
+    #   self.token_embedder = BiLSTMEmbed(self.type_content_data, self.one_hot_sword_embedding)
     else:
       assert False, "Wrong token_embedder_mode"
   

@@ -169,7 +169,7 @@ print_accurate_of_each_example = 0
 '''
 additional composite configuration
 '''
-composite_config_func = "sequence_token_decode"
+composite_config_func = "statement_token_decode_with_bi_way_tokens_compose"
 
 # if composite_config_func == "skeleton_token_decode":
 #   model_run_mode = skeleton_decode_mode
