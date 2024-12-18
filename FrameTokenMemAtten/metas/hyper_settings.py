@@ -66,6 +66,10 @@ skeleton_multi_decode_num = 10
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0
 
+tree_decode_use_cell_lstm = 0
+tree_decode_use_cell_rnn = 1
+tree_decode_use_cell_mode = tree_decode_use_cell_lstm
+
 tree_decode_2d = 0
 tree_decode_embed = 1
 tree_decode_without_children = 2
@@ -171,7 +175,7 @@ print_accurate_of_each_example = 0
 '''
 additional composite configuration
 '''
-composite_config_func = "statement_token_decode_with_bi_way_tokens_compose"
+composite_config_func = "tree_token_decode_without_children"
 
 # if composite_config_func == "skeleton_token_decode":
 #   model_run_mode = skeleton_decode_mode

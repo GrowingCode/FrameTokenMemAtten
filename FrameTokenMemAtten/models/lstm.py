@@ -173,3 +173,41 @@ def layer_normalization(need_to_normalize_tensor, scale, shift, epsilon=1e-5):
   ln_initial = (need_to_normalize_tensor - m) / tf.sqrt(v + epsilon)
   return ln_initial * scale + shift
 
+
+class YRNNCell():
+  
+  def __init__(self, num_desc, forget_bias=0.0, activation=tf.nn.tanh):
+    self.forget_bias = forget_bias
+    self.activation = activation
+    ''' w shape: [256=128*2, 512=128*4] '''
+    self.w = tf.Variable(random_uniform_variable_initializer(9, 88+num_desc, [2 * num_units, 1 * num_units], ini_range=lstm_initialize_range))
+    ''' b shape: [1, 512=128*4] '''
+    self.b = tf.Variable(zero_variable_initializer([1, 1 * num_units]))
+  
+  def __call__(self, inputs, state):
+    """
+    Long short-term memory cell (LSTM)
+    @param: inputs (batch,n)
+    @param state: the states and hidden unit of the two cells
+    """
+    ''' inputs:[1,128] '''
+    ''' c:[1,128], h:[1,128] '''
+    c, h = state
+    # linear_input = tf.concat([inputs, h], 0)
+    # ''' linear_input:[2,128] '''
+    linear_input = tf.concat([inputs, h], 1)
+    ''' linear_input:[1,256] '''
+    
+    # ''' c:[1,128], h:[1,128] '''
+    ''' w shape: [256=128*2, 128=128*1] '''
+    res = tf.matmul(linear_input, self.w)
+    ''' res shape: [1, 128] '''
+    res = tf.add(res, self.b)
+    
+    '''
+    compute h
+    '''
+    new_h1 = self.activation(res)
+    return new_h1, (c, new_h1)
+
+

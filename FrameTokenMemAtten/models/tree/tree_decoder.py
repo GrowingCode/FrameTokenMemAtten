@@ -4,12 +4,13 @@ from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
   tree_decode_embed, tree_decode_way, tree_decode_with_grammar,\
-  ignore_unk_when_computing_accuracy, tree_decode_without_children
+  ignore_unk_when_computing_accuracy, tree_decode_without_children,\
+  tree_decode_use_cell_mode, tree_decode_use_cell_rnn
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
   all_token_grammar_ids
-from models.lstm import YLSTMCell, Y2DLSTMCell
+from models.lstm import YLSTMCell, Y2DLSTMCell, YRNNCell
 from models.tree.tree_encoder import EncodeOneAST
 from models.loss_accurate import compute_loss_and_accurate_from_linear_with_computed_embeddings,\
   compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_range
@@ -25,11 +26,17 @@ class TreeDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(TreeDecodeModel, self).__init__(type_content_data)
-    self.direct_descedent_lstm = YLSTMCell(0)
+    if tree_decode_use_cell_mode == tree_decode_use_cell_rnn:
+      self.direct_descedent_lstm = YRNNCell(0)
+    else:
+      self.direct_descedent_lstm = YLSTMCell(0)
     if tree_decode_way == tree_decode_2d:
       self.two_dimen_lstm = Y2DLSTMCell(1)
-    elif tree_decode_way == tree_decode_embed:
-      self.one_dimen_lstm = YLSTMCell(2)
+    else:# tree_decode_way == tree_decode_embed:
+      if tree_decode_use_cell_mode == tree_decode_use_cell_rnn:
+        self.one_dimen_lstm = YRNNCell(0)
+      else:
+        self.one_dimen_lstm = YLSTMCell(2)
     
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
     self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
@@ -47,7 +54,8 @@ class TreeDecodeModel(BasicDecodeModel):
   def __call__(self, one_example, training = True):
     post_order_node_type_content_en_tensor, post_order_node_child_start_tensor, post_order_node_child_end_tensor, post_order_node_children_tensor = one_example[0], one_example[1], one_example[2], one_example[3]
     self.pre_post_order_node_type_content_en_tensor, self.pre_post_order_node_state_tensor, self.pre_post_order_node_post_order_index_tensor, self.pre_post_order_node_parent_grammar_index, self.pre_post_order_node_kind = one_example[4], one_example[5], one_example[6], one_example[7], one_example[8]
-    _, self.encoded_h, self.encoded_children_cell, self.encoded_children_h = self.encode_tree.get_encoded_embeds(post_order_node_type_content_en_tensor, post_order_node_child_start_tensor, post_order_node_child_end_tensor, post_order_node_children_tensor)
+    if tree_decode_way != tree_decode_without_children:
+      _, self.encoded_h, self.encoded_children_cell, self.encoded_children_h = self.encode_tree.get_encoded_embeds(post_order_node_type_content_en_tensor, post_order_node_child_start_tensor, post_order_node_child_end_tensor, post_order_node_children_tensor)
     self.training = training
     ini_metrics = list(create_empty_tensorflow_tensors(self.metrics_meta, self.contingent_parameters, self.metrics_contingent_index))
     f_res = tf.while_loop(self.tree_iterate_cond, self.tree_iterate_body, [0, tf.shape(self.pre_post_order_node_type_content_en_tensor)[-1], *ini_metrics], shape_invariants=[tf.TensorShape(()), tf.TensorShape(()), *self.metrics_shape], parallel_iterations=1)
