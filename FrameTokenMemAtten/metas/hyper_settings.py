@@ -65,8 +65,10 @@ skeleton_multi_decode_num = 10
 ''' tree decode details '''
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0
+
 tree_decode_2d = 0
 tree_decode_embed = 1
+tree_decode_without_children = 2
 tree_decode_way = tree_decode_2d
 ''' statistics '''
 top_ks = [1, 3, 6, 10]
@@ -296,6 +298,10 @@ if composite_config_func == "sequence_token_decode":
 #   model_run_mode = sequence_decode_mode
 #   use_dup_model = 1
 #   token_memory_mode = abs_size_var_novar_all_concat_memory_mode
+  
+if composite_config_func == "tree_token_decode_without_children":
+  model_run_mode = tree_decode_mode
+  tree_decode_way = tree_decode_without_children
   
 if composite_config_func == "tree_token_decode":
   model_run_mode = tree_decode_mode

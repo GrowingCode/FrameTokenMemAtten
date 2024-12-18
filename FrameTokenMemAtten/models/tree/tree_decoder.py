@@ -4,7 +4,7 @@ from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
   tree_decode_embed, tree_decode_way, tree_decode_with_grammar,\
-  ignore_unk_when_computing_accuracy
+  ignore_unk_when_computing_accuracy, tree_decode_without_children
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
@@ -134,6 +134,8 @@ class TreeDecodeModel(BasicDecodeModel):
       next_cell2, next_h2 = self.two_dimen_lstm(en_h, cell, h, [self.encoded_children_cell[post_order_index]], [self.encoded_children_h[post_order_index]])
     elif tree_decode_way == tree_decode_embed:
       _, (next_cell2, next_h2) = self.one_dimen_lstm(tf.expand_dims(self.encoded_h[post_order_index], axis=0), (cell, h))
+    elif tree_decode_way == tree_decode_without_children:
+      _, (next_cell2, next_h2) = self.one_dimen_lstm(en_h, (cell, h))
     else:
       print("Unrecognized tree decode mode!")
       assert False
