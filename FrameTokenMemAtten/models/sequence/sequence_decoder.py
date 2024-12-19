@@ -3,12 +3,12 @@ from utils.model_tensors_metrics import create_empty_tensorflow_tensors
 from models.basic_decoder import BasicDecodeModel
 from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, decode_attention_way,\
-  decode_no_attention
+  decode_no_attention, decode_use_cell_mode, decode_use_cell_rnn
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum
 from models.attention import YAttention
 from models.token_sword_decode import TokenDecoder
-from models.lstm import YLSTMCell
+from models.lstm import YLSTMCell, YRNNCell
 from models.lstm_procedure import one_lstm_step_and_update_memory
 
 
@@ -21,7 +21,11 @@ class SequenceDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(SequenceDecodeModel, self).__init__(type_content_data)
-    self.token_lstm = YLSTMCell(0)
+    if decode_use_cell_mode == decode_use_cell_rnn:
+      self.token_lstm = YRNNCell(0)
+    else:
+      self.token_lstm = YLSTMCell(0)
+    
     number_of_tokens = self.type_content_data[all_token_summary][TokenHitNum]
     self.linear_token_output_w = tf.Variable(random_uniform_variable_initializer(256, 566, [number_of_tokens, num_units]))
     self.one_hot_token_embedding = tf.Variable(random_uniform_variable_initializer(256, 56, [number_of_tokens, num_units]))

@@ -50,10 +50,10 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings(training, com
   the following two functions are to compute accurate
   compute accuracy for type and content
   '''
-  if training:
-    mrr, accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
-  else:
-    mrr, accurate = compute_linear_accurate(oracle_index_in_computed_embeddings, logits)
+  # if training:
+  #   mrr, accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  # else:
+  mrr, accurate = compute_linear_accurate(oracle_index_in_computed_embeddings, logits)
   return mrr, accurate, loss
 
 
@@ -75,10 +75,10 @@ def compute_loss_and_accurate_from_linear_with_computed_embeddings_in_limited_ra
   the following two functions are to compute accurate
   compute accuracy for type and content
   '''
-  if training:
-    mrr, accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
-  else:
-    mrr, accurate = compute_linear_accurate(oracle_index, logits)
+  # if training:
+  #   mrr, accurate = tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  # else:
+  mrr, accurate = compute_linear_accurate(oracle_index, logits)
   
   mrr_stand, accurate_stand, loss_stand = compute_loss_and_accurate_from_linear_with_computed_embeddings(training, computed_embeddings, en, output)
   
@@ -106,10 +106,10 @@ def compute_loss_and_accurate_and_top_k_prediction_from_linear_with_computed_emb
   the following two functions are to compute accurate
   compute accuracy for type and content
   '''
-  if training:
-    log_probs, ens, mrr, accurate = tf.zeros([top_ks[-1]], float_type)-10000000, tf.zeros([top_ks[-1]], int_type)-1, tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
-  else:
-    log_probs, ens, mrr, accurate = compute_linear_accurate_with_top_k_prediction(oracle_index_in_computed_embeddings, logits)
+  # if training:
+    # log_probs, ens, mrr, accurate = tf.zeros([top_ks[-1]], float_type)-10000000, tf.zeros([top_ks[-1]], int_type)-1, tf.constant(0.0, float_type), tf.zeros([len(top_ks)], float_type)
+  # else:
+  log_probs, ens, mrr, accurate = compute_linear_accurate_with_top_k_prediction(oracle_index_in_computed_embeddings, logits)
   return log_probs, ens, mrr, accurate, loss
 
 

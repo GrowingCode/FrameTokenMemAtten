@@ -66,9 +66,9 @@ skeleton_multi_decode_num = 10
 tree_decode_with_grammar = 0
 tree_leaf_one_more_lstm_step = 0
 
-tree_decode_use_cell_lstm = 0
-tree_decode_use_cell_rnn = 1
-tree_decode_use_cell_mode = tree_decode_use_cell_lstm
+decode_use_cell_lstm = 0
+decode_use_cell_rnn = 1
+decode_use_cell_mode = decode_use_cell_rnn
 
 tree_decode_2d = 0
 tree_decode_embed = 1

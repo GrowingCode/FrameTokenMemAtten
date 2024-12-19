@@ -158,11 +158,11 @@ class ModelRunner():
       train_noavg = process_noavg(train_output_result)
       with open(self.train_noavg_json, 'w') as train_noavg_record:
         train_noavg_record.write(json.dumps(train_noavg))
-      train_average_loss = train_avg["average_all_loss"]
+      # train_average_loss = train_avg["average_all_loss"]
       '''
       compute average loss when training
       '''
-      print(str(turn+1) + "/" + str(max_train_epoch) + " turn's train_set_average_loss:" + str(train_average_loss))
+      print(str(turn+1) + "/" + str(max_train_epoch) + " turn" + "#" + json.dumps(train_avg))
       '''
       valid the training process if period reached
       '''

@@ -5,7 +5,7 @@ from inputs.atom_embeddings import TokenAtomEmbed
 from metas.hyper_settings import num_units, top_ks, tree_decode_2d,\
   tree_decode_embed, tree_decode_way, tree_decode_with_grammar,\
   ignore_unk_when_computing_accuracy, tree_decode_without_children,\
-  tree_decode_use_cell_mode, tree_decode_use_cell_rnn
+  decode_use_cell_mode, decode_use_cell_rnn
 from utils.initializer import random_uniform_variable_initializer
 from metas.non_hyper_constants import all_token_summary, TokenHitNum, int_type,\
   float_type, UNK_en, all_token_grammar_start, all_token_grammar_end,\
@@ -26,14 +26,14 @@ class TreeDecodeModel(BasicDecodeModel):
   
   def __init__(self, type_content_data):
     super(TreeDecodeModel, self).__init__(type_content_data)
-    if tree_decode_use_cell_mode == tree_decode_use_cell_rnn:
+    if decode_use_cell_mode == decode_use_cell_rnn:
       self.direct_descedent_lstm = YRNNCell(0)
     else:
       self.direct_descedent_lstm = YLSTMCell(0)
     if tree_decode_way == tree_decode_2d:
       self.two_dimen_lstm = Y2DLSTMCell(1)
     else:# tree_decode_way == tree_decode_embed:
-      if tree_decode_use_cell_mode == tree_decode_use_cell_rnn:
+      if decode_use_cell_mode == decode_use_cell_rnn:
         self.one_dimen_lstm = YRNNCell(0)
       else:
         self.one_dimen_lstm = YLSTMCell(2)
